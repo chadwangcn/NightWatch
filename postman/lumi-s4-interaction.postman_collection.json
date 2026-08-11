@@ -1,0 +1,1089 @@
+{
+  "info": {
+    "name": "Lumi S4 Interaction",
+    "_postman_id": "s4-interaction-collection-001",
+    "description": "S4 交互运行时 API 测试集合（黑盒测试，仅设备侧视角）\n\n## 鉴权\n- 业务请求使用 device-platform 签发的 `device_access_token`（Bearer）\n- 健康检查 / bootstrap 等无鉴权端点除外\n\n## 使用方式\n- 单接口测试：直接 Send，prerequest 自动生成 trace_id/request_id\n- 场景序列：选中文件夹 → Run Folder，环境变量自动串联\n\n## 真源文档\n- https://github.com/chadwangcn/lumi-s4-interaction/blob/main/docs/openapi.yaml",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "trace_id",
+      "value": ""
+    },
+    {
+      "key": "request_id",
+      "value": ""
+    },
+    {
+      "key": "idempotency_key",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "00 · 健康检查",
+      "description": "S4 健康检查与元数据端点（免鉴权）",
+      "item": [
+        {
+          "name": "H1 GET /health",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('success=true', () => pm.expect(j.success).to.be.true);",
+                  "pm.test('service=s4-interaction', () => pm.expect(j.data.service).to.eql('s4-interaction'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "H2 GET /healthz",
+          "request": {
+            "method": "GET",
+            "url": "{{origin_url}}/healthz",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('status=ok', () => pm.expect(j.data.status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "H3 GET /readyz",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/readyz",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 or 503', () => [200, 503].includes(pm.response.code));",
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  pm.test('ready', () => pm.expect(j.data.status).to.eql('ready'));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "H4 GET /v1/interaction/bootstrap",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/v1/interaction/bootstrap",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('runtime=s4', () => pm.expect(j.data.runtime).to.eql('s4'));",
+                  "pm.test('有 api 路径目录', () => pm.expect(j.data.api).to.be.an('object'));",
+                  "pm.test('有 voiceMessageSession', () => pm.expect(j.data.api.voiceMessageSession).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 · 设备面 · 语音消息",
+      "description": "语音消息生命周期：session → turn → playback-receipt → directive:resolve → directive/events\n鉴权：device_access_token（来自 device-platform 集合）\n执行顺序：VM1 → VM2 → VM3 → VM4 → VM5",
+      "item": [
+        {
+          "name": "VM1 POST /v1/ai/voice-message/session",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/session",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"{{trace_id}}\",\n  \"sessionId\": \"sess-test-{{$timestamp}}\",\n  \"childId\": \"{{child_profile_id}}\",\n  \"deviceId\": \"{{device_sn}}\",\n  \"requestId\": \"{{request_id}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('request_id', 'req-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('success=true', () => pm.expect(j.success).to.be.true);",
+                  "if (j.data && j.data.voiceSessionId) {",
+                  "  pm.environment.set('s4_voice_session_id', j.data.voiceSessionId);",
+                  "  if (j.data.correlation && j.data.correlation.turnId) pm.environment.set('s4_voice_turn_id', j.data.correlation.turnId);",
+                  "  console.log('voiceSessionId:', j.data.voiceSessionId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VM2 POST /v1/ai/voice-message/{voiceSessionId}/turn",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/{{s4_voice_session_id}}/turn",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contractVersion\": \"voice-message-turn-v1\",\n  \"traceId\": \"{{trace_id}}\",\n  \"sessionId\": \"sess-test-{{$timestamp}}\",\n  \"turnId\": \"turn-{{$timestamp}}\",\n  \"idempotencyKey\": \"{{idempotency_key}}\",\n  \"input\": {\n    \"type\": \"asr_final\",\n    \"asrFinal\": {\n      \"segmentId\": \"seg-001\",\n      \"text\": \"给我讲个小红帽的故事\",\n      \"languageTag\": \"zh-CN\",\n      \"confidence\": 0.95\n    }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('idempotency_key', 'idem-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('contractVersion=voice-message-turn-result-v1', () => pm.expect(j.data.contractVersion).to.eql('voice-message-turn-result-v1'));",
+                  "if (j.data && j.data.correlation && j.data.correlation.turnId) pm.environment.set('s4_voice_turn_id', j.data.correlation.turnId);",
+                  "if (j.data && j.data.outcome && j.data.outcome.assistantOutput && j.data.outcome.assistantOutput.speech && j.data.outcome.assistantOutput.speech.speechId) pm.environment.set('s4_speech_id', j.data.outcome.assistantOutput.speech.speechId);",
+                  "if (j.data && j.data.outcome && j.data.outcome.actionDirective && j.data.outcome.actionDirective.directiveId) pm.environment.set('s4_directive_id', j.data.outcome.actionDirective.directiveId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VM3 POST /v1/ai/voice-message/{voiceSessionId}/playback-receipt",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/{{s4_voice_session_id}}/playback-receipt",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contractVersion\": \"voice-message-playback-receipt-v1\",\n  \"traceId\": \"{{trace_id}}\",\n  \"turnId\": \"{{s4_voice_turn_id}}\",\n  \"speechId\": \"{{s4_speech_id}}\",\n  \"idempotencyKey\": \"{{idempotency_key}}\",\n  \"state\": \"completed\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('idempotency_key', 'idem-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('success=true', () => pm.expect(j.success).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VM4 POST /v1/ai/voice-message/{voiceSessionId}/directives/{directiveId}:resolve",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/{{s4_voice_session_id}}/directives/{{s4_directive_id}}:resolve",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"{{trace_id}}\",\n  \"idempotencyKey\": \"{{idempotency_key}}\",\n  \"resolutionType\": \"confirmed\",\n  \"source\": \"button\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('idempotency_key', 'idem-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('success=true', () => pm.expect(j.success).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "VM5 POST /v1/ai/voice-message/{voiceSessionId}/directives/{directiveId}/events",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/{{s4_voice_session_id}}/directives/{{s4_directive_id}}/events",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"{{trace_id}}\",\n  \"idempotencyKey\": \"{{idempotency_key}}\",\n  \"eventType\": \"presented\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('idempotency_key', 'idem-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('success=true', () => pm.expect(j.success).to.be.true);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 · 设备面 · 实时语音",
+      "description": "实时语音生命周期：session → turn → hangup\n鉴权：device_access_token\n执行顺序：RV1 → RV2 → RV3",
+      "item": [
+        {
+          "name": "RV1 POST /v1/ai/realtime-voice/session",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/realtime-voice/session",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"{{trace_id}}\",\n  \"sessionId\": \"rt-sess-{{$timestamp}}\",\n  \"childId\": \"{{child_profile_id}}\",\n  \"deviceId\": \"{{device_sn}}\",\n  \"requestId\": \"{{request_id}}\",\n  \"realtimeVoiceMode\": \"cascaded_asr_llm_tts\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('request_id', 'req-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('success=true', () => pm.expect(j.success).to.be.true);",
+                  "if (j.data && j.data.callSessionId) pm.environment.set('s4_call_session_id', j.data.callSessionId);",
+                  "if (j.data && j.data.mediaChannels) {",
+                  "  console.log('mediaChannels:', JSON.stringify(j.data.mediaChannels));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "RV2 POST /v1/ai/realtime-voice/{callSessionId}/turn",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/realtime-voice/{{s4_call_session_id}}/turn",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contractVersion\": \"realtime-voice-turn-v1\",\n  \"traceId\": \"{{trace_id}}\",\n  \"sessionId\": \"rt-sess-{{$timestamp}}\",\n  \"turnId\": \"rt-turn-{{$timestamp}}\",\n  \"idempotencyKey\": \"{{idempotency_key}}\",\n  \"input\": {\n    \"type\": \"asr_final\",\n    \"asrFinal\": {\n      \"segmentId\": \"seg-rt-001\",\n      \"text\": \"今天天气怎么样\",\n      \"languageTag\": \"zh-CN\",\n      \"confidence\": 0.92\n    }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('idempotency_key', 'idem-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('contractVersion=realtime-voice-turn-result-v1', () => pm.expect(j.data.contractVersion).to.eql('realtime-voice-turn-result-v1'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "RV3 POST /v1/ai/realtime-voice/{callSessionId}:hangup",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/realtime-voice/{{s4_call_session_id}}:hangup",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"user_hangup\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('state=closed', () => pm.expect(j.data.state).to.eql('closed'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 · 设备面 · 拍搜与媒体",
+      "description": "拍搜（JSON + multipart）与媒体通道解析\n鉴权：device_access_token",
+      "item": [
+        {
+          "name": "CE1 POST /v1/ai/camera-explore (JSON)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/camera-explore",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"{{trace_id}}\",\n  \"sessionId\": \"cam-sess-{{$timestamp}}\",\n  \"childId\": \"{{child_profile_id}}\",\n  \"deviceId\": \"{{device_sn}}\",\n  \"question\": \"这个图片里是什么动物？\",\n  \"mediaArtifactId\": \"art-test-001\",\n  \"returnTts\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('contractVersion=camera-explore-result-v1', () => pm.expect(j.data.contractVersion).to.eql('camera-explore-result-v1'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "MC1 POST /v1/media/channels:resolve",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/media/channels:resolve",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"channelId\": \"{{s4_channel_id}}\",\n  \"connectDescriptor\": \"wss://example.com/connect\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('有 channelId', () => pm.expect(j.data.channelId).to.be.a('string'));",
+                  "pm.test('transport=websocket', () => pm.expect(j.data.transport).to.eql('websocket'));",
+                  "if (j.data && j.data.receiptRefs && j.data.receiptRefs.mediaSessionReceiptRef) {",
+                  "  console.log('mediaSessionReceiptRef:', j.data.receiptRefs.mediaSessionReceiptRef);",
+                  "}",
+                  "if (j.data && j.data.connectDescriptor && j.data.connectDescriptor.indexOf('oneTimeToken=') !== -1) {",
+                  "  const token = j.data.connectDescriptor.split('oneTimeToken=')[1].split('&')[0];",
+                  "  pm.environment.set('s4_media_one_time_token', token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 · 场景A · 语音消息完整生命周期",
+      "description": "端到端场景：创建 session → 提交 turn → 播放回执 → directive 解决 → directive 事件\n用 Run Folder 执行，环境变量自动串联。\n前置：device_access_token 已签发（来自 device-platform 集合）",
+      "item": [
+        {
+          "name": "A1 创建语音 session",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/session",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"{{trace_id}}\",\n  \"sessionId\": \"scenA-sess-{{$timestamp}}\",\n  \"childId\": \"{{child_profile_id}}\",\n  \"deviceId\": \"{{device_sn}}\",\n  \"requestId\": \"{{request_id}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-scenA-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('request_id', 'req-scenA-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('A1 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('A1 success', () => pm.expect(j.success).to.be.true);",
+                  "pm.test('A1 有 voiceSessionId', () => pm.expect(j.data.voiceSessionId).to.be.a('string'));",
+                  "if (j.data) {",
+                  "  pm.environment.set('s4_voice_session_id', j.data.voiceSessionId);",
+                  "  if (j.data.correlation && j.data.correlation.turnId) pm.environment.set('s4_voice_turn_id', j.data.correlation.turnId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A2 提交 turn（讲故事）",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/{{s4_voice_session_id}}/turn",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contractVersion\": \"voice-message-turn-v1\",\n  \"traceId\": \"{{trace_id}}\",\n  \"sessionId\": \"scenA-sess-{{$timestamp}}\",\n  \"turnId\": \"scenA-turn-{{$timestamp}}\",\n  \"idempotencyKey\": \"{{idempotency_key}}\",\n  \"input\": {\n    \"type\": \"asr_final\",\n    \"asrFinal\": {\n      \"segmentId\": \"scenA-seg-001\",\n      \"text\": \"给我讲个小红帽的故事\",\n      \"languageTag\": \"zh-CN\",\n      \"confidence\": 0.95\n    }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-scenA-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('idempotency_key', 'idem-scenA-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('A2 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "if (j.data && j.data.correlation && j.data.correlation.turnId) pm.environment.set('s4_voice_turn_id', j.data.correlation.turnId);",
+                  "if (j.data && j.data.outcome && j.data.outcome.assistantOutput && j.data.outcome.assistantOutput.speech && j.data.outcome.assistantOutput.speech.speechId) pm.environment.set('s4_speech_id', j.data.outcome.assistantOutput.speech.speechId);",
+                  "if (j.data && j.data.outcome && j.data.outcome.actionDirective && j.data.outcome.actionDirective.directiveId) pm.environment.set('s4_directive_id', j.data.outcome.actionDirective.directiveId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A3 播放回执（completed）",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/{{s4_voice_session_id}}/playback-receipt",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contractVersion\": \"voice-message-playback-receipt-v1\",\n  \"traceId\": \"{{trace_id}}\",\n  \"turnId\": \"{{s4_voice_turn_id}}\",\n  \"speechId\": \"{{s4_speech_id}}\",\n  \"idempotencyKey\": \"{{idempotency_key}}\",\n  \"state\": \"completed\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-scenA-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('idempotency_key', 'idem-scenA-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('A3 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A4 directive resolve（confirmed）",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/{{s4_voice_session_id}}/directives/{{s4_directive_id}}:resolve",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"{{trace_id}}\",\n  \"idempotencyKey\": \"{{idempotency_key}}\",\n  \"resolutionType\": \"confirmed\",\n  \"source\": \"button\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-scenA-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('idempotency_key', 'idem-scenA-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('A4 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A5 directive event（presented）",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/{{s4_voice_session_id}}/directives/{{s4_directive_id}}/events",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"{{trace_id}}\",\n  \"idempotencyKey\": \"{{idempotency_key}}\",\n  \"eventType\": \"presented\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-scenA-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('idempotency_key', 'idem-scenA-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('A5 200', () => pm.response.to.have.status(200));",
+                  "console.log('场景A 完成: session → turn → playback → directive resolve → directive event');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11 · 场景B · 实时语音完整生命周期",
+      "description": "端到端场景：创建 realtime session → 提交 turn → hangup\n用 Run Folder 执行。\n前置：device_access_token 已签发",
+      "item": [
+        {
+          "name": "B1 创建实时语音 session",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/realtime-voice/session",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"{{trace_id}}\",\n  \"sessionId\": \"scenB-sess-{{$timestamp}}\",\n  \"childId\": \"{{child_profile_id}}\",\n  \"deviceId\": \"{{device_sn}}\",\n  \"requestId\": \"{{request_id}}\",\n  \"realtimeVoiceMode\": \"cascaded_asr_llm_tts\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-scenB-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('request_id', 'req-scenB-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('B1 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('B1 success', () => pm.expect(j.success).to.be.true);",
+                  "if (j.data && j.data.callSessionId) pm.environment.set('s4_call_session_id', j.data.callSessionId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B2 提交 realtime turn",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/realtime-voice/{{s4_call_session_id}}/turn",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contractVersion\": \"realtime-voice-turn-v1\",\n  \"traceId\": \"{{trace_id}}\",\n  \"sessionId\": \"scenB-sess-{{$timestamp}}\",\n  \"turnId\": \"scenB-turn-{{$timestamp}}\",\n  \"idempotencyKey\": \"{{idempotency_key}}\",\n  \"input\": {\n    \"type\": \"asr_final\",\n    \"asrFinal\": {\n      \"segmentId\": \"scenB-seg-001\",\n      \"text\": \"今天天气怎么样\",\n      \"languageTag\": \"zh-CN\",\n      \"confidence\": 0.92\n    }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('trace_id', 'tr-scenB-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));",
+                  "pm.environment.set('idempotency_key', 'idem-scenB-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('B2 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B3 hangup",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/realtime-voice/{{s4_call_session_id}}:hangup",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"user_hangup\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('B3 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('B3 state=closed', () => pm.expect(j.data.state).to.eql('closed'));",
+                  "console.log('场景B 完成: realtime session → turn → hangup');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12 · 场景C · 鉴权负向",
+      "description": "鉴权边界负向测试（6 用例）\n预期全部 4xx，验证 S4 防御边界",
+      "item": [
+        {
+          "name": "N1 无 token 调设备面 → 401",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/session",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"neg-{{$timestamp}}\",\n  \"sessionId\": \"neg\",\n  \"childId\": \"{{child_profile_id}}\",\n  \"deviceId\": \"{{device_sn}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N1 401', () => pm.response.to.have.status(401));",
+                  "const j = pm.response.json();",
+                  "pm.test('N1 error code 存在', () => pm.expect(j.error || j.code).to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "N4 任意无效 token 调设备面 → 401",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/session",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer fake.invalid.token.not.real"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"neg-{{$timestamp}}\",\n  \"sessionId\": \"neg\",\n  \"childId\": \"{{child_profile_id}}\",\n  \"deviceId\": \"{{device_sn}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N4 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "N5 篡改 token（错 signature）→ 401",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/session",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid.tampered.token"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"neg-{{$timestamp}}\",\n  \"sessionId\": \"neg\",\n  \"childId\": \"{{child_profile_id}}\",\n  \"deviceId\": \"{{device_sn}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N5 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "N6 body deviceId 与 binding 不一致 → 403",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/v1/ai/voice-message/session",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"traceId\": \"neg-{{$timestamp}}\",\n  \"sessionId\": \"neg\",\n  \"childId\": \"fake-child-id\",\n  \"deviceId\": \"fake-device-sn\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('N6 403/401', () => [401, 403].includes(pm.response.code));",
+                  "const j = pm.response.json();",
+                  "pm.test('N6 RESOURCE_ACCESS_DENIED 或类似', () => {",
+                  "  const code = j.error && j.error.code || j.code || '';",
+                  "  console.log('N6 error code:', code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

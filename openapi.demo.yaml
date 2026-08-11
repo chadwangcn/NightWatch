@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: Lumi Demo (Schemathesis 可视化演示)
+  version: 0.1.0
+servers:
+  - url: https://api-lumi.cinmoore.cn/lumi-mind
+paths:
+  /v1/user-sessions:
+    post:
+      summary: 用户登录
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account, password]
+              properties:
+                account:
+                  type: string
+                  minLength: 4
+                  description: 账号
+                password:
+                  type: string
+                  minLength: 6
+                  description: 密码
+              additionalProperties: false
+      responses:
+        '201':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_access_token:
+                    type: string
+                  user_refresh_token:
+                    type: string
+                  expires_in:
+                    type: integer
+        '401':
+          description: 凭证无效
+        '422':
+          description: 参数校验失败

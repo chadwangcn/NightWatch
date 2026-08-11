@@ -1,0 +1,1763 @@
+{
+  "info": {
+    "name": "Lumi S6 Observation API",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "S6 Observation API 测试集合（对齐 2026-08 最新真源）\n\n覆盖范围（黑盒测试，TLS-native 观测平台 5 端点 + 2 健康检查 + Retired 路由负向）：\n- 00 健康检查（/healthz /readyz）— 2 个端点\n- 01 A6-01G Create Transport Grant（设备/用户面，公网）— 13 个请求\n- 02 A6-06 Create Query Grant（运营/服务面，内部）— 12 个请求\n- 03 A6-06R Redeem Query Grant（无鉴权，凭一次性 code）— 4 个请求\n- 04 A6-06Q Evidence Query（内部，session_token 鉴权）— 10 个请求\n- 05 A6-06D Revoke Query Session（内部）— 4 个请求\n- 06 Retired 路由（负向测试）— 3 个请求\n- 07 通用负向 — 3 个请求\n\n合计 51 个请求\n\n鉴权约束：\n- A6-01G: 只接受 device_access_v1 或 user_access_v1 token，operator/service 跨面 403\n- A6-06: 只接受 operator_access_v1 或 service_access_v1（audience=s6-observation, scope=observation.query-grants.create）\n- A6-06R: 无 Bearer，code 是 capability\n- A6-06Q: 只接受 observation_query_session_v1（qs.* token），其他全部拒绝\n- A6-06D: operator 或 issuing service（scope=observation.query-sessions.revoke）\n\n★ 环境变量（全局共享）\n本集合与 `Lumi device-platform` 集合共用同一份环境文件。\n  - device_access_token    ← device-platform A1/B3 产出 → 用于 A6-01G\n  - user_access_token      ← device-platform user-sessions 产出 → 用于 A6-01G\n  - operator_access_token  ← device-platform 04.operator-sessions 产出 → 用于 A6-06 / A6-06D\n  - service_token          ← S6 预签发服务令牌 → 用于 A6-06 / A6-06D\n  - s6_base_url            ← S6 服务基地址\n  - s6_environment         ← 当前环境标识（dev / staging）\n  - s6_sdk_version         ← SDK 版本号\n  - s6_grant_code          ← C1 产出 → 用于 D1/D2\n  - s6_query_session_id    ← D1 产出 → 用于 A6-06Q / A6-06D\n  - s6_session_token       ← D1 产出 → 用于 A6-06Q 鉴权\n  - s6_transport_grant_id  ← B1 产出 → 用于跨集合关联\n  - s6_query_grant_id      ← C1 产出 → 用于跨集合关联"
+  },
+  "variable": [
+    { "key": "client_nonce", "value": "" },
+    { "key": "request_id", "value": "" },
+    { "key": "time_from", "value": "" },
+    { "key": "time_to", "value": "" },
+    { "key": "replay_nonce", "value": "" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// 全局：若请求未自行设置 request_id，在此生成默认值",
+          "if (!pm.variables.get('request_id')) {",
+          "  pm.variables.set('request_id', 'req_s6_' + Math.random().toString(36).slice(2,14));",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "00 · 健康检查",
+      "description": "S6 健康探针。不需要鉴权。200 只表示进程就绪，不代表业务验收完成。",
+      "item": [
+        {
+          "name": "H-Health · GET /healthz",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('healthz returns 200', () => pm.response.to.have.status(200));",
+                  "try { const j = pm.response.json(); pm.test('status is ok', () => pm.expect(j.status).to.eql('ok')); pm.test('service is s6-observation', () => pm.expect(j.service).to.eql('s6-observation')); } catch(e) {}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{s6_base_url}}/healthz", "host": ["{{s6_base_url}}"], "path": ["healthz"] }
+          }
+        },
+        {
+          "name": "H-Ready · GET /readyz",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('readyz returns 200', () => pm.response.to.have.status(200));",
+                  "try { const j = pm.response.json(); pm.test('status is ready', () => pm.expect(j.status).to.eql('ready')); pm.test('service is s6-observation', () => pm.expect(j.service).to.eql('s6-observation')); } catch(e) {}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{s6_base_url}}/readyz", "host": ["{{s6_base_url}}"], "path": ["readyz"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "01 · A6-01G Transport Grant",
+      "description": "A6-01G Create Transport Grant（设备/用户面，公网）\nPOST /v1/observation/transport-grants\nAuth: Bearer {{device_access_token}} 或 Bearer {{user_access_token}}\n\n鉴权约束：只接受 device_access_v1 或 user_access_v1 token，operator/service 跨面 403\n\n覆盖 13 个测试请求：正向（device/user）、鉴权负向（noAuth/invalid/operator/service）、schema 校验、字段校验、replay、secret 字段检测。",
+      "item": [
+        {
+          "name": "B1-Device-Positive",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('client_nonce', Math.random().toString(16).slice(2,18).padEnd(16,'0'));",
+                  "pm.variables.set('request_id', 'req_' + Math.random().toString(36).slice(2,14));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('has grant_id', () => pm.expect(json.grant_id).to.be.a('string'));",
+                  "pm.test('has endpoint', () => pm.expect(json.endpoint).to.be.a('string'));",
+                  "pm.test('has credentials', () => pm.expect(json.credentials).to.be.an('object'));",
+                  "pm.test('credentials has access_key_id', () => pm.expect(json.credentials.access_key_id).to.be.a('string'));",
+                  "pm.test('credentials has secret_access_key', () => pm.expect(json.credentials.secret_access_key).to.be.a('string'));",
+                  "pm.test('credentials has session_token', () => pm.expect(json.credentials.session_token).to.be.a('string'));",
+                  "pm.test('schema_version matches', () => pm.expect(json.schema_version).to.include('transport-grant'));",
+                  "pm.environment.set('s6_transport_grant_id', json.grant_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B2-User-Positive",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('client_nonce', Math.random().toString(16).slice(2,18).padEnd(16,'0'));",
+                  "pm.variables.set('request_id', 'req_' + Math.random().toString(36).slice(2,14));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('has grant_id', () => pm.expect(json.grant_id).to.be.a('string'));",
+                  "pm.test('has credentials', () => pm.expect(json.credentials).to.be.an('object'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B3-NoAuth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "const json = pm.response.json();",
+                  "pm.test('error code AUTH_CREDENTIAL_MISSING', () => pm.expect(json.error).to.eql('auth_credential_missing'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B4-InvalidToken",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "const json = pm.response.json();",
+                  "pm.test('error code AUTH_CREDENTIAL_INVALID', () => pm.expect(json.error).to.eql('auth_credential_invalid'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer this.is.not.a.valid.token" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B5-OperatorToken",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('error transport_grant_scope_denied', () => pm.expect(json.error).to.eql('transport_grant_scope_denied'));",
+                  "pm.test('reason subject_class_not_allowed', () => pm.expect(json.reason).to.eql('subject_class_not_allowed'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B6-ServiceToken",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('error transport_grant_scope_denied', () => pm.expect(json.error).to.eql('transport_grant_scope_denied'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{service_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B7-SchemaMismatch",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error schema_version_unsupported', () => pm.expect(json.error).to.eql('schema_version_unsupported'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"wrong\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B8-ChannelInvalid",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error transport_grant_invalid', () => pm.expect(json.error).to.eql('transport_grant_invalid'));",
+                  "pm.test('reason channel_invalid', () => pm.expect(json.reason).to.eql('channel_invalid'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"metrics\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B9-EnvMismatch",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('error transport_grant_scope_denied', () => pm.expect(json.error).to.eql('transport_grant_scope_denied'));",
+                  "pm.test('reason environment_mismatch', () => pm.expect(json.reason).to.eql('environment_mismatch'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"operational\",\n  \"environment\": \"prod\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B10-ProducerInvalid",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error transport_grant_invalid', () => pm.expect(json.error).to.eql('transport_grant_invalid'));",
+                  "pm.test('reason producer_invalid', () => pm.expect(json.reason).to.eql('producer_invalid'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"ios\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B11-TTLInvalid",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error transport_grant_invalid', () => pm.expect(json.error).to.eql('transport_grant_invalid'));",
+                  "pm.test('reason ttl_invalid', () => pm.expect(json.reason).to.eql('ttl_invalid'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 0,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B12-NonceReplay-First",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 生成一个固定 nonce 保存到环境变量，供 B12-Second 复用",
+                  "const replayNonce = Math.random().toString(16).slice(2,18).padEnd(16,'0');",
+                  "pm.environment.set('replay_nonce', replayNonce);",
+                  "pm.variables.set('client_nonce', replayNonce);",
+                  "pm.variables.set('request_id', 'req_' + Math.random().toString(36).slice(2,14));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('first request status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('has grant_id', () => pm.expect(json.grant_id).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B12-NonceReplay-Second",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 复用 B12-First 保存的 nonce",
+                  "pm.variables.set('client_nonce', pm.environment.get('replay_nonce'));",
+                  "pm.variables.set('request_id', 'req_' + Math.random().toString(36).slice(2,14));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('second request status 409', () => pm.response.to.have.status(409));",
+                  "const json = pm.response.json();",
+                  "pm.test('error transport_grant_replay', () => pm.expect(json.error).to.eql('transport_grant_replay'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "B13-SecretField",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error secret_field_detected', () => pm.expect(json.error).to.eql('secret_field_detected'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-tls-transport-grant-request-v1\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"access_key_id\": \"AKIAEXAMPLE\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "02 · A6-06 Query Grant",
+      "description": "A6-06 Create Query Grant（运营/服务面，内部）\nPOST /v1/observation/query-grants\nAuth: Bearer {{operator_access_token}} 或 Bearer {{service_token}}\n\n鉴权约束：只接受 operator_access_v1 或 service_access_v1（audience=s6-observation, scope=observation.query-grants.create）\n\n覆盖 12 个测试请求：正向（operator/service）、鉴权负向、schema 校验、access_mode/views/redaction/time_range/ttl 校验。",
+      "item": [
+        {
+          "name": "C1-Operator-Positive",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('time_from', new Date(Date.now()-3600000).toISOString());",
+                  "pm.variables.set('time_to', new Date().toISOString());",
+                  "pm.variables.set('s6_trace_id', 'trace_' + Math.random().toString(36).slice(2,14));",
+                  "pm.variables.set('s6_device_ref', 'dev_ref_' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('has grant_id', () => pm.expect(json.grant_id).to.be.a('string'));",
+                  "pm.test('has grant_code', () => pm.expect(json.grant_code).to.be.a('string'));",
+                  "pm.test('has expires_at', () => pm.expect(json.expires_at).to.be.a('string'));",
+                  "pm.test('grant_code length >= 22', () => pm.expect(json.grant_code.length).to.be.at.least(22));",
+                  "pm.environment.set('s6_grant_code', json.grant_code);",
+                  "pm.environment.set('s6_query_grant_id', json.grant_id);",
+                  "console.log('✅ C1 提取 grant_code=' + json.grant_code);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-query-grant-request-v1\",\n  \"time_range\": { \"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\" },\n  \"scope\": { \"trace_ids\": [\"{{s6_trace_id}}\"], \"source_systems\": [\"device\",\"app\",\"s5\",\"s4\"], \"device_refs\": [\"{{s6_device_ref}}\"] },\n  \"allowed_views\": [\"trace_timeline\",\"log_summary\",\"metric_window\",\"issue_rca\"],\n  \"budget\": { \"max_queries\": 100, \"max_rows\": 10000, \"max_total_bytes\": 20971520 }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "C2-Service-Positive",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('time_from', new Date(Date.now()-3600000).toISOString());",
+                  "pm.variables.set('time_to', new Date().toISOString());",
+                  "pm.variables.set('s6_trace_id', 'trace_' + Math.random().toString(36).slice(2,14));",
+                  "pm.variables.set('s6_device_ref', 'dev_ref_' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('has grant_id', () => pm.expect(json.grant_id).to.be.a('string'));",
+                  "pm.test('has grant_code', () => pm.expect(json.grant_code).to.be.a('string'));",
+                  "pm.test('has expires_at', () => pm.expect(json.expires_at).to.be.a('string'));",
+                  "pm.test('grant_code length >= 22', () => pm.expect(json.grant_code.length).to.be.at.least(22));",
+                  "pm.environment.set('s6_grant_code', json.grant_code);",
+                  "pm.environment.set('s6_query_grant_id', json.grant_id);",
+                  "console.log('✅ C2 提取 grant_code=' + json.grant_code);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{service_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-query-grant-request-v1\",\n  \"time_range\": { \"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\" },\n  \"scope\": { \"trace_ids\": [\"{{s6_trace_id}}\"], \"source_systems\": [\"device\",\"app\",\"s5\",\"s4\"], \"device_refs\": [\"{{s6_device_ref}}\"] },\n  \"allowed_views\": [\"trace_timeline\",\"log_summary\",\"metric_window\",\"issue_rca\"],\n  \"budget\": { \"max_queries\": 100, \"max_rows\": 10000, \"max_total_bytes\": 20971520 }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "C3-NoAuth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "const json = pm.response.json();",
+                  "pm.test('error code AUTH_CREDENTIAL_MISSING', () => pm.expect(json.error).to.eql('auth_credential_missing'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-query-grant-request-v1\",\n  \"access_mode\": \"evidence_api\",\n  \"environment\": \"{{s6_environment}}\",\n  \"time_range\": {\"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\"},\n  \"scope\": {\"trace_ids\": [], \"source_systems\": [\"s4-voice\",\"s5-content\"]},\n  \"allowed_views\": [\"trace_timeline\",\"log_summary\",\"metric_window\",\"issue_rca\"],\n  \"redaction_level\": \"strict\",\n  \"budget\": {\"max_queries\": 100, \"max_rows\": 10000, \"max_total_bytes\": 20971520},\n  \"ttl_seconds\": 1800,\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "C4-DeviceToken",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('error query_grant_scope_invalid', () => pm.expect(json.error).to.eql('query_grant_scope_invalid'));",
+                  "pm.test('reason subject_class_not_allowed', () => pm.expect(json.reason).to.eql('subject_class_not_allowed'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-query-grant-request-v1\",\n  \"access_mode\": \"evidence_api\",\n  \"environment\": \"{{s6_environment}}\",\n  \"time_range\": {\"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\"},\n  \"scope\": {\"trace_ids\": [], \"source_systems\": [\"s4-voice\",\"s5-content\"]},\n  \"allowed_views\": [\"trace_timeline\",\"log_summary\",\"metric_window\",\"issue_rca\"],\n  \"redaction_level\": \"strict\",\n  \"budget\": {\"max_queries\": 100, \"max_rows\": 10000, \"max_total_bytes\": 20971520},\n  \"ttl_seconds\": 1800,\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "C5-UserToken",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('error query_grant_scope_invalid', () => pm.expect(json.error).to.eql('query_grant_scope_invalid'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-query-grant-request-v1\",\n  \"access_mode\": \"evidence_api\",\n  \"environment\": \"{{s6_environment}}\",\n  \"time_range\": {\"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\"},\n  \"scope\": {\"trace_ids\": [], \"source_systems\": [\"s4-voice\",\"s5-content\"]},\n  \"allowed_views\": [\"trace_timeline\",\"log_summary\",\"metric_window\",\"issue_rca\"],\n  \"redaction_level\": \"strict\",\n  \"budget\": {\"max_queries\": 100, \"max_rows\": 10000, \"max_total_bytes\": 20971520},\n  \"ttl_seconds\": 1800,\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "C6-SchemaMismatch",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error schema_version_unsupported', () => pm.expect(json.error).to.eql('schema_version_unsupported'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"wrong\",\n  \"access_mode\": \"evidence_api\",\n  \"environment\": \"{{s6_environment}}\",\n  \"time_range\": {\"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\"},\n  \"scope\": {\"trace_ids\": [], \"source_systems\": [\"s4-voice\",\"s5-content\"]},\n  \"allowed_views\": [\"trace_timeline\",\"log_summary\",\"metric_window\",\"issue_rca\"],\n  \"redaction_level\": \"strict\",\n  \"budget\": {\"max_queries\": 100, \"max_rows\": 10000, \"max_total_bytes\": 20971520},\n  \"ttl_seconds\": 1800,\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "C7-AccessModeInvalid",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error query_grant_scope_invalid', () => pm.expect(json.error).to.eql('query_grant_scope_invalid'));",
+                  "pm.test('reason access_mode_invalid', () => pm.expect(json.reason).to.eql('access_mode_invalid'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-query-grant-request-v1\",\n  \"access_mode\": \"raw\",\n  \"environment\": \"{{s6_environment}}\",\n  \"time_range\": {\"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\"},\n  \"scope\": {\"trace_ids\": [], \"source_systems\": [\"s4-voice\",\"s5-content\"]},\n  \"allowed_views\": [\"trace_timeline\",\"log_summary\",\"metric_window\",\"issue_rca\"],\n  \"redaction_level\": \"strict\",\n  \"budget\": {\"max_queries\": 100, \"max_rows\": 10000, \"max_total_bytes\": 20971520},\n  \"ttl_seconds\": 1800,\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "C8-AllowedViewsEmpty",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error query_grant_scope_invalid', () => pm.expect(json.error).to.eql('query_grant_scope_invalid'));",
+                  "pm.test('reason allowed_views_required', () => pm.expect(json.reason).to.eql('allowed_views_required'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-query-grant-request-v1\",\n  \"access_mode\": \"evidence_api\",\n  \"environment\": \"{{s6_environment}}\",\n  \"time_range\": {\"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\"},\n  \"scope\": {\"trace_ids\": [], \"source_systems\": [\"s4-voice\",\"s5-content\"]},\n  \"allowed_views\": [],\n  \"redaction_level\": \"strict\",\n  \"budget\": {\"max_queries\": 100, \"max_rows\": 10000, \"max_total_bytes\": 20971520},\n  \"ttl_seconds\": 1800,\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "C9-AllowedViewsInvalid",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error query_grant_scope_invalid', () => pm.expect(json.error).to.eql('query_grant_scope_invalid'));",
+                  "pm.test('reason allowed_views_invalid', () => pm.expect(json.reason).to.eql('allowed_views_invalid'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-query-grant-request-v1\",\n  \"access_mode\": \"evidence_api\",\n  \"environment\": \"{{s6_environment}}\",\n  \"time_range\": {\"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\"},\n  \"scope\": {\"trace_ids\": [], \"source_systems\": [\"s4-voice\",\"s5-content\"]},\n  \"allowed_views\": [\"trace_timeline\",\"sql_query\"],\n  \"redaction_level\": \"strict\",\n  \"budget\": {\"max_queries\": 100, \"max_rows\": 10000, \"max_total_bytes\": 20971520},\n  \"ttl_seconds\": 1800,\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "C10-RedactionNotStrict",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error query_grant_scope_invalid', () => pm.expect(json.error).to.eql('query_grant_scope_invalid'));",
+                  "pm.test('reason redaction_level_must_be_strict', () => pm.expect(json.reason).to.eql('redaction_level_must_be_strict'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-query-grant-request-v1\",\n  \"access_mode\": \"evidence_api\",\n  \"environment\": \"{{s6_environment}}\",\n  \"time_range\": {\"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\"},\n  \"scope\": {\"trace_ids\": [], \"source_systems\": [\"s4-voice\",\"s5-content\"]},\n  \"allowed_views\": [\"trace_timeline\",\"log_summary\",\"metric_window\",\"issue_rca\"],\n  \"redaction_level\": \"none\",\n  \"budget\": {\"max_queries\": 100, \"max_rows\": 10000, \"max_total_bytes\": 20971520},\n  \"ttl_seconds\": 1800,\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "C11-TimeRangeTooLarge",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('request_id', 'req_' + Math.random().toString(36).slice(2,14));",
+                  "// 跨度 25h",
+                  "pm.variables.set('time_from', new Date(Date.now()-90000000).toISOString());",
+                  "pm.variables.set('time_to', new Date().toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error query_grant_scope_invalid', () => pm.expect(json.error).to.eql('query_grant_scope_invalid'));",
+                  "pm.test('reason time_range_too_large', () => pm.expect(json.reason).to.eql('time_range_too_large'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-query-grant-request-v1\",\n  \"access_mode\": \"evidence_api\",\n  \"environment\": \"{{s6_environment}}\",\n  \"time_range\": {\"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\"},\n  \"scope\": {\"trace_ids\": [], \"source_systems\": [\"s4-voice\",\"s5-content\"]},\n  \"allowed_views\": [\"trace_timeline\",\"log_summary\",\"metric_window\",\"issue_rca\"],\n  \"redaction_level\": \"strict\",\n  \"budget\": {\"max_queries\": 100, \"max_rows\": 10000, \"max_total_bytes\": 20971520},\n  \"ttl_seconds\": 1800,\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "C12-TTLInvalid",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('request_id', 'req_' + Math.random().toString(36).slice(2,14));",
+                  "pm.variables.set('time_from', new Date(Date.now()-3600000).toISOString());",
+                  "pm.variables.set('time_to', new Date().toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error query_grant_scope_invalid', () => pm.expect(json.error).to.eql('query_grant_scope_invalid'));",
+                  "pm.test('reason ttl_invalid', () => pm.expect(json.reason).to.eql('ttl_invalid'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-query-grant-request-v1\",\n  \"access_mode\": \"evidence_api\",\n  \"environment\": \"{{s6_environment}}\",\n  \"time_range\": {\"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\"},\n  \"scope\": {\"trace_ids\": [], \"source_systems\": [\"s4-voice\",\"s5-content\"]},\n  \"allowed_views\": [\"trace_timeline\",\"log_summary\",\"metric_window\",\"issue_rca\"],\n  \"redaction_level\": \"strict\",\n  \"budget\": {\"max_queries\": 100, \"max_rows\": 10000, \"max_total_bytes\": 20971520},\n  \"ttl_seconds\": 9999,\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "03 · A6-06R Redeem Query Grant",
+      "description": "A6-06R Redeem Query Grant（无鉴权，凭一次性 code）\nPOST /v1/observation/query-grants/{grant_code}:redeem\nAuth: 无 Bearer（code 本身是 capability）\n\n覆盖 4 个测试请求：正向、重放、未知 code、错误携带 Bearer。\n依赖 C1 产出的 s6_grant_code。",
+      "item": [
+        {
+          "name": "D1-Redeem-Positive",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('has session_id', () => pm.expect(json.session_id).to.be.a('string'));",
+                  "pm.test('has session_token', () => pm.expect(json.session_token).to.be.a('string'));",
+                  "pm.test('session_token starts with qs.', () => pm.expect(json.session_token).to.match(/^qs\\./));",
+                  "pm.environment.set('s6_query_session_id', json.session_id);",
+                  "pm.environment.set('s6_session_token', json.session_token);",
+                  "console.log('✅ D1 提取 session_id=' + json.session_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants/{{s6_grant_code}}:redeem", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants","{{s6_grant_code}}:redeem"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "D2-Redeem-Replay",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 410', () => pm.response.to.have.status(410));",
+                  "const json = pm.response.json();",
+                  "pm.test('error grant_consumed', () => pm.expect(json.error).to.eql('grant_consumed'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants/{{s6_grant_code}}:redeem", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants","{{s6_grant_code}}:redeem"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "D3-UnknownCode",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 410', () => pm.response.to.have.status(410));",
+                  "const json = pm.response.json();",
+                  "pm.test('error grant_consumed', () => pm.expect(json.error).to.eql('grant_consumed'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants/nonexistent_code_12345:redeem", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants","nonexistent_code_12345:redeem"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "D4-WithBearer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 服务端应当忽略 Bearer 或返回 400（按实现）；此处宽松断言 4xx",
+                  "pm.test('status 4xx (bearer ignored or rejected)', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "const json = pm.response.json();",
+                  "pm.test('has error field', () => pm.expect(json.error).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-grants/{{s6_grant_code}}:redeem", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-grants","{{s6_grant_code}}:redeem"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "04 · A6-06Q Evidence Query",
+      "description": "A6-06Q Evidence Query（内部，session_token 鉴权）\nPOST /v1/observation/evidence:query\nAuth: Bearer {{s6_session_token}}（即 qs.<body>.<hmac> 格式）\n\n鉴权约束：只接受 observation_query_session_v1（qs.* token），Device/User/Operator/Service 全部拒绝\n\n覆盖 10 个测试请求：4 个 view 正向、鉴权负向、view/scope/time/schema 校验。\n依赖 D1 产出的 s6_session_token / s6_query_session_id。",
+      "item": [
+        {
+          "name": "E1-Query-TraceTimeline",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('time_from', new Date(Date.now()-3600000).toISOString());",
+                  "pm.variables.set('time_to', new Date().toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('view is trace_timeline', () => pm.expect(json.view).to.eql('trace_timeline'));",
+                  "pm.test('has row_count', () => pm.expect(json.row_count).to.be.a('number'));",
+                  "pm.test('has total_bytes', () => pm.expect(json.total_bytes).to.be.a('number'));",
+                  "pm.test('has result_status', () => pm.expect(json.result_status).to.be.a('string'));",
+                  "pm.test('rows is array', () => pm.expect(json.rows).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{s6_session_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/evidence:query", "host": ["{{s6_base_url}}"], "path": ["v1","observation","evidence:query"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-evidence-query-v1\",\n  \"view\": \"trace_timeline\",\n  \"filters\": { \"trace_id\": \"{{s6_trace_id}}\", \"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\" },\n  \"limit\": 200\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "E2-Query-LogSummary",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('time_from', new Date(Date.now()-3600000).toISOString());",
+                  "pm.variables.set('time_to', new Date().toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('view is log_summary', () => pm.expect(json.view).to.eql('log_summary'));",
+                  "pm.test('has row_count', () => pm.expect(json.row_count).to.be.a('number'));",
+                  "pm.test('has total_bytes', () => pm.expect(json.total_bytes).to.be.a('number'));",
+                  "pm.test('has result_status', () => pm.expect(json.result_status).to.be.a('string'));",
+                  "pm.test('rows is array', () => pm.expect(json.rows).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{s6_session_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/evidence:query", "host": ["{{s6_base_url}}"], "path": ["v1","observation","evidence:query"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-evidence-query-v1\",\n  \"view\": \"log_summary\",\n  \"filters\": { \"trace_id\": \"{{s6_trace_id}}\", \"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\" },\n  \"limit\": 200\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "E3-Query-MetricWindow",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('time_from', new Date(Date.now()-3600000).toISOString());",
+                  "pm.variables.set('time_to', new Date().toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('view is metric_window', () => pm.expect(json.view).to.eql('metric_window'));",
+                  "pm.test('has row_count', () => pm.expect(json.row_count).to.be.a('number'));",
+                  "pm.test('has total_bytes', () => pm.expect(json.total_bytes).to.be.a('number'));",
+                  "pm.test('has result_status', () => pm.expect(json.result_status).to.be.a('string'));",
+                  "pm.test('rows is array', () => pm.expect(json.rows).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{s6_session_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/evidence:query", "host": ["{{s6_base_url}}"], "path": ["v1","observation","evidence:query"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-evidence-query-v1\",\n  \"view\": \"metric_window\",\n  \"filters\": { \"trace_id\": \"{{s6_trace_id}}\", \"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\" },\n  \"limit\": 200\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "E4-Query-IssueRCA",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('time_from', new Date(Date.now()-3600000).toISOString());",
+                  "pm.variables.set('time_to', new Date().toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('view is issue_rca', () => pm.expect(json.view).to.eql('issue_rca'));",
+                  "pm.test('has row_count', () => pm.expect(json.row_count).to.be.a('number'));",
+                  "pm.test('has total_bytes', () => pm.expect(json.total_bytes).to.be.a('number'));",
+                  "pm.test('has result_status', () => pm.expect(json.result_status).to.be.a('string'));",
+                  "pm.test('rows is array', () => pm.expect(json.rows).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{s6_session_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/evidence:query", "host": ["{{s6_base_url}}"], "path": ["v1","observation","evidence:query"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-evidence-query-v1\",\n  \"view\": \"issue_rca\",\n  \"filters\": { \"trace_id\": \"{{s6_trace_id}}\", \"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\" },\n  \"limit\": 200\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "E5-NoAuth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "const json = pm.response.json();",
+                  "pm.test('error access_token_invalid', () => pm.expect(json.error).to.eql('access_token_invalid'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/evidence:query", "host": ["{{s6_base_url}}"], "path": ["v1","observation","evidence:query"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-evidence-query-v1\",\n  \"request_id\": \"{{request_id}}\",\n  \"view\": \"trace_timeline\",\n  \"filters\": {\"trace_id\": \"\", \"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\", \"source_systems\": []},\n  \"limit\": 200\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "E6-DeviceToken",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', () => pm.response.to.have.status(401));",
+                  "const json = pm.response.json();",
+                  "pm.test('error access_token_invalid', () => pm.expect(json.error).to.eql('access_token_invalid'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/evidence:query", "host": ["{{s6_base_url}}"], "path": ["v1","observation","evidence:query"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-evidence-query-v1\",\n  \"request_id\": \"{{request_id}}\",\n  \"view\": \"trace_timeline\",\n  \"filters\": {\"trace_id\": \"\", \"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\", \"source_systems\": []},\n  \"limit\": 200\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "E7-ViewNotAllowed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('error evidence_scope_denied', () => pm.expect(json.error).to.eql('evidence_scope_denied'));",
+                  "pm.test('reason view_not_allowed', () => pm.expect(json.reason).to.eql('view_not_allowed'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{s6_session_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/evidence:query", "host": ["{{s6_base_url}}"], "path": ["v1","observation","evidence:query"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-evidence-query-v1\",\n  \"request_id\": \"{{request_id}}\",\n  \"view\": \"raw_export\",\n  \"filters\": {\"trace_id\": \"\", \"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\", \"source_systems\": []},\n  \"limit\": 200\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "E8-TraceOutsideScope",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('request_id', 'req_' + Math.random().toString(36).slice(2,14));",
+                  "pm.variables.set('time_from', new Date(Date.now()-3600000).toISOString());",
+                  "pm.variables.set('time_to', new Date().toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('error evidence_scope_denied', () => pm.expect(json.error).to.eql('evidence_scope_denied'));",
+                  "pm.test('reason trace_id_out_of_scope', () => pm.expect(json.reason).to.eql('trace_id_out_of_scope'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{s6_session_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/evidence:query", "host": ["{{s6_base_url}}"], "path": ["v1","observation","evidence:query"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-evidence-query-v1\",\n  \"request_id\": \"{{request_id}}\",\n  \"view\": \"trace_timeline\",\n  \"filters\": {\"trace_id\": \"trace_outside_scope_999\", \"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\", \"source_systems\": []},\n  \"limit\": 200\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "E9-TimeOutsideRange",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('request_id', 'req_' + Math.random().toString(36).slice(2,14));",
+                  "// 故意使用超出 frozen range 的时间（一周前）",
+                  "pm.variables.set('time_from', new Date(Date.now()-604800000).toISOString());",
+                  "pm.variables.set('time_to', new Date(Date.now()-604000000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('error evidence_scope_denied', () => pm.expect(json.error).to.eql('evidence_scope_denied'));",
+                  "pm.test('reason time_out_of_range', () => pm.expect(json.reason).to.eql('time_out_of_range'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{s6_session_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/evidence:query", "host": ["{{s6_base_url}}"], "path": ["v1","observation","evidence:query"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"a6-observation-evidence-query-v1\",\n  \"request_id\": \"{{request_id}}\",\n  \"view\": \"trace_timeline\",\n  \"filters\": {\"trace_id\": \"\", \"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\", \"source_systems\": []},\n  \"limit\": 200\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "E10-SchemaMismatch",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('request_id', 'req_' + Math.random().toString(36).slice(2,14));",
+                  "pm.variables.set('time_from', new Date(Date.now()-3600000).toISOString());",
+                  "pm.variables.set('time_to', new Date().toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error schema_version_unsupported', () => pm.expect(json.error).to.eql('schema_version_unsupported'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{s6_session_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/evidence:query", "host": ["{{s6_base_url}}"], "path": ["v1","observation","evidence:query"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"wrong\",\n  \"request_id\": \"{{request_id}}\",\n  \"view\": \"trace_timeline\",\n  \"filters\": {\"trace_id\": \"\", \"from\": \"{{time_from}}\", \"to\": \"{{time_to}}\", \"source_systems\": []},\n  \"limit\": 200\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "05 · A6-06D Revoke Query Session",
+      "description": "A6-06D Revoke Query Session（内部）\nDELETE /v1/observation/query-sessions/{session_id}\nAuth: Bearer {{operator_access_token}} 或 Bearer {{service_token}}\n无 request body，Response: 204 No Content\n\n鉴权约束：operator 或 issuing service（scope=observation.query-sessions.revoke）\n\n覆盖 4 个测试请求：operator 正向、service issuer 幂等、device 拒绝、不存在 session。\n依赖 D1 产出的 s6_query_session_id。",
+      "item": [
+        {
+          "name": "F1-Revoke-Operator",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-sessions/{{s6_query_session_id}}", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-sessions","{{s6_query_session_id}}"] }
+          }
+        },
+        {
+          "name": "F2-Revoke-ServiceIssuer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 幂等：已 revoke 的 session 再次 revoke 应仍返回 204（或不报错）",
+                  "pm.test('status 204 (idempotent)', () => pm.expect([204,404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{service_token}}" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-sessions/{{s6_query_session_id}}", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-sessions","{{s6_query_session_id}}"] }
+          }
+        },
+        {
+          "name": "F3-Revoke-DeviceToken",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('error evidence_scope_denied', () => pm.expect(json.error).to.eql('evidence_scope_denied'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-sessions/{{s6_query_session_id}}", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-sessions","{{s6_query_session_id}}"] }
+          }
+        },
+        {
+          "name": "F4-Revoke-Nonexistent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('error evidence_scope_denied', () => pm.expect(json.error).to.eql('evidence_scope_denied'));",
+                  "// 不泄露存在性：reason 不应是 not_found",
+                  "pm.test('reason does not leak existence', () => pm.expect(json.reason).to.not.eql('session_not_found'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/query-sessions/nonexistent_session_id_12345", "host": ["{{s6_base_url}}"], "path": ["v1","observation","query-sessions","nonexistent_session_id_12345"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "06 · Retired 路由",
+      "description": "Retired 路由负向测试：旧版 events / ingestions 接口已下线，应返回 404 not_found。\n\n覆盖 3 个测试请求。",
+      "item": [
+        {
+          "name": "G1-EventsPost",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "const json = pm.response.json();",
+                  "pm.test('error not_found', () => pm.expect(json.error).to.eql('not_found'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/events", "host": ["{{s6_base_url}}"], "path": ["v1","observation","events"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"event_type\":\"test\",\"payload\":{}}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "G2-EventsBatchPost",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "const json = pm.response.json();",
+                  "pm.test('error not_found', () => pm.expect(json.error).to.eql('not_found'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/events:batch", "host": ["{{s6_base_url}}"], "path": ["v1","observation","events:batch"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"events\":[]}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "G3-IngestionsGet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));",
+                  "const json = pm.response.json();",
+                  "pm.test('error not_found', () => pm.expect(json.error).to.eql('not_found'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/ingestions/test-id", "host": ["{{s6_base_url}}"], "path": ["v1","observation","ingestions","test-id"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "07 · 通用负向",
+      "description": "通用负向测试：retired 路由 secret 字段优先级、schema_version 空字符串、body 格式错误。\n\n覆盖 3 个测试请求。",
+      "item": [
+        {
+          "name": "N1-RetiredEventsSecret",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 路由不存在优先于 secret 字段检测：应返回 404 而非 400 secret_field_detected",
+                  "pm.test('status 404 (route not found takes precedence)', () => pm.response.to.have.status(404));",
+                  "const json = pm.response.json();",
+                  "pm.test('error not_found', () => pm.expect(json.error).to.eql('not_found'));",
+                  "pm.test('not secret_field_detected', () => pm.expect(json.error).to.not.eql('secret_field_detected'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/events", "host": ["{{s6_base_url}}"], "path": ["v1","observation","events"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"event_type\":\"test\",\"payload\":{},\"access_key_id\":\"AKIAEXAMPLE\"}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "N3-SchemaVersionEmpty",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('error schema_version_unsupported', () => pm.expect(json.error).to.eql('schema_version_unsupported'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"\",\n  \"channel\": \"operational\",\n  \"environment\": \"{{s6_environment}}\",\n  \"producer_kind\": \"android\",\n  \"sdk_version\": \"{{s6_sdk_version}}\",\n  \"requested_ttl_seconds\": 300,\n  \"client_nonce\": \"{{client_nonce}}\",\n  \"request_id\": \"{{request_id}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "N4-RequestBodyMalformed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test('has error field', () => pm.expect(json.error).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s6_base_url}}/v1/observation/transport-grants", "host": ["{{s6_base_url}}"], "path": ["v1","observation","transport-grants"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{invalid",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

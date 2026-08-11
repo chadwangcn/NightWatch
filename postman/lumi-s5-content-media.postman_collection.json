@@ -1,0 +1,1046 @@
+{
+  "info": {
+    "name": "Lumi S5 Content Media",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Lumi S5 Content Media API 测试集合（对齐 2026-08 最新真源）\n\n真源文档：\n- docs/api/public/device-content.v1.md  — 设备 CMS / Catalog / PlayResource\n- docs/api/operations/publishing.v1.md  — 运营分类 / 上传 / 发布 / 查询\n- docs/api/external-api-test-guide.v1.md  — 端到端联调指南\n\n覆盖范围（黑盒测试，仅设备 + 运营两个面，不含 internal）：\n- 00 健康检查（/healthz /readyz）\n- 01 设备 API · CMS / Catalog / PlayResource（3 个端点）\n- 02 运营 API · Categories / Uploads / Publications / Source-intakes（11 个端点）\n- 10 场景A · 端到端最小验收（对应 external-api-test-guide 步骤 1-11）\n- 11 场景B · 个人内容（private_child 可见性边界）\n- 12 场景C · 鉴权与参数负向\n\n两种使用方式：\n1. 单接口测试：每个请求独立 Send，prerequest 脚本自动生成 trace_id/request_id/idempotency_key\n2. 场景序列测试：Collection Runner 选中文件夹按顺序执行，环境变量自动串联\n\n★ 环境变量（全局共享）\n本集合与 `Lumi device-platform` 集合共用同一份环境文件 `lumi-device-platform.postman_environment.json`。\n所有 token 和身份字段都由 device-platform 集合签发后直接被本集合消费，无需切换或复制环境：\n  - device_access_token    ← device-platform A1/B3 产出 → 用于 /v1/device/*\n  - device_sn              ← 同一环境 → 用于 X-Lumi-Device-ID header\n  - operator_access_token  ← device-platform 04.operator-sessions 产出 → 用于 /ops/v1/*\n  - s5_* 前缀变量          ← S5 专属（admin 域名/CMS page_key/测试资产/运行时产出）\n\n关键鉴权规则（对齐 device-content.v1.md）：\n- 设备请求必须含 Authorization: Bearer {{device_access_token}} + X-Lumi-Device-ID: {{device_sn}}\n- 设备请求 body 不得携带 device_sn / user_id / child_id / family_id / role / visibility_scope / audience_surface / publication_version_id\n- 设备请求 body 必须含 client_capabilities，audio 客户端必须声明 supported_audio_codecs 至少含 audio/mp4, audio/mpeg, audio/wav\n- 运营写请求必须含 Idempotency-Key 头，DELETE category 还需 If-Match + X-Operation-Reason\n- PlayResource 同时接受 device token 和 user token（本集合只测 device token 路径）"
+  },
+  "variable": [
+    { "key": "trace_id", "value": "" },
+    { "key": "request_id", "value": "" },
+    { "key": "idempotency_key", "value": "" }
+  ],
+  "event": [{
+    "listen": "prerequest",
+    "script": { "type": "text/javascript", "exec": [
+      "// 全局：若请求未自行设置 trace_id/request_id/idempotency_key，在此生成默认值",
+      "if (!pm.variables.get('trace_id')) {",
+      "  pm.variables.set('trace_id', 'trace_s5_' + Math.random().toString(36).slice(2,14));",
+      "}",
+      "if (!pm.variables.get('request_id')) {",
+      "  pm.variables.set('request_id', 'req_s5_' + Math.random().toString(36).slice(2,14));",
+      "}",
+      "if (!pm.variables.get('idempotency_key')) {",
+      "  pm.variables.set('idempotency_key', 'idem_s5_' + Math.random().toString(36).slice(2,14));",
+      "}"
+    ]}
+  }],
+  "item": [
+    {
+      "name": "00 · 健康检查",
+      "description": "S5 健康探针。不需要鉴权。200 只表示进程就绪，不代表业务验收完成。",
+      "item": [
+        {
+          "name": "GET /healthz (S5 liveness)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/healthz", "host": ["{{base_url}}"], "path": ["healthz"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('healthz returns 200', () => pm.response.to.have.status(200));",
+              "try { const j = pm.response.json(); pm.test('status is ok', () => pm.expect(j.status).to.eql('ok')); } catch(e) {}"
+            ]}
+          }]
+        },
+        {
+          "name": "GET /readyz (S5 readiness)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/readyz", "host": ["{{base_url}}"], "path": ["readyz"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('readyz returns 200', () => pm.response.to.have.status(200));",
+              "try { const j = pm.response.json(); pm.test('status is ready', () => pm.expect(j.status).to.eql('ready')); } catch(e) {}"
+            ]}
+          }]
+        }
+      ]
+    },
+
+    {
+      "name": "01 · 设备 API · CMS Catalog PlayResource",
+      "description": "设备内容 API（device-content.v1.md）。Device Token + DeviceBinding Gate，仅音频。\n\n所有请求必须含：\n- Authorization: Bearer {{device_access_token}}\n- X-Lumi-Device-ID: {{device_sn}}\n- Content-Type: application/json\n- body 中非空 trace_id、request_id、client_capabilities\n\nclient_capabilities 必须含 audio/video/image 布尔字段 + supported_audio_codecs 数组（至少 audio/mp4, audio/mpeg, audio/wav）。\n\nbody 不得携带 device_sn / user_id / child_id / family_id / role / visibility_scope / audience_surface / publication_version_id（违规返回 400 identity_context_field_forbidden）。\n\n【单接口测试依赖】\n- D-CMS: 仅依赖 device_access_token + device_sn\n- D-Catalog: 依赖 target.target_type + target.target_id（从 D-CMS 响应取得）\n- D-Play: 依赖 media_id（从 D-Catalog 响应取得）",
+      "item": [
+        {
+          "name": "D-CMS · POST /v1/device/cms/pages/{page_key}:resolve",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_cms_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_cms_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('CMS resolve returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has page_key', () => pm.expect(j.data.page_key).to.be.a('string'));",
+              "pm.test('has projection_revision', () => pm.expect(j.data.projection_revision).to.be.a('string'));",
+              "pm.test('sections is array', () => pm.expect(j.data.sections).to.be.an('array'));",
+              "// 自动提取首个 channel/program target 供 D-Catalog 使用",
+              "let foundTarget = null;",
+              "try {",
+              "  for (const sec of (j.data.sections || [])) {",
+              "    for (const item of (sec.items || [])) {",
+              "      if (item.target && item.target.target_type && item.target.target_id) {",
+              "        foundTarget = item.target;",
+              "        break;",
+              "      }",
+              "    }",
+              "    if (foundTarget) break;",
+              "  }",
+              "} catch(e) {}",
+              "if (foundTarget) {",
+              "  pm.environment.set('s5_catalog_target_type', foundTarget.target_type);",
+              "  pm.environment.set('s5_catalog_target_id', foundTarget.target_id);",
+              "  console.log('✅ CMS 提取 target=' + foundTarget.target_type + '/' + foundTarget.target_id);",
+              "} else {",
+              "  console.warn('⚠️ CMS 未找到可展开的 target，D-Catalog 需手动设置 s5_catalog_target_type/id');",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/cms/pages/{{s5_cms_page_key}}:resolve", "host": ["{{base_url}}"], "path": ["v1","device","cms","pages","{{s5_cms_page_key}}:resolve"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"known_projection_revision\": null,\n  \"cursor\": null,\n  \"limit\": {\"sections\": 6, \"items_per_section\": 20},\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "D-Catalog · POST /v1/device/catalog:resolve",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_catalog_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_catalog_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Catalog resolve returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has projection_revision', () => pm.expect(j.data.projection_revision).to.be.a('string'));",
+              "pm.test('has entity', () => pm.expect(j.data.entity).to.be.an('object'));",
+              "// 从 Episode child 提取 media_id 供 D-Play 使用",
+              "let foundMedia = null;",
+              "try {",
+              "  if (j.data.entity && j.data.entity.media_id) foundMedia = j.data.entity.media_id;",
+              "  if (!foundMedia) {",
+              "    for (const child of (j.data.children || [])) {",
+              "      if (child.media_id) { foundMedia = child.media_id; break; }",
+              "    }",
+              "  }",
+              "} catch(e) {}",
+              "if (foundMedia) {",
+              "  pm.environment.set('s5_media_id', foundMedia);",
+              "  console.log('✅ Catalog 提取 media_id=' + foundMedia);",
+              "} else {",
+              "  console.warn('⚠️ Catalog 未找到 media_id，D-Play 需手动设置 s5_media_id');",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/catalog:resolve", "host": ["{{base_url}}"], "path": ["v1","device","catalog:resolve"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"target\": {\"target_type\": \"{{s5_catalog_target_type}}\", \"target_id\": \"{{s5_catalog_target_id}}\"},\n  \"cursor\": null,\n  \"limit\": 50,\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "D-Play · POST /v1/device/play/resources",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_play_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_play_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('PlayResource returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('play_resource.state is issued', () => pm.expect(j.data.play_resource.state).to.eql('issued'));",
+              "pm.test('has expires_at', () => pm.expect(j.data.play_resource.expires_at).to.be.a('string'));",
+              "// 提取 role=audio 的 url 供 CDN range 测试",
+              "let audioUrl = null;",
+              "try {",
+              "  for (const item of (j.data.play_resource.play_manifest.items || [])) {",
+              "    if (item.role === 'audio' && item.url) { audioUrl = item.url; break; }",
+              "  }",
+              "} catch(e) {}",
+              "if (audioUrl) {",
+              "  pm.environment.set('s5_cdn_audio_url', audioUrl);",
+              "  console.log('✅ PlayResource 提取 audio url');",
+              "} else {",
+              "  console.warn('⚠️ PlayResource 未找到 role=audio 的 url，CDN range 测试需手动设置 s5_cdn_audio_url');",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/play/resources", "host": ["{{base_url}}"], "path": ["v1","device","play","resources"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"media_id\": \"{{s5_media_id}}\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "02 · 运营 API · Categories Uploads Publications",
+      "description": "运营管理 API（publishing.v1.md）。Operator Token + Idempotency-Key（写操作）。\n\n所有请求必须含：\n- Authorization: Bearer {{operator_access_token}}\n- X-Trace-ID / X-Request-ID（未提供时服务生成）\n\n写请求必须含：\n- Idempotency-Key 头（缺失返回 400 operation_idempotency_key_missing）\n\nDELETE category 还需：\n- If-Match: <revision>\n- X-Operation-Reason\n\n错误响应不泄露 storage://、源文件名或原始 metadata。",
+      "item": [
+        {
+          "name": "OP-Cat-List · GET /ops/v1/categories",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('List categories returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories?include_retired=false", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories"], "query": [{"key":"include_retired","value":"false"}] }
+          }
+        },
+        {
+          "name": "OP-Cat-Create · POST /ops/v1/categories",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cat_create_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Create category returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "try {",
+              "  pm.environment.set('s5_category_id', j.data.category_id);",
+              "  pm.environment.set('s5_category_revision', j.data.revision);",
+              "  console.log('✅ Category created: ' + j.data.category_id + ' rev=' + j.data.revision);",
+              "} catch(e) { console.warn('⚠️ 无法提取 category_id/revision'); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories"] },
+            "body": { "mode": "raw", "raw": "{\n  \"category_key\": \"api_acceptance_{{idempotency_key}}\",\n  \"name\": \"API acceptance test\",\n  \"description\": \"Temporary test category\",\n  \"parent_category_id\": null,\n  \"sort_order\": 100,\n  \"reason\": \"external API acceptance\"\n}" }
+          }
+        },
+        {
+          "name": "OP-Cat-Get · GET /ops/v1/categories/{category_id}",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Get category returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "try { pm.environment.set('s5_category_revision', j.data.revision); } catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories/{{s5_category_id}}", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories","{{s5_category_id}}"] }
+          }
+        },
+        {
+          "name": "OP-Cat-Update · PUT /ops/v1/categories/{category_id}",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cat_update_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Update category returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "try { pm.environment.set('s5_category_revision', j.data.revision); } catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories/{{s5_category_id}}", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories","{{s5_category_id}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"category_key\": \"api_acceptance_updated\",\n  \"name\": \"API acceptance test (updated)\",\n  \"description\": \"Updated temporary test category\",\n  \"parent_category_id\": null,\n  \"sort_order\": 101,\n  \"expected_revision\": \"{{s5_category_revision}}\",\n  \"reason\": \"external API acceptance update\"\n}" }
+          }
+        },
+        {
+          "name": "OP-Cat-Delete · DELETE /ops/v1/categories/{category_id}",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cat_delete_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Retire category returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));"
+            ]}
+          }],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "If-Match", "value": "{{s5_category_revision}}" },
+              { "key": "X-Operation-Reason", "value": "external API acceptance cleanup" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories/{{s5_category_id}}", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories","{{s5_category_id}}"] }
+          }
+        },
+        {
+          "name": "OP-Upload-Create · POST /ops/v1/uploads",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_upload_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Upload returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "try {",
+              "  pm.environment.set('s5_upload_id', j.data.upload_id);",
+              "  console.log('✅ Upload created: ' + j.data.upload_id);",
+              "} catch(e) { console.warn('⚠️ 无法提取 upload_id'); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/uploads", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","uploads"] },
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "file", "type": "file", "src": "{{s5_test_audio_path}}" }
+            ] }
+          }
+        },
+        {
+          "name": "OP-Upload-Get · GET /ops/v1/uploads/{upload_id}",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Get upload returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/uploads/{{s5_upload_id}}", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","uploads","{{s5_upload_id}}"] }
+          }
+        },
+        {
+          "name": "OP-Pub-Create · POST /ops/v1/publications",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_pub_create_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Create publication returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "try {",
+              "  pm.environment.set('s5_publication_id', j.data.publication_id);",
+              "  pm.environment.set('s5_publication_version_id', j.data.publication_version_id);",
+              "  pm.environment.set('s5_publication_revision', j.data.revision);",
+              "  console.log('✅ Publication created: ' + j.data.publication_version_id);",
+              "} catch(e) { console.warn('⚠️ 无法提取 publication_version_id'); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications"] },
+            "body": { "mode": "raw", "raw": "{\n  \"upload_id\": \"{{s5_upload_id}}\",\n  \"title\": \"API acceptance audio\",\n  \"synopsis\": \"External API test content\",\n  \"locale\": \"zh-CN\",\n  \"content_type\": \"audio_story\",\n  \"category_ids\": [\"{{s5_category_id}}\"],\n  \"content_grade\": {\"age_band\": \"3-8\", \"safety_grade\": \"safe_default\", \"review_ref\": \"test_review\"},\n  \"rights\": {\"rights_ref\": \"test_rights\", \"review_ref\": \"test_review\"},\n  \"visibility_scope\": \"public\",\n  \"audience_surface\": \"child_device\",\n  \"handoff_bindings\": [],\n  \"reason\": \"external API acceptance\"\n}" }
+          }
+        },
+        {
+          "name": "OP-Pub-Get · GET /ops/v1/publications/{publication_id}",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Get publication returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications/{{s5_publication_id}}", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_id}}"] }
+          }
+        },
+        {
+          "name": "OP-Pub-Command · POST /ops/v1/publications/{publication_version_id}:command",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_pub_cmd_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Command publication returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('state is published', () => pm.expect(j.data.state).to.eql('published'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications/{{s5_publication_version_id}}:command", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_version_id}}:command"] },
+            "body": { "mode": "raw", "raw": "{\n  \"command\": \"publish\",\n  \"expected_revision\": \"{{s5_publication_revision}}\",\n  \"reason\": \"external API acceptance\"\n}" }
+          }
+        },
+        {
+          "name": "OP-Intake-List · GET /ops/v1/source-intakes",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('List source-intakes returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "try {",
+              "  if (j.data.items && j.data.items.length > 0) {",
+              "    pm.environment.set('s5_intake_id', j.data.items[0].intake_id);",
+              "  }",
+              "} catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/source-intakes?source_type=uploaded_direct&limit=10", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","source-intakes"], "query": [{"key":"source_type","value":"uploaded_direct"},{"key":"limit","value":"10"}] }
+          }
+        },
+        {
+          "name": "OP-Intake-Get · GET /ops/v1/source-intakes/{intake_id}",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Get source-intake returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/source-intakes/{{s5_intake_id}}", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","source-intakes","{{s5_intake_id}}"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "10 · 场景A · 端到端最小验收",
+      "description": "对应 external-api-test-guide.v1.md 步骤 1-11 的端到端最小验收链路。\n\n执行顺序（Collection Runner 按文件夹顺序）：\nA1 → A2 → A3 (create+get+update+retire category) → A4 (upload+get) → A5 (create pub+get) → A6 (publish command) → A7 (CMS resolve) → A8 (Catalog 展开) → A9 (PlayResource) → A10 (CDN range)\n\n前置：device_access_token / operator_access_token / device_sn / s5_test_audio_path 已在环境中",
+      "item": [
+        {
+          "name": "A1 · 无运营 token 调 categories → 401",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('A1: 无 token 返回 401', () => pm.response.to.have.status(401));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories"] }
+          }
+        },
+        {
+          "name": "A2 · 运营 token 调 categories → 200",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('A2: 有 token 返回 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories?include_retired=false", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories"], "query": [{"key":"include_retired","value":"false"}] }
+          }
+        },
+        {
+          "name": "A3 · 创建/读取/更新/退役临时分类",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_a3_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('A3: 创建分类返回 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "try {",
+              "  pm.environment.set('s5_category_id', j.data.category_id);",
+              "  pm.environment.set('s5_category_revision', j.data.revision);",
+              "} catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories"] },
+            "body": { "mode": "raw", "raw": "{\n  \"category_key\": \"a3_acceptance_{{idempotency_key}}\",\n  \"name\": \"A3 acceptance category\",\n  \"description\": \"Temporary\",\n  \"parent_category_id\": null,\n  \"sort_order\": 200,\n  \"reason\": \"external API acceptance\"\n}" }
+          }
+        },
+        {
+          "name": "A4 · 上传测试音频",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_a4_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('A4: 上传返回 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "try { pm.environment.set('s5_upload_id', j.data.upload_id); } catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/uploads", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","uploads"] },
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "file", "type": "file", "src": "{{s5_test_audio_path}}" }
+            ] }
+          }
+        },
+        {
+          "name": "A5 · 创建公开 PublicationVersion",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_a5_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('A5: 创建 publication 返回 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "try {",
+              "  pm.environment.set('s5_publication_id', j.data.publication_id);",
+              "  pm.environment.set('s5_publication_version_id', j.data.publication_version_id);",
+              "  pm.environment.set('s5_publication_revision', j.data.revision);",
+              "} catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications"] },
+            "body": { "mode": "raw", "raw": "{\n  \"upload_id\": \"{{s5_upload_id}}\",\n  \"title\": \"A5 acceptance audio\",\n  \"synopsis\": \"External API test content\",\n  \"locale\": \"zh-CN\",\n  \"content_type\": \"audio_story\",\n  \"category_ids\": [\"{{s5_category_id}}\"],\n  \"content_grade\": {\"age_band\": \"3-8\", \"safety_grade\": \"safe_default\", \"review_ref\": \"test_review\"},\n  \"rights\": {\"rights_ref\": \"test_rights\", \"review_ref\": \"test_review\"},\n  \"visibility_scope\": \"public\",\n  \"audience_surface\": \"child_device\",\n  \"handoff_bindings\": [],\n  \"reason\": \"external API acceptance\"\n}" }
+          }
+        },
+        {
+          "name": "A6 · 发布命令 publish",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_a6_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('A6: publish 返回 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('state is published', () => pm.expect(j.data.state).to.eql('published'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications/{{s5_publication_version_id}}:command", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_version_id}}:command"] },
+            "body": { "mode": "raw", "raw": "{\n  \"command\": \"publish\",\n  \"expected_revision\": \"{{s5_publication_revision}}\",\n  \"reason\": \"external API acceptance\"\n}" }
+          }
+        },
+        {
+          "name": "A7 · 设备 CMS resolve",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_a7_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_a7_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('A7: CMS resolve 返回 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "// 提取首个 target 供 A8 使用",
+              "let foundTarget = null;",
+              "try {",
+              "  for (const sec of (j.data.sections || [])) {",
+              "    for (const item of (sec.items || [])) {",
+              "      if (item.target && item.target.target_type && item.target.target_id) {",
+              "        foundTarget = item.target; break;",
+              "      }",
+              "    }",
+              "    if (foundTarget) break;",
+              "  }",
+              "} catch(e) {}",
+              "if (foundTarget) {",
+              "  pm.environment.set('s5_catalog_target_type', foundTarget.target_type);",
+              "  pm.environment.set('s5_catalog_target_id', foundTarget.target_id);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/cms/pages/{{s5_cms_page_key}}:resolve", "host": ["{{base_url}}"], "path": ["v1","device","cms","pages","{{s5_cms_page_key}}:resolve"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"known_projection_revision\": null,\n  \"cursor\": null,\n  \"limit\": {\"sections\": 20, \"items_per_section\": 50},\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "A8 · Catalog 展开",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_a8_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_a8_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('A8: Catalog 返回 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "// 提取 media_id 供 A9 使用",
+              "let foundMedia = null;",
+              "try {",
+              "  if (j.data.entity && j.data.entity.media_id) foundMedia = j.data.entity.media_id;",
+              "  if (!foundMedia) {",
+              "    for (const child of (j.data.children || [])) {",
+              "      if (child.media_id) { foundMedia = child.media_id; break; }",
+              "    }",
+              "  }",
+              "} catch(e) {}",
+              "if (foundMedia) { pm.environment.set('s5_media_id', foundMedia); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/catalog:resolve", "host": ["{{base_url}}"], "path": ["v1","device","catalog:resolve"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"target\": {\"target_type\": \"{{s5_catalog_target_type}}\", \"target_id\": \"{{s5_catalog_target_id}}\"},\n  \"cursor\": null,\n  \"limit\": 50,\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "A9 · PlayResource 签发",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_a9_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_a9_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('A9: PlayResource 返回 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('state is issued', () => pm.expect(j.data.play_resource.state).to.eql('issued'));",
+              "// 提取 audio url 供 A10 使用",
+              "let audioUrl = null;",
+              "try {",
+              "  for (const item of (j.data.play_resource.play_manifest.items || [])) {",
+              "    if (item.role === 'audio' && item.url) { audioUrl = item.url; break; }",
+              "  }",
+              "} catch(e) {}",
+              "if (audioUrl) { pm.environment.set('s5_cdn_audio_url', audioUrl); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/play/resources", "host": ["{{base_url}}"], "path": ["v1","device","play","resources"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"media_id\": \"{{s5_media_id}}\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "A10 · CDN range 下载测试",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('A10: CDN range 返回 200 或 206', () => pm.expect([200, 206]).to.include(pm.response.code));",
+              "pm.test('A10: 至少收到 1 字节', () => pm.expect(pm.response.byteLength).to.be.above(0));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Range", "value": "bytes=0-1023" }
+            ],
+            "url": { "raw": "{{s5_cdn_audio_url}}", "host": ["{{s5_cdn_audio_url}}"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "11 · 场景B · private_child 可见性",
+      "description": "对应 publishing.v1.md 的 visibility_scope=private_child 测试。\n\n验证点：\n- 绑定匹配的设备 → 200 可见\n\n前置：s5_test_family_id / s5_test_child_id 必须与 device_access_token 绑定身份一致\n\n注：跨设备不可见（404 content_not_found）需要第二台设备，当前环境只有一台设备，该负向验证暂未覆盖。如需验证，需在环境中预置其他设备 token。",
+      "item": [
+        {
+          "name": "B1 · 上传测试音频",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_b1_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('B1: 上传返回 201', () => pm.response.to.have.status(201));",
+              "try { pm.environment.set('s5_upload_id', pm.response.json().data.upload_id); } catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/uploads", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","uploads"] },
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "file", "type": "file", "src": "{{s5_test_audio_path}}" }
+            ] }
+          }
+        },
+        {
+          "name": "B2 · 创建 private_child publication",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_b2_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('B2: 创建 private_child publication 返回 201', () => pm.response.to.have.status(201));",
+              "try {",
+              "  const j = pm.response.json();",
+              "  pm.environment.set('s5_publication_id', j.data.publication_id);",
+              "  pm.environment.set('s5_publication_version_id', j.data.publication_version_id);",
+              "  pm.environment.set('s5_publication_revision', j.data.revision);",
+              "} catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications"] },
+            "body": { "mode": "raw", "raw": "{\n  \"upload_id\": \"{{s5_upload_id}}\",\n  \"title\": \"B2 private child audio\",\n  \"synopsis\": \"Private child content visibility test\",\n  \"locale\": \"zh-CN\",\n  \"content_type\": \"audio_story\",\n  \"category_ids\": [],\n  \"content_grade\": {\"age_band\": \"3-8\", \"safety_grade\": \"safe_default\", \"review_ref\": \"test_review\"},\n  \"rights\": {\"rights_ref\": \"test_rights\", \"review_ref\": \"test_review\"},\n  \"visibility_scope\": \"private_child\",\n  \"owner_binding\": {\"owner_type\": \"child\", \"family_id\": \"{{s5_test_family_id}}\", \"child_id\": \"{{s5_test_child_id}}\"},\n  \"audience_surface\": \"child_device\",\n  \"handoff_bindings\": [],\n  \"reason\": \"private child visibility test\"\n}" }
+          }
+        },
+        {
+          "name": "B3 · publish private_child",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_b3_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('B3: publish 返回 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('state is published', () => pm.expect(j.data.state).to.eql('published'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications/{{s5_publication_version_id}}:command", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_version_id}}:command"] },
+            "body": { "mode": "raw", "raw": "{\n  \"command\": \"publish\",\n  \"expected_revision\": \"{{s5_publication_revision}}\",\n  \"reason\": \"private child visibility test\"\n}" }
+          }
+        },
+        {
+          "name": "B4 · 匹配设备 CMS resolve → 200 可见",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_b4_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_b4_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('B4: 匹配设备 CMS 返回 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/cms/pages/{{s5_cms_page_key}}:resolve", "host": ["{{base_url}}"], "path": ["v1","device","cms","pages","{{s5_cms_page_key}}:resolve"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "12 · 场景C · 鉴权与参数负向",
+      "description": "鉴权与参数负向用例，对应 device-content.v1.md 的错误码表。\n\n覆盖：\n- 无 token / 无效 token → 401\n- 身份字段透传 → 400 identity_context_field_forbidden\n- 音频能力不完整 → 400 client_audio_capability_incomplete\n- 缺 Idempotency-Key → 400 operation_idempotency_key_missing",
+      "item": [
+        {
+          "name": "N1 · 无 token 调 CMS → 401",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('N1: 无 token 返回 401', () => pm.response.to.have.status(401));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/cms/pages/{{s5_cms_page_key}}:resolve", "host": ["{{base_url}}"], "path": ["v1","device","cms","pages","{{s5_cms_page_key}}:resolve"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"trace_n1\",\n  \"request_id\": \"req_n1\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "N2 · 无效 token 调 CMS → 401",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('N2: 无效 token 返回 401', () => pm.response.to.have.status(401));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer fake.invalid.token" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/cms/pages/{{s5_cms_page_key}}:resolve", "host": ["{{base_url}}"], "path": ["v1","device","cms","pages","{{s5_cms_page_key}}:resolve"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"trace_n2\",\n  \"request_id\": \"req_n2\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "N3 · body 透传身份字段 → 400 identity_context_field_forbidden",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('N3: 透传身份字段返回 400', () => pm.response.to.have.status(400));",
+              "try {",
+              "  const j = pm.response.json();",
+              "  pm.test('error.code 是 identity_context_field_forbidden', () => pm.expect(j.error.code).to.eql('identity_context_field_forbidden'));",
+              "} catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/cms/pages/{{s5_cms_page_key}}:resolve", "host": ["{{base_url}}"], "path": ["v1","device","cms","pages","{{s5_cms_page_key}}:resolve"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"trace_n3\",\n  \"request_id\": \"req_n3\",\n  \"device_sn\": \"{{device_sn}}\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "N4 · 音频能力不完整 → 400 client_audio_capability_incomplete",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('N4: 能力不完整返回 400', () => pm.response.to.have.status(400));",
+              "try {",
+              "  const j = pm.response.json();",
+              "  pm.test('error.code 是 client_audio_capability_incomplete', () => pm.expect(j.error.code).to.eql('client_audio_capability_incomplete'));",
+              "} catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/cms/pages/{{s5_cms_page_key}}:resolve", "host": ["{{base_url}}"], "path": ["v1","device","cms","pages","{{s5_cms_page_key}}:resolve"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"trace_n4\",\n  \"request_id\": \"req_n4\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\"]}\n}" }
+          }
+        },
+        {
+          "name": "N5 · 缺 Idempotency-Key 调写操作 → 400 operation_idempotency_key_missing",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('N5: 缺 Idempotency-Key 返回 400', () => pm.response.to.have.status(400));",
+              "try {",
+              "  const j = pm.response.json();",
+              "  pm.test('error.code 是 operation_idempotency_key_missing', () => pm.expect(j.error.code).to.eql('operation_idempotency_key_missing'));",
+              "} catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories"] },
+            "body": { "mode": "raw", "raw": "{\n  \"category_key\": \"n5_test\",\n  \"name\": \"N5 test\",\n  \"description\": \"\",\n  \"parent_category_id\": null,\n  \"sort_order\": 999,\n  \"reason\": \"negative test\"\n}" }
+          }
+        },
+        {
+          "name": "N6 · 无效 target_type 调 Catalog → 400 content_target_invalid",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_n6_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_n6_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('N6: 无效 target 返回 400', () => pm.response.to.have.status(400));",
+              "try {",
+              "  const j = pm.response.json();",
+              "  pm.test('error.code 是 content_target_invalid', () => pm.expect(j.error.code).to.eql('content_target_invalid'));",
+              "} catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/catalog:resolve", "host": ["{{base_url}}"], "path": ["v1","device","catalog:resolve"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"target\": {\"target_type\": \"invalid_type\", \"target_id\": \"nonexistent\"},\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        }
+      ]
+    }
+  ]
+}

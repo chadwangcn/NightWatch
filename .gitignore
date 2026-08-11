@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Python venv (Schemathesis)
+.venv/
+
+# Build output
+dist/
+
+# Newman reports
+reports/
+newman-*.json
+
+# Environment
+.env
+.env.local
+
+# Postman 本地环境变量（含真实 token/password，不进 Git）
+postman/*.local.json
+postman/ai-config.local.json
+
+# Trae CLI Agent 沙箱工作区
+.workspace/
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Schemathesis 模糊测试缓存
+.schemathesis/

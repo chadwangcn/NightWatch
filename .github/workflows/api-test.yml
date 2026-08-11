@@ -1,0 +1,110 @@
+name: API Test (Newman)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'postman/**'
+      - 'scripts/run-newman.sh'
+      - '.github/workflows/api-test.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'postman/**'
+      - 'scripts/run-newman.sh'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '测试模式'
+        required: true
+        default: 'smoke'
+        type: choice
+        options:
+          - smoke
+          - device
+          - guardian
+          - ops
+          - s5-full
+          - all
+  schedule:
+    # 每天北京时间 03:00 跑全量
+    - cron: '0 19 * * *'
+
+jobs:
+  newman-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Newman
+        run: |
+          npm install -g newman newman-reporter-htmlextra
+          newman --version
+
+      - name: Prepare test assets
+        run: |
+          mkdir -p test-assets
+          # 生成 1 秒静音 WAV 用于上传测试
+          printf '\x52\x49\x46\x46\x24\x00\x00\x00\x57\x41\x56\x45\x66\x6d\x74\x20\x10\x00\x00\x00\x01\x00\x01\x00\x44\xac\x00\x00\x88\x58\x01\x00\x02\x00\x10\x00\x64\x61\x74\x61\x00\x00\x00\x00' > test-assets/sample.wav
+          ls -la test-assets/
+
+      - name: Determine test mode
+        id: mode
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "value=all" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "value=${{ inputs.mode }}" >> $GITHUB_OUTPUT
+          else
+            echo "value=smoke" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Newman
+        env:
+          # 敏感凭证从 GitHub Secrets 注入
+          DEVICE_SECRET_B64url: ${{ secrets.DEVICE_SECRET_B64URL }}
+          DEVICE_SECRET_B64URL: ${{ secrets.DEVICE_SECRET_B64URL }}
+          USER_ACCOUNT: ${{ secrets.USER_ACCOUNT }}
+          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+          OPERATOR_ACCOUNT: ${{ secrets.OPERATOR_ACCOUNT }}
+          OPERATOR_PASSWORD: ${{ secrets.OPERATOR_PASSWORD }}
+          S5_TEST_AUDIO_PATH: ${{ github.workspace }}/test-assets/sample.wav
+          S5_TEST_FAMILY_ID: ${{ secrets.S5_TEST_FAMILY_ID }}
+          S5_TEST_CHILD_ID: ${{ secrets.S5_TEST_CHILD_ID }}
+        run: |
+          bash scripts/run-newman.sh "${{ steps.mode.outputs.value }}"
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-report
+          path: reports/*.html
+          retention-days: 30
+
+      - name: Deploy report to GitHub Pages
+        if: github.ref == 'refs/heads/main' && always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: reports
+          destination_dir: reports
+          keep_files: true
+
+      - name: Check failures
+        if: always()
+        run: |
+          # Newman 失败时退出码非 0，上面的 run 步骤会直接失败
+          # 这里做汇总展示
+          echo "==> 测试模式: ${{ steps.mode.outputs.value }}"
+          echo "==> 报告工件已上传，可在 Actions 页面下载"
+          echo "==> Main 分支推送后可在 GitHub Pages 查看: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/reports/"

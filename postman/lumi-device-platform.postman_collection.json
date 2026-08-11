@@ -1,0 +1,531 @@
+{
+  "info": {
+    "name": "Lumi Device Platform API",
+    "_postman_id": "lumi-device-platform-collection-v3",
+    "description": "Lumi Device Platform API 测试集合\n\n基于 https://github.com/chadwangcn/lumi-device-platform 文档生成。\n\n## 使用方式\n\n### 方式1：单接口测试\n- 每个请求可独立 Send\n- 请求的 prerequest 脚本会自动从环境变量读取数据并计算 proof\n- 依赖前置环境变量的请求，需先执行前置请求或手动设置环境变量\n- 每个请求 description 标注了【依赖】和【产出】\n\n### 方式2：场景序列测试（Collection Runner）\n- 选中场景文件夹 → Run folder\n- 按文件夹内顺序执行\n- 环境变量自动传递\n- 场景B 的 B3 步骤需手动重复 Send 直到 binding_version ≥ 1（Postman 不支持条件循环）\n\n## 当前测试范围\n- ✅ 健康检查（00）\n- ✅ APP单边：用户登录/刷新/登出（01）\n- ✅ 场景A：设备首次激活（02）\n- ✅ 场景B：QR配对绑定（03）\n- ✅ 场景C：APP解绑（04）\n- ⏸️ 场景D 及以后：runtime / operations / internal / OTA / 生命周期 — 暂不测试\n\n## 通用约定\n- Content-Type: application/json\n- Token: ES256 Compact JWS, Authorization: Bearer <token>\n- nonce: 16 字节 base64url (22 字符), 单次使用, 600s 有效\n- proof: HMAC-SHA256, base64url 无 padding (43 字符)\n- 健康检查 /healthz 使用绝对 URL（根路径，不加 /lumi-mind 前缀）\n- 其他业务端点使用 {{base_url}} 前缀\n\n## 环境变量（已导入 Postman）\n- base_url, origin_url, device_sn, product_id, credential_version\n- device_secret_b64url, capability_digest\n- user_account, user_password, child_profile_id\n- 运行时自动写入：*_access_token, *_refresh_token, binding_version, pairing_*",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": null,
+  "variable": [
+    { "key": "base_url", "value": "https://api-lumi.cinmoore.cn/lumi-mind" },
+    { "key": "origin_url", "value": "https://api-lumi.cinmoore.cn" },
+    { "key": "device_access_token", "value": "" },
+    { "key": "device_refresh_token", "value": "" },
+    { "key": "user_access_token", "value": "" },
+    { "key": "user_refresh_token", "value": "" },
+    { "key": "product_id", "value": "k1" },
+    { "key": "device_sn", "value": "K1-2026-000001" },
+    { "key": "credential_version", "value": "1" },
+    { "key": "binding_version", "value": "0" },
+    { "key": "device_secret_b64url", "value": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8" },
+    { "key": "capability_digest", "value": "sha256:0000000000000000000000000000000000000000000000000000000000000000" },
+    { "key": "user_account", "value": "tester@lumi.local" },
+    { "key": "user_password", "value": "TestPassword123!" },
+    { "key": "child_profile_id", "value": "child-001" },
+    { "key": "pairing_nonce", "value": "" },
+    { "key": "pairing_timestamp", "value": "" },
+    { "key": "pairing_proof", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "00 · 健康检查",
+      "description": "无鉴权的存活/就绪探针。\n\n所有请求可独立 Send，无前置依赖。",
+      "item": [
+        {
+          "name": "GET /healthz",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{origin_url}}/healthz", "host": ["{{origin_url}}"], "path": ["healthz"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('healthz returns 200', () => pm.response.to.have.status(200));"
+            ]}
+          }]
+        },
+        {
+          "name": "GET /readyz (internal)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/readyz", "host": ["{{base_url}}"], "path": ["readyz"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('readyz returns 200', () => pm.response.to.have.status(200));"
+            ]}
+          }]
+        },
+        {
+          "name": "GET /v1/jwks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/v1/jwks", "host": ["{{base_url}}"], "path": ["v1","jwks"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('jwks returns 200', () => pm.response.to.have.status(200));"
+            ]}
+          }]
+        },
+        {
+          "name": "GET /v1/identity/public-key-sets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/v1/identity/public-key-sets", "host": ["{{base_url}}"], "path": ["v1","identity","public-key-sets"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "// 无已注册公钥时返回 401，文档已声明",
+              "pm.test('public-key-sets returns 200 or 401', () => {",
+              "  pm.expect([200,401]).to.include(pm.response.code);",
+              "});"
+            ]}
+          }]
+        }
+      ]
+    },
+    {
+      "name": "01 · APP单边 · 用户登录",
+      "description": "场景：APP 用户登录。\n\n账号 + Argon2id 密码 → user_access_token (typ=lumi-user-access+jws, TTL 900s)。\n\n这是场景B(配对绑定)和场景C(解绑)的前置条件。",
+      "item": [
+        {
+          "name": "POST /v1/user-sessions (login)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"account\": \"{{user_account}}\",\n  \"password\": \"{{user_password}}\"\n}" },
+            "url": { "raw": "{{base_url}}/v1/user-sessions", "host": ["{{base_url}}"], "path": ["v1","user-sessions"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('user-sessions returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "if (j.user_access_token) pm.environment.set('user_access_token', j.user_access_token);",
+              "if (j.user_refresh_token) pm.environment.set('user_refresh_token', j.user_refresh_token);",
+              "pm.test('expires_in is 900', () => pm.expect(j.expires_in).to.eql(900));",
+              "console.log('✅ 用户登录成功，token 已写入环境变量');"
+            ]}
+          }]
+        },
+        {
+          "name": "POST /v1/user-sessions:refresh",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"user_refresh_token\": \"{{user_refresh_token}}\"\n}" },
+            "url": { "raw": "{{base_url}}/v1/user-sessions:refresh", "host": ["{{base_url}}"], "path": ["v1","user-sessions:refresh"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('refresh returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "if (j.user_access_token) pm.environment.set('user_access_token', j.user_access_token);",
+              "if (j.user_refresh_token) pm.environment.set('user_refresh_token', j.user_refresh_token);"
+            ]}
+          }]
+        },
+        {
+          "name": "POST /v1/user-sessions:logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/user-sessions:logout", "host": ["{{base_url}}"], "path": ["v1","user-sessions:logout"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('logout returns 204', () => pm.response.to.have.status(204));"
+            ]}
+          }]
+        }
+      ]
+    },
+    {
+      "name": "02 · 场景A · 设备首次激活",
+      "description": "场景A：设备单边激活流程。\n\n前置：设备已产线导入（lifecycle_state=provisioned 或 active），持有出厂 device_secret。\n\n异常码：\n- proof 错 → 401 AUTH_CREDENTIAL_INVALID\n- 设备非 active/provisioned → 401 AUTH_CREDENTIAL_REVOKED\n- nonce 重放 → 409 AUTH_REPLAY_DETECTED\n- timestamp 超窗 (±300s) → 400 AUTH_REQUEST_INVALID",
+      "item": [
+        {
+          "name": "A1 · POST /v1/device-sessions (Device Proof)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "// ===== 设备证明计算（规范见 docs/auth/device-proof.md） =====",
+                "const CryptoJS = require('crypto-js');",
+                "const productId = pm.environment.get('product_id');",
+                "const deviceSn = pm.environment.get('device_sn');",
+                "const credVer = String(pm.environment.get('credential_version'));",
+                "const ts = Math.floor(Date.now()/1000).toString();",
+                "const secretB64 = pm.environment.get('device_secret_b64url');",
+                "// 生成 16 字节 base64url nonce (22 字符)",
+                "const nonceBytes = CryptoJS.lib.WordArray.random(16);",
+                "const nonce = nonceBytes.toString(CryptoJS.enc.Base64).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');",
+                "pm.environment.set('device_timestamp', ts);",
+                "pm.environment.set('device_nonce', nonce);",
+                "const runtime = {",
+                "  app_version: '1.2.1',",
+                "  capability_digest: pm.environment.get('capability_digest'),",
+                "  firmware_version: '1.0.0'",
+                "};",
+                "// JCS 规范化 body（去掉 device_proof，键按字典序）",
+                "const bodyNoProof = {",
+                "  credential_version: parseInt(credVer),",
+                "  device_sn: deviceSn,",
+                "  nonce: nonce,",
+                "  product_id: productId,",
+                "  runtime: runtime,",
+                "  timestamp: parseInt(ts)",
+                "};",
+                "const bodyJson = JSON.stringify(bodyNoProof);",
+                "const bodySha256 = CryptoJS.SHA256(bodyJson).toString(CryptoJS.enc.Hex);",
+                "// Canonical Request (8 行, LF 分隔, 末尾无 LF)",
+                "const canonical = ['K1_DEVICE_AUTH_V1','POST','/v1/device-sessions',",
+                "  `product_id=${productId}`,`device_sn=${deviceSn}`,",
+                "  `credential_version=${credVer}`,`timestamp=${ts}`,",
+                "  `nonce=${nonce}`,`body_sha256=${bodySha256}`].join('\\n');",
+                "// base64url 解码 device_secret",
+                "const secretWords = CryptoJS.enc.Base64.parse(secretB64.replace(/-/g,'+').replace(/_/g,'/'));",
+                "const proof = CryptoJS.HmacSHA256(canonical, secretWords).toString(CryptoJS.enc.Base64).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');",
+                "pm.environment.set('device_proof', proof);",
+                "pm.variables.set('req_body', JSON.stringify({",
+                "  product_id: productId,",
+                "  device_sn: deviceSn,",
+                "  credential_version: parseInt(credVer),",
+                "  timestamp: parseInt(ts),",
+                "  nonce: nonce,",
+                "  runtime: runtime,",
+                "  device_proof: proof",
+                "}));"
+              ]}
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('device-sessions returns 201', () => pm.response.to.have.status(201));",
+                "const j = pm.response.json();",
+                "if (j.device_access_token) pm.environment.set('device_access_token', j.device_access_token);",
+                "if (j.device_refresh_token) pm.environment.set('device_refresh_token', j.device_refresh_token);",
+                "if (j.binding_version !== undefined) pm.environment.set('binding_version', String(j.binding_version));",
+                "pm.test('expires_in is 900', () => pm.expect(j.expires_in).to.eql(900));",
+                "console.log('✅ 设备激活成功，binding_version=' + j.binding_version);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{{req_body}}" },
+            "url": { "raw": "{{base_url}}/v1/device-sessions", "host": ["{{base_url}}"], "path": ["v1","device-sessions"] }
+          }
+        },
+        {
+          "name": "A2 · GET /v1/device-bootstrap",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device-bootstrap", "host": ["{{base_url}}"], "path": ["v1","device-bootstrap"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('bootstrap returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('has device_sn', () => pm.expect(j.device_sn).to.be.a('string'));",
+              "pm.test('has binding_version', () => pm.expect(j.binding_version).to.be.a('number'));",
+              "console.log('设备引导: bv=' + j.binding_version);"
+            ]}
+          }]
+        }
+      ]
+    },
+    {
+      "name": "03 · 场景B · QR配对绑定",
+      "description": "场景B：设备 ↔ APP 协同配对（核心互动场景）。\n\n执行顺序：\n  B1 → B2 → B3（重复直到 bv≥1）→ B4 → B5\n\n最新 API 变更（已对齐）：\n- B1: POST /v1/device-bindings:start-pairing（原 GET /v1/device-pairing-challenges 已废弃）\n- B5: GET /v1/device-bindings/{device_sn}（原 /current?device_sn= 已废弃）\n\n关键规则：\n- nonce 必须由服务端签发（B1）\n- timestamp 用 challenge 返回值，不用本地时钟\n- 绑定成功后设备旧 token 立即失效（bv 0→1）\n- B3 每次执行都重新计算 Device Proof（新 nonce）\n- 同一 pairing nonce 第二次使用 → 409 AUTH_REPLAY_DETECTED\n\n【单接口测试】\n- B1 依赖：device_access_token（来自 A1）\n- B2 依赖：user_access_token（来自 01.login）+ pairing_nonce/timestamp（来自 B1）\n- B3 依赖：device_secret_b64url（无 token 依赖，可独立 Send）\n- B4 依赖：device_access_token（来自 B3，bv≥1）\n- B5 依赖：user_access_token（来自 01.login）",
+      "item": [
+        {
+          "name": "B1 · POST /v1/device-bindings:start-pairing (Device)",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('start-pairing returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.environment.set('pairing_nonce', j.nonce);",
+              "pm.environment.set('pairing_timestamp', String(j.timestamp));",
+              "pm.test('nonce is 22 chars base64url', () => pm.expect(j.nonce).to.match(/^[A-Za-z0-9_-]{22}$/));",
+              "pm.test('timestamp is positive int', () => pm.expect(j.timestamp).to.be.a('number').above(0));",
+              "pm.test('device_sn matches', () => pm.expect(j.device_sn).to.eql(pm.environment.get('device_sn')));",
+              "console.log('✅ 配对挑战已获取');",
+              "console.log('   nonce=' + j.nonce);",
+              "console.log('   timestamp=' + j.timestamp);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device-bindings:start-pairing", "host": ["{{base_url}}"], "path": ["v1","device-bindings:start-pairing"] }
+          }
+        },
+        {
+          "name": "B2 · POST /v1/device-bindings (User 提交配对)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "// ===== 配对证明计算（规范见 docs/auth/pairing-proof.md） =====",
+                "const CryptoJS = require('crypto-js');",
+                "const deviceSn = pm.environment.get('device_sn');",
+                "const ts = pm.environment.get('pairing_timestamp');",
+                "const nonce = pm.environment.get('pairing_nonce');",
+                "const secretB64 = pm.environment.get('device_secret_b64url');",
+                "if (!nonce || !ts) {",
+                "  console.warn('⚠️  缺少 pairing_nonce/pairing_timestamp，请先执行 B1');",
+                "}",
+                "// Canonical Request (6 行, LF 分隔, 末尾无 LF)",
+                "const canonical = ['K1_PAIRING_V1','POST','/v1/device-bindings',",
+                "  `device_sn=${deviceSn}`,`timestamp=${ts}`,`nonce=${nonce}`].join('\\n');",
+                "const secretWords = CryptoJS.enc.Base64.parse(secretB64.replace(/-/g,'+').replace(/_/g,'/'));",
+                "const proof = CryptoJS.HmacSHA256(canonical, secretWords).toString(CryptoJS.enc.Base64).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');",
+                "pm.environment.set('pairing_proof', proof);",
+                "console.log('Pairing proof 计算完成');"
+              ]}
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('device-bindings returns 201', () => pm.response.to.have.status(201));",
+                "const j = pm.response.json();",
+                "pm.test('status is active', () => pm.expect(j.status).to.eql('active'));",
+                "if (j.binding_version !== undefined) pm.environment.set('binding_version', String(j.binding_version));",
+                "console.log('✅ 绑定成功，binding_version=' + j.binding_version);",
+                "console.log('⚠️  设备旧 token 立即失效，请执行 B3 重新认证');"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"device_sn\": \"{{device_sn}}\",\n  \"child_profile_id\": \"{{child_profile_id}}\",\n  \"pairing_proof\": \"{{pairing_proof}}\",\n  \"nonce\": \"{{pairing_nonce}}\",\n  \"timestamp\": {{pairing_timestamp}}\n}" },
+            "url": { "raw": "{{base_url}}/v1/device-bindings", "host": ["{{base_url}}"], "path": ["v1","device-bindings"] }
+          }
+        },
+        {
+          "name": "B3 · POST /v1/device-sessions (设备重新认证, 发现 bv 0→1)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "// ===== 设备重新认证（绑定后旧 token 失效，必须重新执行 Device Proof） =====",
+                "// 本请求可重复 Send，每次自动生成新 nonce 并重新计算 proof",
+                "const CryptoJS = require('crypto-js');",
+                "const productId = pm.environment.get('product_id');",
+                "const deviceSn = pm.environment.get('device_sn');",
+                "const credVer = String(pm.environment.get('credential_version'));",
+                "const ts = Math.floor(Date.now()/1000).toString();",
+                "const secretB64 = pm.environment.get('device_secret_b64url');",
+                "const nonceBytes = CryptoJS.lib.WordArray.random(16);",
+                "const nonce = nonceBytes.toString(CryptoJS.enc.Base64).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');",
+                "const runtime = {",
+                "  app_version: '1.2.1',",
+                "  capability_digest: pm.environment.get('capability_digest'),",
+                "  firmware_version: '1.0.0'",
+                "};",
+                "const bodyNoProof = {",
+                "  credential_version: parseInt(credVer),",
+                "  device_sn: deviceSn,",
+                "  nonce: nonce,",
+                "  product_id: productId,",
+                "  runtime: runtime,",
+                "  timestamp: parseInt(ts)",
+                "};",
+                "const bodyJson = JSON.stringify(bodyNoProof);",
+                "const bodySha256 = CryptoJS.SHA256(bodyJson).toString(CryptoJS.enc.Hex);",
+                "const canonical = ['K1_DEVICE_AUTH_V1','POST','/v1/device-sessions',",
+                "  `product_id=${productId}`,`device_sn=${deviceSn}`,",
+                "  `credential_version=${credVer}`,`timestamp=${ts}`,",
+                "  `nonce=${nonce}`,`body_sha256=${bodySha256}`].join('\\n');",
+                "const secretWords = CryptoJS.enc.Base64.parse(secretB64.replace(/-/g,'+').replace(/_/g,'/'));",
+                "const proof = CryptoJS.HmacSHA256(canonical, secretWords).toString(CryptoJS.enc.Base64).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');",
+                "pm.variables.set('req_body', JSON.stringify({",
+                "  product_id: productId,",
+                "  device_sn: deviceSn,",
+                "  credential_version: parseInt(credVer),",
+                "  timestamp: parseInt(ts),",
+                "  nonce: nonce,",
+                "  runtime: runtime,",
+                "  device_proof: proof",
+                "}));"
+              ]}
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('device-sessions returns 201', () => pm.response.to.have.status(201));",
+                "const j = pm.response.json();",
+                "if (j.device_access_token) pm.environment.set('device_access_token', j.device_access_token);",
+                "if (j.device_refresh_token) pm.environment.set('device_refresh_token', j.device_refresh_token);",
+                "if (j.binding_version !== undefined) pm.environment.set('binding_version', String(j.binding_version));",
+                "",
+                "const bv = j.binding_version;",
+                "if (bv >= 1) {",
+                "  console.log('✅ 绑定已确认，设备进入 bound 状态 (bv=' + bv + ')');",
+                "  console.log('   可继续执行 B4 / B5');",
+                "  pm.test('binding_version >= 1', () => pm.expect(bv).to.be.at.least(1));",
+                "} else {",
+                "  console.log('⏳ 绑定尚未完成 (bv=0)，请先执行 B2 (APP 提交配对)');",
+                "  console.log('   或重复 Send 本请求 (B3) 继续轮询');",
+                "  pm.test('binding_version still 0', () => pm.expect(bv).to.eql(0));",
+                "}"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{{req_body}}" },
+            "url": { "raw": "{{base_url}}/v1/device-sessions", "host": ["{{base_url}}"], "path": ["v1","device-sessions"] }
+          }
+        },
+        {
+          "name": "B4 · GET /v1/device-bootstrap (确认绑定)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device-bootstrap", "host": ["{{base_url}}"], "path": ["v1","device-bootstrap"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('bootstrap returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('binding_version >= 1 (bound)', () => pm.expect(j.binding_version).to.be.at.least(1));",
+              "console.log('✅ 设备引导确认: bv=' + j.binding_version);"
+            ]}
+          }]
+        },
+        {
+          "name": "B5 · GET /v1/device-bindings/{device_sn} (User 查询绑定)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/device-bindings/{{device_sn}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1","device-bindings","{{device_sn}}"]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('GET binding returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('status is active', () => pm.expect(j.status).to.eql('active'));",
+              "pm.test('binding_version >= 1', () => pm.expect(j.binding_version).to.be.at.least(1));",
+              "console.log('✅ APP 查询绑定成功: bv=' + j.binding_version);"
+            ]}
+          }]
+        }
+      ]
+    },
+    {
+      "name": "04 · 场景C · APP解绑",
+      "description": "场景C：APP 用户解绑设备。\n\n执行顺序：C1 → C2 → C3\n\n最新 API 变更（已对齐）：\n- C1: DELETE /v1/device-bindings/{device_sn}（原 /current?device_sn= 已废弃，无需 body）\n- C3: GET /v1/device-bindings/{device_sn} → 404 RESOURCE_ACCESS_DENIED（原无明确 code）\n\n副作用：\n- C1 后 binding_version 递增, binding 标记 detached\n- 设备现有 device_access_token 立即失效\n- 设备下次调用任何 /v1/device/* → 401 AUTH_CREDENTIAL_INVALID\n\n【单接口测试】\n- C1 依赖：user_access_token（来自 01.login）\n- C2 依赖：device_access_token（来自 A1 或 B3）\n- C3 依赖：user_access_token（来自 01.login）",
+      "item": [
+        {
+          "name": "C1 · DELETE /v1/device-bindings/{device_sn} (User 解绑)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/device-bindings/{{device_sn}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1","device-bindings","{{device_sn}}"]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('DELETE binding returns 204', () => pm.response.to.have.status(204));",
+              "console.log('✅ 解绑成功，设备 token 立即失效');"
+            ]}
+          }]
+        },
+        {
+          "name": "C2 · 验证：设备旧 token 已失效 (GET bootstrap → 401)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device-bootstrap", "host": ["{{base_url}}"], "path": ["v1","device-bootstrap"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('old device token rejected with 401', () => pm.response.to.have.status(401));",
+              "try {",
+              "  const j = pm.response.json();",
+              "  pm.test('code is AUTH_CREDENTIAL_INVALID', () => pm.expect(j.code).to.eql('AUTH_CREDENTIAL_INVALID'));",
+              "  console.log('✅ 设备旧 token 已失效: ' + j.code);",
+              "} catch(e) {}"
+            ]}
+          }]
+        },
+        {
+          "name": "C3 · 验证：APP 查询绑定 → 404 (已解绑)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/device-bindings/{{device_sn}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1","device-bindings","{{device_sn}}"]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('GET binding returns 404 (detached)', () => pm.response.to.have.status(404));",
+              "try {",
+              "  const j = pm.response.json();",
+              "  pm.test('code is RESOURCE_ACCESS_DENIED', () => pm.expect(j.code).to.eql('RESOURCE_ACCESS_DENIED'));",
+              "  console.log('✅ APP 查询已解绑设备返回 404 RESOURCE_ACCESS_DENIED');",
+              "} catch(e) {}"
+            ]}
+          }]
+        }
+      ]
+    },
+    {
+      "name": "99 · 暂不测试（功能未完成）",
+      "description": "⏸️ 以下场景的端点暂不测试，功能未完成开发：\n\n- 场景D：设备运行时循环\n- 场景E：OTA 升级\n- 场景F：设备生命周期管理\n- 场景G：内部服务消费\n- 运营管理（operators CRUD / MFA reset）\n- 鉴权负面用例\n- Frozen v1 兼容层\n\n待功能开发完成后，将补充对应分组。",
+      "item": []
+    }
+  ]
+}

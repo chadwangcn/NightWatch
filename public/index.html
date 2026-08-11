@@ -1,0 +1,4537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SuperMan Console · Lumi API Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* 科技色主题 - 深青蓝 + 暗色背景 */
+    --pm-orange: #00b4d8;          /* 主强调色改为科技青蓝（保留变量名兼容） */
+    --pm-accent: #00d9ff;          /* 高亮青色 */
+    --pm-bg: #0d1117;              /* 主背景：GitHub Dark */
+    --pm-bg-sidebar: #161b22;     /* 侧栏背景 */
+    --pm-bg-tab: #161b22;          /* Tab 背景 */
+    --pm-bg-tab-active: #1f2630; /* 激活 Tab */
+    --pm-bg-input: #0d1117;       /* 输入框背景 */
+    --pm-border: #30363d;          /* 边框 */
+    --pm-border-light: #21262d;    /* 轻边框 */
+    --pm-text: #e6edf3;            /* 主文本 */
+    --pm-text-dim: #8b949e;       /* 次文本 */
+    --pm-text-mute: #6e7681;      /* 弱文本 */
+    --pm-blue: #58a6ff;            /* 链接/信息蓝 */
+    --pm-green: #3fb950;          /* 成功绿 */
+    --pm-red: #f85149;            /* 错误红 */
+    --pm-yellow: #d29922;         /* 警告黄 */
+    --pm-purple: #bc8cff;          /* 紫色 */
+    --pm-mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; font-size: 13px; }
+  body { background: var(--pm-bg); color: var(--pm-text); }
+  /* 全局 input/select/textarea 深色主题 */
+  input, select, textarea {
+    background: var(--pm-bg-input);
+    color: var(--pm-text);
+    border: 1px solid var(--pm-border);
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--pm-accent);
+  }
+  /* placeholder 颜色 */
+  ::placeholder { color: var(--pm-text-mute); opacity: 1; }
+  /* 滚动条 */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--pm-bg); }
+  ::-webkit-scrollbar-thumb { background: var(--pm-border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--pm-text-mute); }
+
+  /* ===== Header ===== */
+  .header {
+    height: 44px;
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+    border-bottom: 1px solid var(--pm-border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+    color: var(--pm-text);
+    flex-shrink: 0;
+  }
+  .header-logo {
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--pm-accent);
+  }
+  .header-logo svg { width: 20px; height: 20px; color: var(--pm-accent); }
+  .header-tabs {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+  }
+  .header-tab {
+    padding: 6px 14px;
+    color: var(--pm-text-dim);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.1s;
+  }
+  .header-tab:hover { background: rgba(0,217,255,0.15); color: var(--pm-accent); }
+  .header-tab.active { background: rgba(0,217,255,0.2); color: var(--pm-accent); border-bottom: 2px solid var(--pm-accent); }
+
+  /* ===== Main 三栏 ===== */
+  .main {
+    display: flex;
+    height: calc(100vh - 44px);
+  }
+
+  /* 左侧栏 - Collections */
+  .sidebar {
+    width: 300px;
+    min-width: 200px;
+    max-width: 600px;
+    background: var(--pm-bg-sidebar);
+    border-right: 1px solid var(--pm-border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: relative;
+  }
+  /* 拖拽分隔条 */
+  .sidebar-resizer {
+    position: absolute;
+    top: 0;
+    right: -3px;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    z-index: 10;
+    background: transparent;
+    transition: background 0.15s;
+  }
+  .sidebar-resizer:hover,
+  .sidebar-resizer.dragging {
+    background: var(--pm-accent);
+  }
+  .sidebar-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--pm-border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;          /* 允许 flex 子项收缩，防止 select 撑爆侧栏 */
+  }
+  .sidebar-header select {
+    flex: 1;
+    min-width: 0;          /* 关键：让 select 可收缩 */
+    width: 100%;           /* 配合 flex:1 占满剩余空间 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--pm-text);
+  }
+  .col-import-btn {
+    padding: 4px 10px;
+    background: var(--pm-orange);
+    color: white;
+    border: none;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .col-import-btn:hover { background: #0091b8; }
+  .sidebar-search {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--pm-border-light);
+  }
+  .sidebar-search input {
+    width: 100%;
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+  }
+  .sidebar-search input:focus { outline: none; border-color: var(--pm-blue); }
+  .sidebar-tree {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+  }
+  .sidebar-tree::-webkit-scrollbar { width: 6px; }
+  .sidebar-tree::-webkit-scrollbar-thumb { background: var(--pm-border); border-radius: 3px; }
+  .tree-group { margin-bottom: 2px; }
+  .tree-group-header {
+    padding: 6px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pm-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+  }
+  .tree-group-header:hover { background: rgba(0,0,0,0.04); }
+  .tree-arrow {
+    font-size: 9px;
+    width: 10px;
+    transition: transform 0.1s;
+  }
+  .tree-group.collapsed .tree-arrow { transform: rotate(-90deg); }
+  .tree-group.collapsed .tree-requests { display: none; }
+  .tree-request {
+    padding: 5px 16px 5px 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    transition: background 0.1s;
+    border-left: 2px solid transparent;
+  }
+  .tree-request:hover { background: rgba(0,0,0,0.04); }
+  .tree-request.active {
+    background: rgba(243,112,56,0.08);
+    border-left-color: var(--pm-orange);
+  }
+  .method-badge {
+    font-family: var(--pm-mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 2px;
+    min-width: 36px;
+    text-align: center;
+  }
+  .m-GET { background: rgba(0,166,90,0.12); color: var(--pm-green); }
+  .m-POST { background: rgba(210,153,34,0.18); color: var(--pm-yellow); }
+  .m-PUT { background: rgba(13,110,253,0.12); color: var(--pm-blue); }
+  .m-DELETE { background: rgba(220,53,69,0.12); color: var(--pm-red); }
+  .tree-request-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--pm-text);
+  }
+
+  /* 中间 + 右侧 主区 */
+  .workspace {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    background: var(--pm-bg);
+    min-width: 0;
+  }
+  .workspace-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  /* ===== AI 助手侧栏（全局 fixed，所有页面可见） ===== */
+  .ai-sidebar {
+    position: fixed;
+    top: 42px;
+    right: 0;
+    bottom: 0;
+    width: 380px;
+    border-left: 1px solid var(--pm-border);
+    background: var(--pm-bg);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: width 0.18s ease, transform 0.18s ease;
+    z-index: 50;
+  }
+  .ai-sidebar.collapsed { width: 40px; }
+  .ai-sidebar.collapsed .ai-body,
+  .ai-sidebar.collapsed .ai-footer,
+  .ai-sidebar.collapsed .ai-title-text,
+  .ai-sidebar.collapsed .ai-shortcuts,
+  .ai-sidebar.collapsed .ai-status { display: none; }
+  /* 页面主区右留白，避免被 AI 侧栏遮挡（仅在非折叠时） */
+  body:not(.ai-collapsed) .main { margin-right: 380px; }
+  body.ai-collapsed .main { margin-right: 40px; }
+  .ai-header {
+    height: 36px;
+    padding: 0 10px 0 12px;
+    border-bottom: 1px solid var(--pm-border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--pm-bg-sidebar);
+    flex-shrink: 0;
+  }
+  .ai-title {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; color: var(--pm-text);
+    flex: 1;
+  }
+  .ai-title-text { display: flex; align-items: center; gap: 6px; }
+  .ai-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--pm-text-mute);
+    flex-shrink: 0;
+  }
+  .ai-dot.ok { background: var(--pm-green); }
+  .ai-dot.warn { background: var(--pm-yellow); }
+  .ai-dot.err { background: var(--pm-red); }
+  .ai-icon-btn {
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: none; background: transparent;
+    color: var(--pm-text-dim);
+    cursor: pointer; border-radius: 3px;
+    font-size: 13px;
+  }
+  .ai-icon-btn:hover { background: rgba(0,0,0,0.06); color: var(--pm-text); }
+  .ai-mode-select {
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    color: var(--pm-text);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .ai-mode-select:focus { outline: none; border-color: var(--pm-accent); }
+  .ai-status {
+    font-size: 10px; color: var(--pm-text-mute);
+    font-family: var(--pm-mono);
+    padding: 2px 6px;
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    border-radius: 3px;
+  }
+  .ai-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .ai-body::-webkit-scrollbar { width: 6px; }
+  .ai-body::-webkit-scrollbar-thumb { background: var(--pm-border); border-radius: 3px; }
+  .ai-empty {
+    text-align: center;
+    color: var(--pm-text-mute);
+    font-size: 12px;
+    padding: 32px 16px;
+    line-height: 1.7;
+  }
+  .ai-empty-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.4; }
+  .ai-msg {
+    display: flex; flex-direction: column;
+    gap: 4px;
+  }
+  .ai-msg-role {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--pm-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .ai-msg-role .ai-tag {
+    font-size: 9px;
+    padding: 0 4px;
+    border-radius: 2px;
+    font-weight: 600;
+  }
+  .ai-tag-user { background: rgba(0,180,216,0.18); color: var(--pm-accent); }
+  .ai-tag-ai { background: rgba(88,166,255,0.18); color: var(--pm-blue); }
+  .ai-tag-ctx { background: rgba(139,148,158,0.18); color: var(--pm-text-dim); }
+  .ai-msg-bubble {
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    word-wrap: break-word;
+  }
+  .ai-msg.user .ai-msg-bubble {
+    background: rgba(0,180,216,0.12);
+    color: var(--pm-text);
+    border: 1px solid rgba(0,180,216,0.3);
+  }
+  .ai-msg.assistant .ai-msg-bubble {
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border-light);
+  }
+  .ai-msg-bubble p { margin: 0 0 8px; }
+  .ai-msg-bubble p:last-child { margin-bottom: 0; }
+  .ai-msg-bubble pre {
+    background: #1e1e1e; color: #d4d4d4;
+    padding: 10px; border-radius: 4px;
+    overflow-x: auto;
+    font-family: var(--pm-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    margin: 6px 0;
+  }
+  .ai-msg-bubble pre code { background: transparent; padding: 0; display: block; }
+  /* 代码块语法高亮色（复用 VS Code Dark+ 配色） */
+  .ai-msg-bubble pre .json-key,
+  .ai-msg-bubble pre .js-key { color: #9cdcfe; }
+  .ai-msg-bubble pre .json-string,
+  .ai-msg-bubble pre .js-string { color: #ce9178; }
+  .ai-msg-bubble pre .json-number,
+  .ai-msg-bubble pre .js-number { color: #b5cea8; }
+  .ai-msg-bubble pre .json-bool,
+  .ai-msg-bubble pre .js-bool { color: #569cd6; }
+  .ai-msg-bubble pre .json-null { color: #569cd6; }
+  .ai-msg-bubble pre .js-comment { color: #6a9955; font-style: italic; }
+  .ai-msg-bubble pre .js-fn { color: #dcdcaa; }
+  .ai-msg-bubble pre .js-op { color: #d4d4d4; }
+  .ai-msg-bubble code {
+    font-family: var(--pm-mono);
+    font-size: 11.5px;
+    background: rgba(0,0,0,0.05);
+    padding: 1px 4px;
+    border-radius: 2px;
+    color: var(--pm-accent);
+  }
+  .ai-msg-bubble pre code { background: transparent; padding: 0; color: #d4d4d4; }
+  .ai-msg-ctx-pill {
+    display: inline-block;
+    font-size: 10px;
+    font-family: var(--pm-mono);
+    padding: 1px 6px;
+    background: var(--pm-bg-tab-active);
+    color: var(--pm-text-dim);
+    border-radius: 8px;
+    margin-right: 4px;
+  }
+  .ai-typing {
+    display: inline-flex; gap: 3px; padding: 4px 0;
+  }
+  .ai-typing span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--pm-text-mute);
+    animation: ai-blink 1.2s infinite ease-in-out both;
+  }
+  .ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes ai-blink {
+    0%, 80%, 100% { opacity: 0.3; }
+    40% { opacity: 1; }
+  }
+  .ai-shortcuts {
+    padding: 6px 10px;
+    border-top: 1px solid var(--pm-border-light);
+    display: flex; flex-wrap: wrap; gap: 4px;
+    flex-shrink: 0;
+    background: var(--pm-bg-sidebar);
+  }
+  .ai-shortcut {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    color: var(--pm-text-dim);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .ai-shortcut:hover {
+    border-color: var(--pm-orange);
+    color: var(--pm-orange);
+    background: rgba(243,112,56,0.05);
+  }
+  .ai-shortcut:disabled { opacity: 0.4; cursor: not-allowed; }
+  .ai-footer {
+    border-top: 1px solid var(--pm-border);
+    padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 6px;
+    flex-shrink: 0;
+    background: var(--pm-bg);
+  }
+  .ai-input-wrap {
+    position: relative;
+  }
+  .ai-input {
+    width: 100%;
+    min-height: 60px;
+    max-height: 140px;
+    padding: 8px 32px 8px 10px;
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    resize: vertical;
+    background: var(--pm-bg-sidebar);
+    color: var(--pm-text);
+  }
+  .ai-input:focus { outline: none; border-color: var(--pm-orange); background: var(--pm-bg-sidebar); }
+  .ai-send-btn {
+    position: absolute;
+    right: 4px; bottom: 4px;
+    width: 24px; height: 24px;
+    border: none;
+    background: var(--pm-orange);
+    color: white;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ai-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  /* 停止按钮 — Agent 思考/执行时显示 */
+  .ai-stop-btn {
+    position: absolute;
+    right: 4px; bottom: 4px;
+    width: 24px; height: 24px;
+    border: none;
+    background: var(--pm-red);
+    color: white;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+    display: none;                /* 默认隐藏，busy 时显示 */
+    align-items: center; justify-content: center;
+  }
+  .ai-stop-btn:hover { background: #ff615a; }
+  .ai-stop-btn.show { display: flex; }
+  /* Agent 思考状态指示器（footer 顶部条带） */
+  .ai-busy-bar {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--pm-accent), transparent);
+    background-size: 200% 100%;
+    animation: ai-busy-slide 1.2s linear infinite;
+    display: none;
+  }
+  .ai-busy-bar.show { display: block; }
+  @keyframes ai-busy-slide {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .ai-input:disabled { opacity: 0.5; cursor: not-allowed; background: var(--pm-bg); }
+  .ai-input-hint {
+    font-size: 10px; color: var(--pm-text-mute);
+    display: flex; justify-content: space-between;
+  }
+  .ai-input-hint kbd {
+    font-family: var(--pm-mono);
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    padding: 0 4px;
+    border-radius: 2px;
+    font-size: 9px;
+  }
+  /* 上下文 pill（格式化展示当前页面/集合/请求/报告） */
+  #ai-ctx-hint { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+  .ctx-empty { color: var(--pm-text-mute); }
+  .ctx-pill {
+    display: inline-flex; align-items: center;
+    font-size: 10px; font-family: var(--pm-mono);
+    padding: 1px 6px; border-radius: 3px;
+    max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    border: 1px solid var(--pm-border);
+  }
+  .ctx-pill:hover { border-color: var(--pm-accent); cursor: default; }
+  .ctx-page {
+    background: rgba(0,217,255,0.15); color: var(--pm-accent);
+    border-color: rgba(0,217,255,0.3); font-weight: 600;
+  }
+  .ctx-collection {
+    background: var(--pm-bg-sidebar); color: var(--pm-text-dim);
+  }
+  .ctx-request {
+    background: rgba(255,168,40,0.12); color: #ffa828;
+    border-color: rgba(255,168,40,0.3);
+  }
+
+  /* AI 配置弹窗 */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    display: none;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--pm-bg-sidebar);
+    border-radius: 6px;
+    width: 460px;
+    max-width: 92vw;
+    max-height: 86vh;
+    overflow-y: auto;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+  }
+  .modal-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--pm-border);
+    display: flex; align-items: center;
+  }
+  .modal-header h3 { font-size: 14px; font-weight: 700; flex: 1; }
+  .modal-body { padding: 16px; }
+  .modal-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--pm-border);
+    display: flex; justify-content: flex-end; gap: 8px;
+    background: var(--pm-bg-sidebar);
+  }
+  .form-row { margin-bottom: 12px; }
+  .form-row label {
+    display: block;
+    font-size: 11px; font-weight: 600;
+    color: var(--pm-text-dim);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .form-row input, .form-row textarea, .form-row select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    background: var(--pm-bg-sidebar);
+    color: var(--pm-text);
+  }
+  .form-row input:focus, .form-row textarea:focus { outline: none; border-color: var(--pm-blue); }
+  .form-row textarea { min-height: 70px; resize: vertical; font-family: var(--pm-mono); }
+  .form-hint { font-size: 10px; color: var(--pm-text-mute); margin-top: 3px; }
+  .preset-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .preset-btn {
+    padding: 3px 8px;
+    font-size: 11px;
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--pm-text-dim);
+  }
+  .preset-btn:hover { border-color: var(--pm-orange); color: var(--pm-orange); }
+
+  /* 请求构建器 */
+  .builder {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+  }
+  .builder-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pm-text-mute);
+    font-size: 14px;
+  }
+  .builder-url-bar {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--pm-border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .method-select {
+    padding: 6px 10px;
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    font-family: var(--pm-mono);
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--pm-bg-sidebar);
+    color: var(--pm-text);
+    cursor: pointer;
+  }
+  .url-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    font-family: var(--pm-mono);
+    font-size: 12px;
+    background: var(--pm-bg-sidebar);
+    color: var(--pm-text);
+  }
+  .url-input:focus { outline: none; border-color: var(--pm-blue); background: var(--pm-bg-sidebar); }
+  .send-btn {
+    padding: 6px 20px;
+    background: var(--pm-orange);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .send-btn:hover { background: #0091b8; }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .url-bar-btn {
+    padding: 6px 12px;
+    background: var(--pm-bg-sidebar);
+    color: var(--pm-text);
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.1s;
+  }
+  .url-bar-btn:hover:not(:disabled) {
+    border-color: var(--pm-accent);
+    color: var(--pm-accent);
+  }
+  .url-bar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Tab 切换 */
+  .builder-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--pm-border);
+    padding: 0 16px;
+    gap: 4px;
+  }
+  .builder-tab {
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--pm-text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.1s;
+    user-select: none;
+  }
+  .builder-tab:hover { color: var(--pm-text); }
+  .builder-tab.active {
+    color: var(--pm-orange);
+    border-bottom-color: var(--pm-orange);
+    font-weight: 600;
+  }
+  .builder-tab .badge {
+    background: var(--pm-text-mute);
+    color: white;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 8px;
+    margin-left: 4px;
+  }
+
+  .builder-content {
+    flex: 1;
+    overflow: auto;
+    padding: 16px;
+  }
+  .builder-panel { display: none; }
+  .builder-panel.active { display: block; }
+
+  /* Headers 表格 */
+  .kv-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .kv-table th {
+    text-align: left;
+    padding: 6px 10px;
+    background: var(--pm-bg-sidebar);
+    color: var(--pm-text-dim);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    border: 1px solid var(--pm-border);
+  }
+  .kv-table td {
+    padding: 4px;
+    border: 1px solid var(--pm-border);
+  }
+  .kv-table input {
+    width: 100%;
+    border: none;
+    padding: 4px 6px;
+    font-family: var(--pm-mono);
+    font-size: 12px;
+    background: transparent;
+  }
+  .kv-table input:focus { outline: none; background: rgba(243,112,56,0.05); }
+  .kv-row-check {
+    width: 30px;
+    text-align: center;
+  }
+
+  /* Body 编辑器 */
+  .body-editor {
+    width: 100%;
+    min-height: 300px;
+    font-family: var(--pm-mono);
+    font-size: 12px;
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    padding: 10px;
+    resize: vertical;
+    background: var(--pm-bg-sidebar);
+    color: var(--pm-text);
+  }
+  .body-editor:focus { outline: none; border-color: var(--pm-blue); background: var(--pm-bg-sidebar); }
+
+  /* 脚本编辑器（只读） */
+  .script-viewer {
+    font-family: var(--pm-mono);
+    font-size: 11px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 12px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+    overflow-x: auto;
+  }
+  /* 可编辑脚本编辑器 */
+  .script-editor {
+    min-height: 260px;
+    background: var(--pm-bg-input);
+    color: var(--pm-text);
+    line-height: 1.55;
+  }
+  /* 代码编辑器叠加层（textarea + pre 高亮） */
+  .code-editor-wrap {
+    position: relative;
+    min-height: 260px;
+  }
+  .code-editor-highlight,
+  .code-editor-input {
+    margin: 0;
+    padding: 10px;
+    font-family: var(--pm-mono);
+    font-size: 12px;
+    line-height: 1.55;
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    tab-size: 2;
+  }
+  .code-editor-highlight {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    overflow: hidden;
+    margin: 0;
+  }
+  .code-editor-input {
+    position: relative;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--pm-accent);
+    resize: vertical;
+    width: 100%;
+    min-height: 260px;
+    z-index: 1;
+  }
+  .code-editor-input::placeholder { color: var(--pm-text-mute); }
+  .code-editor-input:focus { outline: none; border-color: var(--pm-accent); background: transparent; }
+  /* JS 语法高亮色值（VS Code Dark+ 风格） */
+  .code-editor-highlight .js-comment { color: #6a9955; font-style: italic; }
+  .code-editor-highlight .js-string { color: #ce9178; }
+  .code-editor-highlight .js-number { color: #b5cea8; }
+  .code-editor-highlight .js-key { color: #c586c0; }
+  .code-editor-highlight .js-fn { color: #dcdcaa; }
+  .code-editor-highlight .js-bool { color: #569cd6; }
+  .code-editor-highlight .js-null { color: #569cd6; }
+  .script-editor-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 6px 8px;
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+  }
+  .script-hint {
+    flex: 1;
+    font-size: 11px;
+    color: var(--pm-text-dim);
+    line-height: 1.4;
+  }
+  .script-hint code {
+    font-family: var(--pm-mono);
+    background: rgba(0,0,0,0.05);
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 10.5px;
+  }
+  .ai-mini-btn {
+    padding: 3px 8px;
+    background: var(--pm-orange);
+    color: white;
+    border: none;
+    border-radius: 3px;
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .ai-mini-btn:hover { background: #0091b8; }
+  .ai-mini-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Test Results 面板 */
+  .response-testresults {
+    flex: 1;
+    overflow: auto;
+    padding: 12px 16px;
+    font-family: inherit;
+    font-size: 12px;
+  }
+  .testresults-summary {
+    display: flex;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .testresults-summary .pass { color: var(--pm-green); font-weight: 600; }
+  .testresults-summary .fail { color: var(--pm-red); font-weight: 600; }
+  .testresults-summary .env-write { color: var(--pm-blue); font-weight: 600; }
+  .testresult-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--pm-border-light);
+    font-size: 12px;
+  }
+  .testresult-icon {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    font-size: 9px;
+    color: white;
+    font-weight: 700;
+  }
+  .testresult-icon.pass { background: var(--pm-green); }
+  .testresult-icon.fail { background: var(--pm-red); }
+  .testresult-name { flex: 1; }
+  .testresult-error {
+    font-family: var(--pm-mono);
+    font-size: 10.5px;
+    color: var(--pm-red);
+    margin-top: 3px;
+    padding: 4px 6px;
+    background: rgba(220,53,69,0.06);
+    border-radius: 2px;
+  }
+  .env-write-list {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: rgba(13,110,253,0.05);
+    border: 1px solid rgba(13,110,253,0.2);
+    border-radius: 4px;
+  }
+  .env-write-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--pm-blue);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    letter-spacing: 0.04em;
+  }
+  .env-write-item {
+    display: flex;
+    gap: 8px;
+    padding: 3px 0;
+    font-family: var(--pm-mono);
+    font-size: 11px;
+  }
+  .env-write-item .k { color: var(--pm-text); font-weight: 600; }
+  .env-write-item .v { color: var(--pm-text-dim); word-break: break-all; }
+
+  /* 响应区 */
+  .response-section {
+    border-top: 1px solid var(--pm-border);
+    display: flex;
+    flex-direction: column;
+    height: 45%;
+    min-height: 200px;
+  }
+  .response-header {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--pm-border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--pm-bg-sidebar);
+  }
+  .response-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--pm-text);
+  }
+  .response-status {
+    font-family: var(--pm-mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+  .response-status.s2xx { background: rgba(0,166,90,0.12); color: var(--pm-green); }
+  .response-status.s4xx, .response-status.s5xx { background: rgba(220,53,69,0.12); color: var(--pm-red); }
+  .response-status.pending { background: rgba(158,158,158,0.15); color: var(--pm-text-mute); }
+  .response-meta {
+    font-size: 11px;
+    color: var(--pm-text-mute);
+    font-family: var(--pm-mono);
+  }
+  .response-tabs {
+    display: flex;
+    padding: 0 16px;
+    gap: 4px;
+    border-bottom: 1px solid var(--pm-border);
+  }
+  .response-tab {
+    padding: 6px 12px;
+    font-size: 11px;
+    color: var(--pm-text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+  .response-tab:hover { color: var(--pm-text); }
+  .response-tab.active { color: var(--pm-orange); border-bottom-color: var(--pm-orange); }
+  .response-body {
+    flex: 1;
+    overflow: auto;
+    padding: 12px 16px;
+    font-family: var(--pm-mono);
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  /* 结构化请求/响应展示 */
+  .response-structured {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+    font-family: var(--pm-mono);
+    font-size: 11.5px;
+    line-height: 1.6;
+    background: var(--pm-bg-input);
+  }
+  .struct-section { border-bottom: 1px solid var(--pm-border-light); }
+  .struct-section-header {
+    padding: 8px 16px;
+    background: var(--pm-bg-sidebar);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--pm-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .struct-section-header .struct-method {
+    font-family: var(--pm-mono);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .struct-method.GET { background: rgba(63,185,80,0.15); color: var(--pm-green); }
+  .struct-method.POST { background: rgba(210,153,34,0.2); color: var(--pm-yellow); }
+  .struct-method.PUT { background: rgba(88,166,255,0.15); color: var(--pm-blue); }
+  .struct-method.DELETE { background: rgba(248,81,73,0.15); color: var(--pm-red); }
+  .struct-method.PATCH { background: rgba(188,140,255,0.15); color: var(--pm-purple); }
+  .struct-status {
+    margin-left: auto;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .struct-status.s2xx { background: rgba(63,185,80,0.18); color: var(--pm-green); }
+  .struct-status.s3xx { background: rgba(88,166,255,0.18); color: var(--pm-blue); }
+  .struct-status.s4xx { background: rgba(210,153,34,0.2); color: var(--pm-yellow); }
+  .struct-status.s5xx { background: rgba(248,81,73,0.18); color: var(--pm-red); }
+  .struct-resolve-toggle {
+    margin-left: 8px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-family: inherit;
+    background: rgba(0,217,255,0.08);
+    border: 1px solid rgba(0,217,255,0.3);
+    color: var(--pm-accent);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.1s;
+    white-space: nowrap;
+  }
+  .struct-resolve-toggle:hover { background: rgba(0,217,255,0.18); }
+  .struct-section-body { padding: 10px 16px; }
+  .struct-url {
+    color: var(--pm-blue);
+    word-break: break-all;
+    margin-bottom: 8px;
+  }
+  .struct-subsection-title {
+    font-size: 10px;
+    color: var(--pm-text-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 8px 0 4px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .struct-edit-btn {
+    margin-left: auto;
+    padding: 1px 8px;
+    font-size: 10px;
+    font-family: inherit;
+    background: transparent;
+    border: 1px dashed transparent;
+    color: var(--pm-text-mute);
+    border-radius: 3px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.1s, color 0.1s, border-color 0.1s;
+  }
+  .struct-section:hover .struct-edit-btn { opacity: 0.7; }
+  .struct-edit-btn:hover {
+    opacity: 1 !important;
+    color: var(--pm-accent);
+    border-color: rgba(0,217,255,0.4);
+    background: rgba(0,217,255,0.08);
+  }
+  .struct-edit-wrap {
+    margin: 6px 0 8px;
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--pm-bg-input);
+  }
+  .struct-edit-textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 10px;
+    border: none;
+    background: var(--pm-bg-input);
+    color: var(--pm-text);
+    font-family: var(--pm-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .struct-edit-textarea:focus { outline: none; }
+  .struct-edit-actions {
+    padding: 6px 10px;
+    background: var(--pm-bg-sidebar);
+    border-top: 1px solid var(--pm-border-light);
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .struct-edit-cancel {
+    padding: 4px 10px;
+    font-size: 11px;
+    background: transparent;
+    border: 1px solid var(--pm-border);
+    color: var(--pm-text-dim);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .struct-edit-cancel:hover { color: var(--pm-text); border-color: var(--pm-text-dim); }
+  .struct-headers {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 8px 10px;
+    border-radius: 4px;
+    margin: 4px 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .struct-body-pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .struct-body-pre .json-key { color: #9cdcfe; }
+  .struct-body-pre .json-string { color: #ce9178; }
+  .struct-body-pre .json-number { color: #b5cea8; }
+  .struct-body-pre .json-bool { color: #569cd6; }
+  .struct-body-pre .json-null { color: #569cd6; }
+  .struct-assertions {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .struct-assertion {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 11px;
+  }
+  .struct-assertion .pass { color: var(--pm-green); }
+  .struct-assertion .fail { color: var(--pm-red); }
+  .struct-assertion-name { color: var(--pm-text); flex: 1; }
+  .struct-assertion-err { color: var(--pm-red); font-size: 10px; margin-top: 2px; }
+
+  .response-console {
+    flex: 1;
+    overflow: auto;
+    padding: 12px 16px;
+    font-family: var(--pm-mono);
+    font-size: 11px;
+    line-height: 1.6;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    white-space: pre-wrap;
+  }
+
+  /* ===== Newman 运行控制台格式化输出（按请求分组） ===== */
+  #run-console .run-req-block {
+    margin: 8px 0 4px;
+    padding: 8px 10px;
+    border-left: 2px solid var(--pm-border);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 0 4px 4px 0;
+  }
+  #run-console .run-req-title {
+    color: var(--pm-blue);
+    font-weight: 600;
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--pm-border-light);
+  }
+  #run-console .run-assertion {
+    padding: 1px 0 1px 12px;
+    color: var(--pm-text-dim);
+  }
+  #run-console .run-assertion.pass { color: var(--pm-green); }
+  #run-console .run-assertion.fail {
+    color: var(--pm-red);
+    background: rgba(248, 81, 73, 0.08);
+    padding: 2px 4px 2px 12px;
+    margin: 1px 0;
+    border-radius: 2px;
+  }
+  #run-console .run-http-call {
+    padding: 2px 0 2px 12px;
+    color: var(--pm-text-dim);
+    font-size: 10.5px;
+  }
+  #run-console .run-http-call.http-ok { color: var(--pm-green); }
+  #run-console .run-http-call.http-err {
+    color: var(--pm-red);
+    background: rgba(248, 81, 73, 0.06);
+    padding: 2px 4px 2px 12px;
+    border-radius: 2px;
+  }
+  #run-console .run-separator {
+    margin: 6px 0;
+    padding: 2px 0;
+    color: var(--pm-text-mute);
+    border-top: 1px dashed var(--pm-border-light);
+    font-weight: 600;
+  }
+  #run-console .run-status {
+    margin: 4px 0;
+    padding: 4px 0;
+    font-weight: 600;
+  }
+
+  /* ===== 环境变量面板 ===== */
+  .env-page {
+    flex: 1;
+    overflow: hidden;
+    padding: 16px 20px 0;
+    background: var(--pm-bg);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .env-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .env-header h2 { font-size: 15px; font-weight: 700; }
+  .env-source {
+    font-family: var(--pm-mono);
+    font-size: 11px;
+    padding: 3px 8px;
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    border-radius: 3px;
+    color: var(--pm-text-dim);
+  }
+  .env-actions { margin-left: auto; display: flex; gap: 8px; }
+  .btn {
+    padding: 6px 14px;
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    color: var(--pm-text);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .btn:hover { background: var(--pm-bg-sidebar); }
+  .btn-primary {
+    background: var(--pm-orange);
+    color: white;
+    border-color: var(--pm-orange);
+  }
+  .btn-primary:hover { background: #0091b8; }
+  .btn-accent {
+    background: rgba(0,217,255,0.12);
+    color: var(--pm-accent);
+    border-color: rgba(0,217,255,0.4);
+  }
+  .btn-accent:hover { background: rgba(0,217,255,0.22); border-color: var(--pm-accent); }
+
+  .env-filter {
+    margin-bottom: 12px;
+    padding: 6px 10px;
+    width: 100%;
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .env-filter:focus { outline: none; border-color: var(--pm-blue); }
+  .env-scroll-wrap {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+    padding-bottom: 16px;
+  }
+  .env-table {
+    width: 100%;
+    table-layout: fixed;   /* 固定列宽，按 th 设定的 width 分配 */
+    border-collapse: collapse;
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  /* ===== Runner 页面 ===== */
+  .runner-card {
+    background: var(--pm-bg-sidebar);
+    border: 1px solid var(--pm-border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+  .runner-row { margin-bottom: 14px; }
+  .runner-field { flex: 1; }
+  .runner-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pm-text-dim);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .runner-select {
+    width: 100%;
+    padding: 6px 10px;
+    background: var(--pm-bg-input);
+    color: var(--pm-text);
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+  }
+  .runner-select:focus { outline: none; border-color: var(--pm-accent); }
+  .runner-folders {
+    max-height: 240px;
+    overflow-y: auto;
+    background: var(--pm-bg-input);
+    border: 1px solid var(--pm-border);
+    border-radius: 4px;
+    padding: 6px;
+  }
+  .runner-folder-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    font-size: 12px;
+    color: var(--pm-text);
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background 0.1s;
+  }
+  .runner-folder-item:hover { background: rgba(0,217,255,0.08); }
+  .runner-folder-item input { accent-color: var(--pm-accent); }
+  .runner-strategy { display: flex; gap: 16px; flex-wrap: wrap; }
+  .runner-strategy-item {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; cursor: pointer;
+    color: var(--pm-text-dim);
+  }
+  .runner-strategy-item input { accent-color: var(--pm-accent); margin: 0; }
+  .runner-strategy-item:has(input:checked) { color: var(--pm-accent); }
+  .runner-strategy-desc { font-size: 10px; color: var(--pm-text-mute); }
+  .runner-folder-count {
+    color: var(--pm-text-mute);
+    font-size: 11px;
+    margin-left: auto;
+  }
+
+  .env-table th {
+    background: var(--pm-bg-sidebar);
+    padding: 6px 10px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--pm-text-dim);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--pm-border);
+  }
+  .env-table td {
+    padding: 4px 10px;
+    border-bottom: 1px solid var(--pm-border-light);
+    word-break: break-all;    /* 长 value（如 JWT/URL）自动换行 */
+    overflow-wrap: break-word;
+    vertical-align: middle;
+  }
+  .env-table tr:last-child td { border-bottom: none; }
+  .env-table tr:hover td { background: rgba(0,0,0,0.02); }
+  .env-key {
+    font-family: var(--pm-mono);
+    font-weight: 600;
+    color: var(--pm-text);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .env-value-input {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-family: var(--pm-mono);
+    font-size: 12px;
+    word-break: break-all;
+  }
+  .env-value-input:hover { border-color: var(--pm-border); }
+  .env-value-input:focus { outline: none; border-color: var(--pm-blue); background: var(--pm-bg-sidebar); }
+  .env-desc {
+    font-size: 11px;
+    color: var(--pm-text-mute);
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+  .env-toggle {
+    width: 28px; height: 16px;
+    background: #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .env-toggle.on { background: var(--pm-green); }
+  .env-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 12px; height: 12px;
+    background: var(--pm-bg-sidebar);
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .env-toggle.on::after { transform: translateX(12px); }
+  .tag {
+    display: inline-block;
+    padding: 1px 5px;
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 2px;
+    margin-right: 4px;
+    font-family: var(--pm-mono);
+  }
+  .tag-user { background: rgba(0,180,216,0.18); color: var(--pm-accent); }
+  .tag-runtime { background: rgba(88,166,255,0.18); color: var(--pm-blue); }
+  .tag-config { background: rgba(63,185,80,0.18); color: var(--pm-green); }
+  .tag-convention { background: rgba(188,140,255,0.18); color: var(--pm-purple); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    padding: 10px 16px;
+    background: #212121;
+    color: white;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.2s;
+    font-size: 12px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* 空状态 */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--pm-text-mute);
+    font-size: 13px;
+  }
+  .empty-icon { font-size: 36px; margin-bottom: 8px; opacity: 0.3; }
+
+  /* 报告页 - 阅读软件式布局 */
+  .reports-page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--pm-bg);
+    min-height: 0;          /* 关键：允许 flex 子项收缩 */
+  }
+  .reports-toolbar {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--pm-border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--pm-bg-sidebar);
+  }
+  .reports-toolbar h2 { font-size: 14px; font-weight: 700; margin-right: 4px; }
+  .reports-toolbar .reports-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  .reports-layout {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;          /* 关键：允许 flex 子项收缩 */
+  }
+  .reports-list-pane {
+    width: 300px;
+    min-width: 180px;
+    max-width: 500px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--pm-bg-sidebar);
+    border-right: 1px solid var(--pm-border);
+    overflow: hidden;
+    position: relative;     /* 拖拽分隔条锚点 */
+  }
+  .reports-list-resizer {
+    position: absolute;
+    top: 0; right: -3px; bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    z-index: 10;
+    background: transparent;
+    transition: background 0.15s;
+  }
+  .reports-list-resizer:hover,
+  .reports-list-resizer.dragging { background: var(--pm-accent); }
+  .reports-list-toolbar {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--pm-border-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--pm-bg-sidebar);
+    flex-shrink: 0;
+  }
+  .reports-list-toolbar .select-all-wrap {
+    flex: 1;
+    font-size: 11px;
+    color: var(--pm-text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .reports-list-toolbar .select-all-wrap input { accent-color: var(--pm-accent); cursor: pointer; }
+  .reports-list-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px;
+  }
+  .reports-list-body::-webkit-scrollbar { width: 6px; }
+  .reports-list-body::-webkit-scrollbar-thumb { background: var(--pm-border); border-radius: 3px; }
+  /* 目录项（阅读软件式） */
+  .report-card {
+    background: transparent;
+    border: 1px solid transparent;
+    border-left: 3px solid transparent;
+    border-radius: 3px;
+    padding: 8px 10px 8px 12px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: all 0.1s;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .report-card:hover { background: rgba(0,217,255,0.06); border-left-color: rgba(0,217,255,0.4); }
+  .report-card.active {
+    background: rgba(0,217,255,0.12);
+    border-left-color: var(--pm-accent);
+  }
+  .report-card input[type="checkbox"] { margin-top: 2px; accent-color: var(--pm-accent); cursor: pointer; flex-shrink: 0; }
+  .report-card-body { flex: 1; min-width: 0; }
+  .report-name {
+    font-family: var(--pm-mono);
+    font-size: 11px;
+    color: var(--pm-text);
+    margin-bottom: 3px;
+    word-break: break-all;
+    line-height: 1.4;
+  }
+  .report-card.active .report-name { color: var(--pm-accent); }
+  .report-meta { font-size: 10px; color: var(--pm-text-mute); display: flex; gap: 8px; }
+  /* 预览窗格（阅读区） */
+  .reports-preview-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--pm-bg-sidebar);
+    overflow: hidden;
+    min-width: 0;
+  }
+  .reports-preview-header {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--pm-border-light);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    background: var(--pm-bg-sidebar);
+  }
+  .reports-preview-title {
+    flex: 1;
+    font-family: var(--pm-mono);
+    font-size: 11px;
+    color: var(--pm-text-dim);
+    word-break: break-all;
+    min-width: 0;
+  }
+  .reports-preview-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .reports-preview-frame-wrap {
+    flex: 1;
+    background: white;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .reports-preview-frame-wrap iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: white;
+    display: block;
+  }
+  .reports-preview-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--pm-text-mute);
+    font-size: 12px;
+    gap: 8px;
+  }
+  .reports-preview-empty .empty-icon { font-size: 40px; opacity: 0.3; }
+  .reports-action-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    background: var(--pm-bg-input);
+    border: 1px solid var(--pm-border);
+    color: var(--pm-text);
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .reports-action-btn:hover { background: var(--pm-bg-sidebar); border-color: var(--pm-accent); }
+  .reports-action-btn.primary {
+    background: rgba(0,217,255,0.12);
+    border-color: rgba(0,217,255,0.4);
+    color: var(--pm-accent);
+  }
+  .reports-action-btn.primary:hover { background: rgba(0,217,255,0.22); }
+  .reports-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">
+    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+    SuperMan Console
+  </div>
+  <div class="header-tabs">
+    <div class="header-tab active" data-page="builder">请求构建器</div>
+    <div class="header-tab" data-page="env">环境变量</div>
+    <div class="header-tab" data-page="runner">Runner</div>
+    <div class="header-tab" data-page="reports">报告</div>
+  </div>
+</div>
+
+<!-- ============ 请求构建器页（三栏） ============ -->
+<div class="main" id="page-builder">
+  <!-- 左侧：集合请求树 -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <select id="col-select" onchange="loadStructure()"></select>
+      <input type="file" id="col-import-file" accept=".postman_collection.json,application/json" style="display:none" onchange="importCollectionFile(this)">
+      <button class="col-import-btn" title="导入 Postman 集合" onclick="document.getElementById('col-import-file').click()">＋ 导入</button>
+    </div>
+    <div class="sidebar-search">
+      <input placeholder="过滤请求..." oninput="filterTree(this.value)">
+    </div>
+    <div class="sidebar-tree" id="sidebar-tree">
+      <div class="empty"><div class="empty-icon">◐</div>选择集合后加载请求</div>
+    </div>
+    <div class="sidebar-resizer" id="sidebar-resizer"></div>
+  </div>
+
+  <!-- 中间 + 右侧：请求构建器 + AI 助手 -->
+  <div class="workspace" id="workspace">
+    <!-- 中间：请求构建器 + 响应 -->
+    <div class="workspace-main">
+      <div class="builder-empty" id="builder-empty">
+        从左侧选择一个请求开始测试
+      </div>
+      <div class="builder" id="builder" style="display:none">
+        <!-- URL 栏 -->
+        <div class="builder-url-bar">
+          <select class="method-select" id="req-method" disabled></select>
+          <input class="url-input" id="req-url" disabled>
+          <input type="file" id="req-import-file" accept=".json,application/json" style="display:none" onchange="importRequestFile(this)">
+          <button class="url-bar-btn" id="btn-import-req" title="导入请求（从 Postman 单请求 JSON）" onclick="document.getElementById('req-import-file').click()" disabled>导入</button>
+          <button class="url-bar-btn" id="btn-export-req" title="导出当前请求为 Postman 单请求 JSON" onclick="exportRequestFile()" disabled>导出</button>
+          <button class="send-btn" id="send-btn" onclick="sendRequest()">Send</button>
+        </div>
+
+        <!-- 请求 Tab -->
+        <div class="builder-tabs">
+          <div class="builder-tab active" data-tab="headers">Headers <span class="badge" id="headers-count">0</span></div>
+          <div class="builder-tab" data-tab="body">Body</div>
+          <div class="builder-tab" data-tab="prerequest">Pre-request Script</div>
+          <div class="builder-tab" data-tab="test">Post-response Script</div>
+        </div>
+
+        <div class="builder-content">
+          <div class="builder-panel active" id="panel-headers">
+            <table class="kv-table">
+              <thead>
+                <tr>
+                  <th class="kv-row-check"></th>
+                  <th>Key</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody id="headers-tbody"></tbody>
+            </table>
+          </div>
+          <div class="builder-panel" id="panel-body">
+            <textarea class="body-editor" id="req-body" readonly></textarea>
+          </div>
+          <div class="builder-panel" id="panel-prerequest">
+            <div class="script-editor-toolbar">
+              <span class="script-hint">Pre-request Script · 在请求发送前执行，使用 <code>pm.environment.get/set</code> 读写环境变量</span>
+              <button class="ai-mini-btn" onclick="aiShortcut('prerequest')" title="用 AI 生成">✦ AI</button>
+            </div>
+            <div class="code-editor-wrap">
+              <pre class="code-editor-highlight" aria-hidden="true"></pre>
+              <textarea class="body-editor script-editor code-editor-input" id="req-prerequest" placeholder="// 在请求发送前执行的 JavaScript&#10;// pm.environment.get('key') / pm.environment.set('key', value)&#10;// pm.variables.set('var', value)" spellcheck="false"></textarea>
+            </div>
+          </div>
+          <div class="builder-panel" id="panel-test">
+            <div class="script-editor-toolbar">
+              <span class="script-hint">Tests · 在响应返回后执行，<code>pm.test</code> 断言 + <code>pm.environment.set</code> 回写变量</span>
+              <button class="ai-mini-btn" onclick="aiShortcut('test_script')" title="用 AI 生成">✦ AI</button>
+            </div>
+            <div class="code-editor-wrap">
+              <pre class="code-editor-highlight" aria-hidden="true"></pre>
+              <textarea class="body-editor script-editor code-editor-input" id="req-test" placeholder="// 响应返回后执行的 JavaScript&#10;// pm.test('status 200', () => pm.response.to.have.status(200))&#10;// const j = pm.response.json(); pm.environment.set('token', j.token)" spellcheck="false"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- 响应区 -->
+        <div class="response-section">
+          <div class="response-header">
+            <div class="response-title">Response</div>
+            <span class="response-status pending" id="resp-status">未发送</span>
+            <span class="response-meta" id="resp-meta"></span>
+          </div>
+          <div class="response-tabs">
+            <div class="response-tab active" data-rtab="body">Body</div>
+            <div class="response-tab" data-rtab="request">请求/响应</div>
+            <div class="response-tab" data-rtab="testresults">Test Results <span class="badge" id="testresults-count" style="display:none">0</span></div>
+            <div class="response-tab" data-rtab="console">Console</div>
+          </div>
+          <div class="response-body" id="resp-body">
+            <div class="empty"><div class="empty-icon">←</div>点击 Send 按钮发送请求</div>
+          </div>
+          <div class="response-structured" id="resp-structured" style="display:none">
+            <div class="empty"><div class="empty-icon">←</div>点击 Send 按钮发送请求</div>
+          </div>
+          <div class="response-testresults" id="resp-testresults" style="display:none">
+            <div class="empty"><div class="empty-icon">∅</div>无 Test 脚本或未执行</div>
+          </div>
+          <div class="response-console" id="resp-console" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 全局 AI 助手侧栏（所有页面可见） ============ -->
+<div class="ai-sidebar" id="ai-sidebar">
+  <div class="ai-header">
+    <div class="ai-title">
+      <span class="ai-dot" id="ai-dot"></span>
+      <span class="ai-title-text">QA Agent</span>
+      <span class="ai-status" id="ai-status">就绪</span>
+    </div>
+    <button class="ai-icon-btn" title="新建对话" onclick="aiNewChat()">✚</button>
+    <button class="ai-icon-btn" title="配置" onclick="aiOpenConfig()">⚙</button>
+    <button class="ai-icon-btn" id="ai-collapse-btn" title="折叠/展开" onclick="aiToggleCollapse()">«</button>
+  </div>
+  <div class="ai-body" id="ai-body">
+    <div class="ai-empty" id="ai-empty">
+      <div class="ai-empty-icon">✦</div>
+      <div>AI 测试助手</div>
+      <div style="margin-top:8px;font-size:11px">
+        可对话或点击下方快捷操作<br>
+        自动关联当前页面上下文
+      </div>
+    </div>
+  </div>
+  <div class="ai-shortcuts">
+    <button class="ai-shortcut" onclick="aiShortcut('explain')">解释该请求</button>
+    <button class="ai-shortcut" onclick="aiShortcut('diagnose')">诊断响应</button>
+    <button class="ai-shortcut" onclick="aiShortcut('test_script')">生成 test 脚本</button>
+    <button class="ai-shortcut" onclick="aiShortcut('prerequest')">生成 prerequest</button>
+    <button class="ai-shortcut" onclick="aiShortcut('auth')">解释鉴权</button>
+    <button class="ai-shortcut" onclick="aiShortcut('env')">修改环境变量</button>
+  </div>
+  <div class="ai-footer">
+    <div class="ai-busy-bar" id="ai-busy-bar"></div>
+    <div class="ai-input-wrap">
+      <textarea class="ai-input" id="ai-input" placeholder="问点什么... (Enter 发送 / Shift+Enter 换行)" rows="2"></textarea>
+      <button class="ai-send-btn" id="ai-send-btn" onclick="aiSend()" title="发送">➤</button>
+      <button class="ai-stop-btn" id="ai-stop-btn" onclick="aiStop()" title="停止 Agent 执行">■</button>
+    </div>
+    <div class="ai-input-hint">
+      <span id="ai-ctx-hint">上下文：无</span>
+      <span><kbd>Enter</kbd> 发送</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ AI 配置弹窗 ============ -->
+<div class="modal-overlay" id="ai-config-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>AI 助手配置</h3>
+      <button class="ai-icon-btn" onclick="aiCloseConfig()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>提供商预设</label>
+        <div class="preset-row">
+          <button class="preset-btn" onclick="aiPreset('glm')">智谱 GLM</button>
+          <button class="preset-btn" onclick="aiPreset('deepseek')">DeepSeek</button>
+          <button class="preset-btn" onclick="aiPreset('openai')">OpenAI</button>
+          <button class="preset-btn" onclick="aiPreset('moonshot')">Moonshot</button>
+          <button class="preset-btn" onclick="aiPreset('custom')">自定义</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Base URL</label>
+        <input id="ai-cfg-base_url" placeholder="https://open.bigmodel.cn/api/paas/v4">
+        <div class="form-hint">OpenAI 兼容接口地址，不带 /chat/completions 后缀</div>
+      </div>
+      <div class="form-row">
+        <label>模型</label>
+        <input id="ai-cfg-model" placeholder="glm-4-plus">
+      </div>
+      <div class="form-row">
+        <label>API Key</label>
+        <input id="ai-cfg-api_key" type="password" placeholder="sk-...">
+        <div class="form-hint" id="ai-cfg-key-hint"></div>
+      </div>
+      <div class="form-row">
+        <label>Temperature</label>
+        <input id="ai-cfg-temperature" type="number" step="0.1" min="0" max="2" value="0.3">
+      </div>
+      <div class="form-row">
+        <label>System Prompt</label>
+        <textarea id="ai-cfg-system_prompt"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="aiCloseConfig()">取消</button>
+      <button class="btn btn-primary" onclick="aiSaveConfig()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 导入环境变量确认 Modal ============ -->
+<div class="modal-overlay" id="env-import-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>导入环境变量</h3>
+      <button class="ai-icon-btn" onclick="envImportCancel()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="env-import-summary"></div>
+      <div id="env-import-list" style="margin-top:12px; max-height:280px; overflow-y:auto; font-family:var(--pm-mono); font-size:11px; border:1px solid var(--pm-border); border-radius:4px; padding:8px;"></div>
+      <div style="margin-top:10px; font-size:11px; color:var(--pm-text-dim);">
+        <span style="color:var(--pm-green)">●</span> 新增　
+        <span style="color:var(--pm-yellow)">●</span> 覆盖　
+        <span style="color:var(--pm-text-mute)">●</span> 不变
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="envImportCancel()">取消</button>
+      <button class="btn" onclick="envImportApply('merge')">仅新增</button>
+      <button class="btn btn-primary" onclick="envImportApply('overwrite')">新增并覆盖</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 环境变量页 ============ -->
+<div class="main" id="page-env" style="display:none">
+  <div class="env-page">
+    <div class="env-header">
+      <h2>环境变量</h2>
+      <span class="env-source" id="env-source">加载中...</span>
+      <div class="env-actions">
+        <input type="file" id="env-import-file" accept=".json" style="display:none" onchange="importEnvFile(this)">
+        <button class="btn" onclick="document.getElementById('env-import-file').click()">导入 JSON</button>
+        <button class="btn btn-accent" onclick="envAiModify()" title="用 AI Agent 修改变量，自动写回文件并刷新">✦ AI 修改</button>
+        <button class="btn" onclick="clearEnvValues()" title="将所有变量的值清空（保留 key 和描述）">清空值</button>
+        <button class="btn" onclick="disableAllEnv()" title="禁用全部变量">全部禁用</button>
+        <button class="btn" onclick="loadEnv()">刷新</button>
+        <button class="btn btn-primary" onclick="saveEnv()">保存</button>
+      </div>
+    </div>
+    <input class="env-filter" placeholder="过滤变量..." oninput="filterEnv(this.value)">
+    <div class="env-scroll-wrap">
+    <table class="env-table">
+      <thead>
+        <tr>
+          <th style="width:44px">启用</th>
+          <th style="width:180px">变量名</th>
+          <th>值</th>
+          <th style="width:26%">描述</th>
+        </tr>
+      </thead>
+      <tbody id="env-tbody"></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Runner 页 ============ -->
+<div class="main" id="page-runner" style="display:none">
+  <div class="env-page">
+    <div class="env-header">
+      <h2>Collection Runner</h2>
+    </div>
+    <div class="runner-card">
+      <div class="runner-row">
+        <div class="runner-field">
+          <label class="runner-label">集合</label>
+          <select id="run-collection" class="runner-select" onchange="loadRunFolders()"></select>
+        </div>
+      </div>
+      <div class="runner-row">
+        <label class="runner-label">文件夹</label>
+        <div id="run-folders" class="runner-folders"></div>
+      </div>
+      <div class="runner-row">
+        <label class="runner-label">运行策略</label>
+        <div class="runner-strategy">
+          <label class="runner-strategy-item"><input type="radio" name="run-strategy" value="stopOnFail" checked> <span>失败停止</span> <span class="runner-strategy-desc">（前置场景失败立即停止后续）</span></label>
+          <label class="runner-strategy-item"><input type="radio" name="run-strategy" value="continueOnFail"> <span>失败继续</span> <span class="runner-strategy-desc">（所有场景独立，失败也继续）</span></label>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="run-btn" onclick="runFolder()">运行</button>
+      <button class="btn" id="stop-btn" onclick="stopRun()" style="display:none">停止</button>
+    </div>
+    <div class="response-console" id="run-console" style="height:400px"></div>
+  </div>
+</div>
+
+<!-- ============ 报告页 ============ -->
+<div class="main" id="page-reports" style="display:none">
+  <div class="reports-page">
+    <div class="reports-toolbar">
+      <h2>历史报告</h2>
+      <button class="btn" onclick="loadReports()">刷新</button>
+      <div class="reports-actions">
+        <button class="btn btn-accent" id="reports-send-selected" onclick="reportsSendToAgent('selected')" disabled>发送选中给 Agent</button>
+        <button class="btn btn-accent" id="reports-send-all" onclick="reportsSendToAgent('all')" disabled>发送全部给 Agent</button>
+      </div>
+    </div>
+    <div class="reports-layout">
+      <div class="reports-list-pane" id="reports-list-pane">
+        <div class="reports-list-toolbar">
+          <label class="select-all-wrap">
+            <input type="checkbox" id="reports-select-all" onchange="reportsToggleAll(this.checked)">
+            <span id="reports-count">0 个报告</span>
+          </label>
+        </div>
+        <div class="reports-list-body">
+          <div class="reports-list" id="reports-list">
+            <div class="empty"><div class="empty-icon">○</div>暂无报告</div>
+          </div>
+        </div>
+        <div class="reports-list-resizer" id="reports-list-resizer"></div>
+      </div>
+      <div class="reports-preview-pane">
+        <div class="reports-preview-header">
+          <span class="reports-preview-title" id="reports-preview-title">未选中报告</span>
+          <div class="reports-preview-actions">
+            <button class="reports-action-btn" id="reports-new-tab" onclick="reportsOpenInNewTab()" style="display:none">在新标签打开</button>
+            <button class="reports-action-btn primary" id="reports-send-current" onclick="reportsSendToAgent('current')" style="display:none">当前报告发给 Agent</button>
+          </div>
+        </div>
+        <div class="reports-preview-frame-wrap" id="reports-preview-wrap">
+          <div class="reports-preview-empty" id="reports-preview-empty">
+            <div class="empty-icon">📋</div>
+            <div>点击左侧报告名预览</div>
+          </div>
+          <iframe id="reports-preview-frame" style="display:none" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ 侧栏拖拽调宽 ============
+  (function() {
+    const resizer = document.getElementById('sidebar-resizer');
+    const sidebar = document.getElementById('sidebar');
+    let dragging = false, startX = 0, startW = 0;
+    resizer.addEventListener('mousedown', (e) => {
+      dragging = true;
+      startX = e.clientX;
+      startW = sidebar.offsetWidth;
+      resizer.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      let w = startW + dx;
+      const min = 200, max = 600;
+      if (w < min) w = min;
+      if (w > max) w = max;
+      sidebar.style.width = w + 'px';
+    });
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+  })();
+
+// ============ 页面切换 ============
+document.querySelectorAll('.header-tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.header-tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.main').forEach(x => x.style.display = 'none');
+    t.classList.add('active');
+    document.getElementById('page-' + t.dataset.page).style.display = 'flex';
+    if (t.dataset.page === 'reports') loadReports();
+    if (t.dataset.page === 'runner') loadRunCollections();
+    if (t.dataset.page === 'env') loadEnv();  // 切到 env 页面时重新拉取最新数据
+    // 切换页面时更新 AI 上下文提示
+    if (typeof aiUpdateCtxHint === 'function') aiUpdateCtxHint();
+    // 同步当前页面指针到后端，供 Agent 按需查询
+    if (typeof putContext === 'function') putContext();
+  };
+});
+
+// ============ 请求构建器 Tab ============
+document.querySelectorAll('.builder-tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.builder-tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.builder-panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+  };
+});
+document.querySelectorAll('.response-tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.response-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const tab = t.dataset.rtab;
+    document.getElementById('resp-body').style.display = tab === 'body' ? 'block' : 'none';
+    document.getElementById('resp-structured').style.display = tab === 'request' ? 'block' : 'none';
+    document.getElementById('resp-testresults').style.display = tab === 'testresults' ? 'block' : 'none';
+    document.getElementById('resp-console').style.display = tab === 'console' ? 'block' : 'none';
+  };
+});
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ============ 集合结构 ============
+let currentCol = '';
+let currentReq = null;
+
+async function loadCollections() {
+  const r = await fetch('/api/collections');
+  const j = await r.json();
+  if (!j.ok) return;
+  const sel = document.getElementById('col-select');
+  sel.innerHTML = '<option value="">— 选择集合 —</option>' +
+    j.data.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+}
+
+// 导入 Postman 集合文件
+async function importCollectionFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    // 先本地校验 JSON 合法性
+    let parsed;
+    try { parsed = JSON.parse(text); } catch (e) {
+      toast('JSON 解析失败: ' + e.message, 'err');
+      input.value = '';
+      return;
+    }
+    if (!parsed.info || !parsed.info.name || !Array.isArray(parsed.item)) {
+      toast('不是合法的 Postman v2.1 集合（缺 info.name 或 item 数组）', 'err');
+      input.value = '';
+      return;
+    }
+    // 文件名：优先用原始文件名，否则用集合名补后缀
+    let name = file.name;
+    if (!name.endsWith('.postman_collection.json')) {
+      name = name.replace(/\.json$/i, '') + '.postman_collection.json';
+    }
+    const r = await fetch('/api/collections/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, content: text })
+    });
+    const j = await r.json();
+    if (!j.ok) {
+      toast('导入失败: ' + j.error, 'err');
+      input.value = '';
+      return;
+    }
+    toast(`已导入：${j.saved}（${j.requestCount} 个请求）`, 'ok');
+    // 刷新下拉列表并自动选中
+    await loadCollections();
+    const sel = document.getElementById('col-select');
+    sel.value = j.saved;
+    await loadStructure();
+  } catch (e) {
+    toast('导入异常: ' + e.message, 'err');
+    console.error('导入集合失败:', e);
+  }
+  input.value = '';
+}
+
+async function loadStructure() {
+  const col = document.getElementById('col-select').value;
+  if (!col) return;
+  currentCol = col;
+  // 启用请求构建器的导入按钮
+  document.getElementById('btn-import-req').disabled = false;
+  const r = await fetch(`/api/collections/${encodeURIComponent(col)}/structure`);
+  const j = await r.json();
+  if (!j.ok) return;
+  renderTree(j.data);
+}
+
+function renderTree(data) {
+  const tree = document.getElementById('sidebar-tree');
+  tree.innerHTML = '';
+  for (const g of data) {
+    if (g.type === 'folder') {
+      const div = document.createElement('div');
+      div.className = 'tree-group';
+      div.innerHTML = `
+        <div class="tree-group-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="tree-arrow">▼</span>
+          <span>${esc(g.name)}</span>
+          <span style="margin-left:auto;font-size:10px;color:var(--pm-text-mute)">(${g.requests.length})</span>
+        </div>
+        <div class="tree-requests">
+          ${g.requests.map(r => `
+            <div class="tree-request" data-name="${esc(r.name)}" onclick="selectReq(this)">
+              <span class="method-badge m-${r.method}">${r.method}</span>
+              <span class="tree-request-name" title="${esc(r.name)}">${esc(r.name)}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      tree.appendChild(div);
+    } else {
+      const div = document.createElement('div');
+      div.className = 'tree-group';
+      div.innerHTML = `
+        <div class="tree-requests">
+          <div class="tree-request" data-name="${esc(g.name)}" onclick="selectReq(this)">
+            <span class="method-badge m-${g.method}">${g.method}</span>
+            <span class="tree-request-name">${esc(g.name)}</span>
+          </div>
+        </div>
+      `;
+      tree.appendChild(div);
+    }
+  }
+}
+
+function filterTree(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.tree-request').forEach(el => {
+    const name = (el.dataset.name || '').toLowerCase();
+    el.style.display = name.includes(q) ? '' : 'none';
+  });
+  if (q) {
+    document.querySelectorAll('.tree-group').forEach(g => {
+      const vis = [...g.querySelectorAll('.tree-request')].some(i => i.style.display !== 'none');
+      if (vis) g.classList.remove('collapsed');
+    });
+  }
+}
+
+async function selectReq(el) {
+  document.querySelectorAll('.tree-request.active').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+  const name = el.dataset.name;
+  currentReq = name;
+
+  document.getElementById('builder-empty').style.display = 'none';
+  document.getElementById('builder').style.display = 'flex';
+
+  // 启用导出按钮
+  document.getElementById('btn-export-req').disabled = false;
+
+  await loadRequestDetail(currentCol, name);
+  // 同步当前选中请求指针到后端，供 Agent 按需查询
+  if (typeof putContext === 'function') putContext();
+}
+
+// 加载请求详情到 UI（供 selectReq 和 SSE 自动刷新调用）
+async function loadRequestDetail(collection, name) {
+  const r = await fetch(`/api/collections/${encodeURIComponent(collection)}/requests/${encodeURIComponent(name)}`);
+  const j = await r.json();
+  if (!j.ok) return;
+  const d = j.data;
+
+  document.getElementById('req-method').innerHTML = `<option>${d.method}</option>`;
+  document.getElementById('req-method').value = d.method;
+  document.getElementById('req-url').value = d.url;
+  document.getElementById('req-body').value = d.body || '(无 body)';
+  // 可编辑脚本（用 value 而非 textContent）
+  document.getElementById('req-prerequest').value = d.prerequest || '';
+  document.getElementById('req-test').value = d.test || '';
+  // 触发代码高亮刷新
+  refreshCodeEditor('req-prerequest');
+  refreshCodeEditor('req-test');
+
+  // Headers
+  const tb = document.getElementById('headers-tbody');
+  tb.innerHTML = '';
+  for (const h of d.headers) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="kv-row-check"><input type="checkbox" ${h.disabled ? '' : 'checked'}></td>
+      <td><input value="${esc(h.key)}" readonly></td>
+      <td><input value="${esc(h.value)}" readonly></td>
+    `;
+    tb.appendChild(tr);
+  }
+  document.getElementById('headers-count').textContent = d.headers.length;
+
+  // 重置响应区（含 Test Results）
+  document.getElementById('resp-status').className = 'response-status pending';
+  document.getElementById('resp-status').textContent = '未发送';
+  document.getElementById('resp-meta').textContent = '';
+  document.getElementById('resp-body').innerHTML = '<div class="empty"><div class="empty-icon">←</div>点击 Send 按钮发送请求</div>';
+  document.getElementById('resp-console').innerHTML = '';
+  document.getElementById('resp-testresults').innerHTML = '<div class="empty"><div class="empty-icon">∅</div>无 Test 脚本或未执行</div>';
+  document.getElementById('testresults-count').style.display = 'none';
+
+  // 切回 Body tab
+  document.querySelectorAll('.response-tab').forEach(x => x.classList.remove('active'));
+  document.querySelector('.response-tab[data-rtab="body"]').classList.add('active');
+  document.getElementById('resp-body').style.display = 'block';
+  document.getElementById('resp-testresults').style.display = 'none';
+  document.getElementById('resp-console').style.display = 'none';
+
+  aiUpdateCtxHint();
+}
+
+// 导出当前请求为 Postman 单请求 JSON 文件
+function exportRequestFile() {
+  if (!currentReq) { toast('请先选中一个请求', 'err'); return; }
+  // 从当前编辑器收集数据
+  const method = document.getElementById('req-method').value || 'GET';
+  const url = document.getElementById('req-url').value || '';
+  const body = document.getElementById('req-body').value || '';
+  const prereq = document.getElementById('req-prerequest').value || '';
+  const test = document.getElementById('req-test').value || '';
+  const headers = [];
+  document.querySelectorAll('#headers-tbody tr').forEach(tr => {
+    const inputs = tr.querySelectorAll('input');
+    if (inputs.length >= 3) {
+      headers.push({
+        key: inputs[1].value || '',
+        value: inputs[2].value || '',
+        disabled: !inputs[0].checked
+      });
+    }
+  });
+
+  // 组装 Postman v2.1 单请求集合格式
+  const item = {
+    name: currentReq,
+    request: {
+      method,
+      header: headers.map(h => ({ key: h.key, value: h.value, disabled: h.disabled || undefined })),
+      url: { raw: url },
+      body: body && body !== '(无 body)' ? { mode: 'raw', raw: body } : undefined
+    },
+    event: []
+  };
+  // 去掉 undefined 字段
+  if (!item.request.body) delete item.request.body;
+  if (prereq) item.event.push({ listen: 'prerequest', script: { type: 'text/javascript', exec: prereq.split('\n') } });
+  if (test) item.event.push({ listen: 'test', script: { type: 'text/javascript', exec: test.split('\n') } });
+
+  const collection = {
+    info: {
+      name: currentReq,
+      schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
+      _exporter_id: 'newman-console'
+    },
+    item: [item]
+  };
+
+  const blob = new Blob([JSON.stringify(collection, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${currentReq.replace(/[^a-zA-Z0-9_\-]/g, '_')}.postman_collection.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast(`已导出：${a.download}`, 'ok');
+}
+
+// 导入请求 JSON（支持 Postman 单请求集合 或 单个 item 对象）
+async function importRequestFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    let item = null;
+    // 格式1: Postman 集合（含 item 数组），取第一个
+    if (parsed.item && Array.isArray(parsed.item)) {
+      item = parsed.item.find(i => !i.item) || parsed.item[0];
+    }
+    // 格式2: 单个 item 对象（含 request 字段）
+    else if (parsed.request) {
+      item = parsed;
+    }
+    if (!item || !item.request) {
+      toast('未找到合法的请求定义（需含 request 字段）', 'err');
+      input.value = '';
+      return;
+    }
+
+    // 加载到编辑器（不改变集合中的原始请求，仅在当前会话编辑）
+    currentReq = item.name || '导入的请求';
+    document.getElementById('builder-empty').style.display = 'none';
+    document.getElementById('builder').style.display = 'flex';
+    document.getElementById('btn-export-req').disabled = false;
+
+    const r = item.request;
+    const method = r.method || 'GET';
+    const url = typeof r.url === 'string' ? r.url : (r.url?.raw || '');
+    const headers = r.header || [];
+    const body = r.body?.raw || '';
+
+    document.getElementById('req-method').innerHTML = `<option>${method}</option>`;
+    document.getElementById('req-method').value = method;
+    document.getElementById('req-url').value = url;
+    document.getElementById('req-body').value = body || '(无 body)';
+
+    const prereqEv = (item.event || []).find(e => e.listen === 'prerequest');
+    const testEv = (item.event || []).find(e => e.listen === 'test');
+    document.getElementById('req-prerequest').value = prereqEv?.script?.exec?.join('\n') || '';
+    document.getElementById('req-test').value = testEv?.script?.exec?.join('\n') || '';
+    refreshCodeEditor('req-prerequest');
+    refreshCodeEditor('req-test');
+
+    // Headers
+    const tb = document.getElementById('headers-tbody');
+    tb.innerHTML = '';
+    for (const h of headers) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="kv-row-check"><input type="checkbox" ${h.disabled ? '' : 'checked'}></td>
+        <td><input value="${esc(h.key)}" readonly></td>
+        <td><input value="${esc(h.value)}" readonly></td>
+      `;
+      tb.appendChild(tr);
+    }
+    document.getElementById('headers-count').textContent = headers.length;
+
+    // 重置响应区
+    document.getElementById('resp-status').className = 'response-status pending';
+    document.getElementById('resp-status').textContent = '未发送';
+    document.getElementById('resp-meta').textContent = '';
+    document.getElementById('resp-body').innerHTML = '<div class="empty"><div class="empty-icon">←</div>点击 Send 按钮发送请求</div>';
+    document.getElementById('resp-console').innerHTML = '';
+    document.getElementById('resp-testresults').innerHTML = '<div class="empty"><div class="empty-icon">∅</div>无 Post-response Script 或未执行</div>';
+    document.getElementById('testresults-count').style.display = 'none';
+
+    toast(`已导入请求：${currentReq}（仅当前会话，不会写回集合文件）`, 'ok');
+  } catch (e) {
+    toast('解析失败: ' + e.message, 'err');
+    console.error('导入请求失败:', e);
+  }
+  input.value = '';
+}
+
+async function sendRequest() {
+  if (!currentReq) return;
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  document.getElementById('resp-status').className = 'response-status pending';
+  document.getElementById('resp-status').textContent = '运行中...';
+  document.getElementById('resp-meta').textContent = '';
+  document.getElementById('resp-body').textContent = '';
+  document.getElementById('resp-console').innerHTML = '';
+  document.getElementById('resp-testresults').innerHTML = '';
+  document.getElementById('resp-structured').innerHTML = '';
+  document.getElementById('testresults-count').style.display = 'none';
+
+  // 切到 console tab
+  document.querySelectorAll('.response-tab').forEach(x => x.classList.remove('active'));
+  document.querySelector('.response-tab[data-rtab="console"]').classList.add('active');
+  document.getElementById('resp-body').style.display = 'none';
+  document.getElementById('resp-testresults').style.display = 'none';
+  document.getElementById('resp-console').style.display = 'block';
+
+  // 收集编辑后的脚本
+  const prereqScript = document.getElementById('req-prerequest').value;
+  const testScript = document.getElementById('req-test').value;
+
+  // POST 模式：传递编辑后的脚本（临时覆盖集合脚本）
+  // 用 fetch + ReadableStream 接收 SSE（EventSource 不支持 POST）
+  const resp = await fetch('/api/run-request', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      collection: currentCol,
+      requestName: currentReq,
+      prerequest: prereqScript,
+      test: testScript
+    })
+  });
+
+  if (!resp.ok || !resp.body) {
+    addConsole(`HTTP ${resp.status}`, 'err');
+    btn.disabled = false; btn.textContent = 'Send';
+    return;
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  let testResults = []; // {name, pass, error}
+  let envWrites = [];  // {key, value}
+  let respBodyText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const events = buf.split('\n\n');
+    buf = events.pop() || '';
+    for (const ev of events) {
+      const lines = ev.split('\n');
+      let type = '', data = '';
+      for (const ln of lines) {
+        if (ln.startsWith('event: ')) type = ln.slice(7).trim();
+        else if (ln.startsWith('data: ')) data = ln.slice(6);
+      }
+      if (!type || !data) continue;
+      let d;
+      try { d = JSON.parse(data); } catch { continue; }
+
+      if (type === 'start') {
+        addConsole(`▶ ${d.requestName}${d.tempOverride ? ' (脚本已临时覆盖)' : ''}`, 'info');
+      } else if (type === 'stdout') {
+        addConsole(d.line);
+        parseNewmanLine(d.line, testResults, envWrites);
+        // 提取响应 body
+        if (d.line.startsWith('  ') && d.line.includes('{')) {
+          respBodyText = d.line;
+          document.getElementById('resp-body').textContent = d.line;
+        }
+      } else if (type === 'stderr') {
+        addConsole(d.line, 'err');
+      } else if (type === 'result') {
+        // 结构化请求/响应数据
+        renderStructuredResults(d.results || []);
+      } else if (type === 'result_error') {
+        addConsole('解析结构化结果失败: ' + d.error, 'err');
+      } else if (type === 'end') {
+        if (d.code === 0) {
+          addConsole(`\n✅ 完成，环境变量已回写`, 'ok');
+          // 渲染 Test Results
+          renderTestResults(testResults, envWrites);
+          loadEnv();
+        } else {
+          addConsole(`\n❌ 失败 (exit ${d.code})`, 'err');
+          renderTestResults(testResults, envWrites);
+          loadEnv();
+        }
+      }
+    }
+  }
+  btn.disabled = false;
+  btn.textContent = 'Send';
+}
+
+// 解析 Newman CLI 单行输出，提取断言结果和环境变量写入
+function parseNewmanLine(line, testResults, envWrites) {
+  // 状态码
+  const m = line.match(/\[(\d+)\s+(\w+)[,\s]/);
+  if (m) {
+    const code = parseInt(m[1]);
+    const st = document.getElementById('resp-status');
+    if (code >= 200 && code < 300) {
+      st.className = 'response-status s2xx';
+      st.textContent = `${code} ${m[2]}`;
+    } else if (code >= 400) {
+      st.className = 'response-status s4xx';
+      st.textContent = `${code} ${m[2]}`;
+    }
+    const t = line.match(/★\s*(\d+)ms/);
+    if (t) document.getElementById('resp-meta').textContent = `${t[1]}ms`;
+  }
+
+  // 断言行：  ✓ 断言名 /  ✗ 断言名
+  const passM = line.match(/^\s*✓\s+(.+)/);
+  if (passM) {
+    testResults.push({ name: passM[1].trim(), pass: true });
+  }
+  const failM = line.match(/^\s*✗\s+(.+)/);
+  if (failM) {
+    testResults.push({ name: failM[1].trim(), pass: false, error: '' });
+  }
+  // Newman 失败断言错误信息：通常在下一行有 "  X.x ..." 这种格式
+  // 简单处理：把后续缩进行追加到上一个失败断言
+  if (failM || (testResults.length && !testResults[testResults.length - 1].pass)) {
+    const errM = line.match(/^\s{4,}(.+)/);
+    if (errM && !failM) {
+      const last = testResults[testResults.length - 1];
+      if (last && !last.pass) last.error = (last.error || '') + (last.error ? '\n' : '') + errM[1];
+    }
+  }
+
+  // 环境变量写入：pm.environment.set 调用 Newman 会输出 "set environment variable XXX = YYY"
+  const envM = line.match(/set environment variable\s+(\S+)\s*=?\s*(.*)/i) ||
+               line.match(/environment\s+variable\s+(\S+)\s*(?:=|set to)\s*(.*)/i);
+  if (envM) {
+    envWrites.push({ key: envM[1], value: envM[2] || '' });
+  }
+}
+
+// 渲染结构化请求/响应结果
+function renderStructuredResults(results) {
+  const el = document.getElementById('resp-structured');
+  if (!results.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">∅</div>无结构化数据</div>';
+    return;
+  }
+  // 构建环境变量映射（用于解析 {{var}} 占位符）
+  const envMap = {};
+  if (window.envData) {
+    for (const v of envData) {
+      if (v.enabled !== false && v.value != null) envMap[v.key] = String(v.value);
+    }
+  }
+  el.innerHTML = results.map((r, idx) => {
+    const statusClass = `s${Math.floor(r.response.status / 100)}xx`;
+    const methodClass = r.request.method.toUpperCase();
+    const hasVars = /\{\{[^}]+\}\}/.test(r.request.url + r.request.body + r.request.headers.join(' '));
+    return `
+    <div class="struct-section" data-idx="${idx}">
+      <div class="struct-section-header">
+        <span class="struct-method ${methodClass}">${methodClass}</span>
+        <span>${esc(r.name)}</span>
+        ${r.response.status ? `<span class="struct-status ${statusClass}">${r.response.status} ${esc(r.response.statusText)}</span>` : ''}
+        ${hasVars ? `<button class="struct-resolve-toggle" data-resolved="false">显示已解析值</button>` : ''}
+      </div>
+      <div class="struct-section-body">
+        <div class="struct-subsection-title">URL</div>
+        <div class="struct-url struct-resolvable" data-template="${esc(r.request.url)}">${esc(r.request.url)}</div>
+
+        ${r.request.headers.length ? `
+          <div class="struct-subsection-title">请求 Headers</div>
+          <div class="struct-headers struct-resolvable" data-template="${esc(r.request.headers.join('\n'))}">${esc(r.request.headers.join('\n'))}</div>
+        ` : ''}
+
+        ${r.request.body ? `
+          <div class="struct-subsection-title">
+            请求 Body
+            <button class="struct-edit-btn" data-idx="${idx}">✎ 编辑并发送</button>
+          </div>
+          <pre class="struct-body-pre struct-resolvable" data-template="${esc(r.request.body)}">${highlightJson(r.request.body)}</pre>
+          <div class="struct-edit-wrap" data-idx="${idx}" style="display:none">
+            <textarea class="struct-edit-textarea"></textarea>
+            <div class="struct-edit-actions">
+              <button class="struct-edit-cancel">取消</button>
+              <button class="struct-edit-send struct-action-btn primary">发送</button>
+            </div>
+          </div>
+        ` : ''}
+
+        ${r.response.headers.length ? `
+          <div class="struct-subsection-title">响应 Headers</div>
+          <div class="struct-headers">${esc(r.response.headers.join('\n'))}</div>
+        ` : ''}
+
+        ${r.response.body ? `
+          <div class="struct-subsection-title">响应 Body</div>
+          <pre class="struct-body-pre">${highlightJson(r.response.body)}</pre>
+        ` : ''}
+
+        ${(r.assertions.length || r.testResults.length) ? `
+          <div class="struct-subsection-title">断言 (${r.assertions.length + r.testResults.length})</div>
+          <div class="struct-assertions">
+            ${[...r.assertions, ...r.testResults].map(a => `
+              <div class="struct-assertion">
+                <span class="${a.passed ? 'pass' : 'fail'}">${a.passed ? '✓' : '✗'}</span>
+                <div style="flex:1">
+                  <div class="struct-assertion-name">${esc(a.name)}</div>
+                  ${a.error ? `<div class="struct-assertion-err">${esc(a.error)}</div>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // 绑定切换按钮
+  el.querySelectorAll('.struct-resolve-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const section = btn.closest('.struct-section');
+      const resolved = btn.dataset.resolved === 'true';
+      section.querySelectorAll('.struct-resolvable').forEach(node => {
+        const tpl = node.dataset.template;
+        if (!tpl) return;
+        if (resolved) {
+          // 切回模板
+          if (node.classList.contains('struct-body-pre')) {
+            node.innerHTML = highlightJson(tpl);
+          } else {
+            node.textContent = tpl;
+          }
+        } else {
+          // 切换为已解析值
+          const resolvedText = resolveEnvVars(tpl, envMap);
+          if (node.classList.contains('struct-body-pre')) {
+            node.innerHTML = highlightJson(resolvedText);
+          } else {
+            node.textContent = resolvedText;
+          }
+        }
+      });
+      btn.dataset.resolved = (!resolved).toString();
+      btn.textContent = resolved ? '显示已解析值' : '显示模板';
+    });
+  });
+
+  // 绑定"编辑并发送"按钮
+  el.querySelectorAll('.struct-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const section = btn.closest('.struct-section');
+      const idx = btn.dataset.idx;
+      const wrap = section.querySelector(`.struct-edit-wrap[data-idx="${idx}"]`);
+      const textarea = wrap.querySelector('.struct-edit-textarea');
+      const pre = section.querySelector('.struct-body-pre.struct-resolvable');
+      // 预填当前显示内容（已解析值优先，否则模板）
+      const tpl = pre?.dataset.template || '';
+      const currentText = resolveEnvVars(tpl, envMap);
+      // 规范化 JSON 格式
+      let formatted = currentText;
+      try { formatted = JSON.stringify(JSON.parse(currentText), null, 2); } catch {}
+      textarea.value = formatted;
+      wrap.style.display = 'block';
+      pre.style.display = 'none';
+      btn.style.display = 'none';
+      textarea.focus();
+    });
+  });
+  // 绑定取消按钮
+  el.querySelectorAll('.struct-edit-cancel').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const wrap = btn.closest('.struct-edit-wrap');
+      const section = btn.closest('.struct-section');
+      const pre = section.querySelector('.struct-body-pre.struct-resolvable');
+      const editBtn = section.querySelector('.struct-edit-btn');
+      wrap.style.display = 'none';
+      pre.style.display = 'block';
+      editBtn.style.display = '';
+    });
+  });
+  // 绑定发送按钮（用编辑后的 body override 重新运行请求）
+  el.querySelectorAll('.struct-edit-send').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const section = btn.closest('.struct-section');
+      const wrap = btn.closest('.struct-edit-wrap');
+      const textarea = wrap.querySelector('.struct-edit-textarea');
+      const newBody = textarea.value;
+      if (!newBody.trim()) { toast('Body 不能为空', 'err'); return; }
+      // JSON 合法性校验
+      try { JSON.parse(newBody); } catch (e) { toast('Body 不是合法 JSON: ' + e.message, 'err'); return; }
+      // 调用 run-request 带 bodyOverride
+      if (!currentCol || !currentReq) { toast('未选中集合/请求', 'err'); return; }
+      btn.disabled = true;
+      btn.textContent = '发送中…';
+      try {
+        await runRequestWithBodyOverride(currentCol, currentReq, newBody);
+      } catch (e) {
+        toast('发送失败: ' + e.message, 'err');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '发送';
+      }
+    });
+  });
+}
+
+// 用 bodyOverride 运行请求（复用 run-request 端点）
+async function runRequestWithBodyOverride(collection, requestName, bodyOverride) {
+  // 切到"请求/响应"tab，清空旧结果
+  document.querySelectorAll('.response-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.response-tab[data-rtab="request"]')?.classList.add('active');
+  document.getElementById('resp-console').style.display = 'none';
+  document.getElementById('resp-structured').style.display = 'block';
+  document.getElementById('resp-structured').innerHTML = '<div class="empty"><div class="empty-icon">⏳</div>运行中…</div>';
+
+  const resp = await fetch('/api/run-request', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ collection, requestName, bodyOverride })
+  });
+  // SSE 流式响应：由于已经是 text/event-stream，这里用 reader 解析
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const events = buf.split('\n\n');
+    buf = events.pop() || '';
+    for (const evt of events) {
+      const lines = evt.split('\n');
+      let type = '', data = '';
+      for (const line of lines) {
+        if (line.startsWith('event: ')) type = line.slice(7);
+        else if (line.startsWith('data: ')) data += line.slice(6);
+      }
+      if (!type) continue;
+      let d = {};
+      try { d = JSON.parse(data); } catch {}
+      if (type === 'stdout') addConsole(d.line, 'stdout');
+      else if (type === 'stderr') addConsole(d.line, 'err');
+      else if (type === 'result') renderStructuredResults(d.results || []);
+      else if (type === 'result_error') addConsole('解析结构化结果失败: ' + d.error, 'err');
+      else if (type === 'end') {
+        addConsole(`✓ 运行结束 (exit ${d.code})`, d.code === 0 ? 'ok' : 'err');
+        loadEnv();   // 环境变量可能被 test 脚本回写
+      }
+    }
+  }
+}
+
+// 用环境变量解析 {{var}} 占位符
+function resolveEnvVars(text, envMap) {
+  if (!text) return text;
+  return text.replace(/\{\{([^}]+)\}\}/g, (m, key) => {
+    key = key.trim();
+    return (key in envMap) ? envMap[key] : m;
+  });
+}
+
+// JSON 语法高亮
+function highlightJson(text) {
+  if (!text) return '';
+  let str = text;
+  try {
+    // 尝试解析后再 stringify，规范化格式
+    str = JSON.stringify(JSON.parse(text), null, 2);
+  } catch { /* 非合法 JSON，按原文展示 */ }
+  // 转义 HTML
+  str = esc(str);
+  // 高亮：key / string / number / bool / null
+  // 注意：esc 后双引号变成 &quot;，正则要匹配 &quot;
+  str = str.replace(/(&quot;(?:\\.|[^&]|&(?!quot;))*&quot;)(\s*:)/g, '<span class="json-key">$1</span>$2');
+  str = str.replace(/:\s*(&quot;(?:\\.|[^&]|&(?!quot;))*&quot;)/g, ': <span class="json-string">$1</span>');
+  str = str.replace(/:\s*(-?\d+(?:\.\d+)?)/g, ': <span class="json-number">$1</span>');
+  str = str.replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>');
+  str = str.replace(/:\s*null/g, ': <span class="json-null">null</span>');
+  return str;
+}
+
+function renderTestResults(testResults, envWrites) {
+  const el = document.getElementById('resp-testresults');
+  const badge = document.getElementById('testresults-count');
+  const pass = testResults.filter(t => t.pass).length;
+  const fail = testResults.filter(t => !t.pass).length;
+  const total = testResults.length;
+
+  // badge 显示
+  if (total > 0) {
+    badge.style.display = 'inline-block';
+    badge.textContent = total;
+    badge.style.background = fail > 0 ? 'var(--pm-red)' : 'var(--pm-green)';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  let html = '';
+  if (total === 0 && envWrites.length === 0) {
+    html = '<div class="empty"><div class="empty-icon">∅</div>无 Test 脚本或未执行</div>';
+  } else {
+    if (total > 0) {
+      html += `<div class="testresults-summary">
+        <span>断言：</span>
+        <span class="pass">✓ ${pass} 通过</span>
+        ${fail > 0 ? `<span class="fail">✗ ${fail} 失败</span>` : ''}
+      </div>`;
+      for (const t of testResults) {
+        html += `<div class="testresult-item">
+          <span class="testresult-icon ${t.pass ? 'pass' : 'fail'}">${t.pass ? '✓' : '✗'}</span>
+          <div class="testresult-name">
+            ${esc(t.name)}
+            ${!t.pass && t.error ? `<div class="testresult-error">${esc(t.error)}</div>` : ''}
+          </div>
+        </div>`;
+      }
+    }
+    if (envWrites.length > 0) {
+      html += `<div class="env-write-list">
+        <div class="env-write-title">环境变量回写（${envWrites.length}）</div>`;
+      for (const w of envWrites) {
+        html += `<div class="env-write-item">
+          <span class="k">${esc(w.key)}</span>
+          <span class="v">${esc((w.value || '').slice(0, 100))}${(w.value || '').length > 100 ? '...' : ''}</span>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+  }
+  el.innerHTML = html;
+
+  // 如果有 test 结果，自动切到 Test Results tab
+  if (total > 0 || envWrites.length > 0) {
+    document.querySelectorAll('.response-tab').forEach(x => x.classList.remove('active'));
+    document.querySelector('.response-tab[data-rtab="testresults"]').classList.add('active');
+    document.getElementById('resp-body').style.display = 'none';
+    document.getElementById('resp-testresults').style.display = 'block';
+    document.getElementById('resp-console').style.display = 'none';
+  }
+}
+
+function addConsole(text, cls) {
+  const con = document.getElementById('resp-console');
+  const div = document.createElement('div');
+  const colors = { info: '#4d9eff', err: '#ff5757', ok: '#00d9a3' };
+  if (colors[cls]) div.style.color = colors[cls];
+  div.textContent = text;
+  con.appendChild(div);
+  con.scrollTop = con.scrollHeight;
+}
+
+// ============ 环境变量 ============
+let envData = [];
+
+async function loadEnv() {
+  try {
+    const r = await fetch('/api/env');
+    const j = await r.json();
+    if (!j.ok) {
+      console.error('[loadEnv] 后端返回错误:', j);
+      toast('加载环境变量失败: ' + (j.error || '未知错误'), 'err');
+      return;
+    }
+    envData = j.data || [];
+    window.envData = envData;   // 同步到 window，供结构化展示解析 {{var}} 使用
+    const sourceEl = document.getElementById('env-source');
+    if (sourceEl) sourceEl.textContent = '来源: ' + j.source;
+    renderEnv(envData);
+    console.log(`[loadEnv] 已加载 ${envData.length} 个变量（来源: ${j.source}）`);
+  } catch (e) {
+    console.error('[loadEnv] 请求异常:', e);
+    toast('加载环境变量异常: ' + e.message, 'err');
+  }
+}
+
+// 导入 JSON 文件（支持 Postman env 格式 + 普通 KV JSON）
+let pendingImport = null; // 暂存待应用的导入数据
+
+async function importEnvFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    let newValues = [];
+
+    // 格式 1: Postman env 文件（含 values 数组）
+    if (parsed.values && Array.isArray(parsed.values)) {
+      newValues = parsed.values.map(v => ({
+        key: v.key || '',
+        value: v.value || '',
+        enabled: v.enabled !== false,
+        description: v.description || ''
+      })).filter(v => v.key);
+    }
+    // 格式 2: 普通 KV JSON（{ "key": "value", ... }）
+    else if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+      newValues = Object.entries(parsed).map(([k, v]) => ({
+        key: k,
+        value: String(v),
+        enabled: true,
+        description: '[导入]'
+      }));
+    } else {
+      toast('不支持的 JSON 格式（需 Postman env 或 {key:value}）', 'err');
+      input.value = '';
+      return;
+    }
+
+    if (newValues.length === 0) {
+      toast('文件中未找到变量', 'err');
+      input.value = '';
+      return;
+    }
+
+    // 计算每个变量的状态：added / overwrite / unchanged
+    const rows = newValues.map(nv => {
+      const existing = envData.find(v => v.key === nv.key);
+      if (!existing) {
+        return { ...nv, status: 'added' };
+      }
+      if (existing.value !== nv.value) {
+        return { ...nv, status: 'overwrite', oldValue: existing.value };
+      }
+      return { ...nv, status: 'unchanged', oldValue: existing.value };
+    });
+
+    const added = rows.filter(r => r.status === 'added');
+    const overwrite = rows.filter(r => r.status === 'overwrite');
+    const unchanged = rows.filter(r => r.status === 'unchanged');
+
+    // 暂存，等待用户在 modal 中选择策略
+    pendingImport = { newValues, rows, added, overwrite, unchanged };
+
+    // 渲染 modal
+    const summary = document.getElementById('env-import-summary');
+    summary.innerHTML = `
+      <div style="display:flex; gap:16px; margin-bottom:8px; font-size:12px;">
+        <div><span style="color:var(--pm-green); font-weight:700;">${added.length}</span> <span style="color:var(--pm-text-dim)">新增</span></div>
+        <div><span style="color:var(--pm-yellow); font-weight:700;">${overwrite.length}</span> <span style="color:var(--pm-text-dim)">覆盖</span></div>
+        <div><span style="color:var(--pm-text-mute); font-weight:700;">${unchanged.length}</span> <span style="color:var(--pm-text-dim)">不变</span></div>
+        <div style="margin-left:auto; color:var(--pm-text-dim)">共 ${rows.length} 个</div>
+      </div>
+    `;
+
+    const listEl = document.getElementById('env-import-list');
+    listEl.innerHTML = rows.map(r => {
+      const color = r.status === 'added' ? 'var(--pm-green)'
+                  : r.status === 'overwrite' ? 'var(--pm-yellow)'
+                  : 'var(--pm-text-mute)';
+      const tag = r.status === 'added' ? '新增'
+                : r.status === 'overwrite' ? '覆盖'
+                : '不变';
+      const oldVal = r.oldValue !== undefined
+        ? `<span style="color:var(--pm-text-mute); text-decoration:line-through;">${escapeHtml(r.oldValue || '(空)')}</span> → `
+        : '';
+      return `<div style="padding:3px 0; border-bottom:1px dashed var(--pm-border-light);">
+        <span style="color:${color};">●</span>
+        <span style="color:${color}; font-weight:600; padding:0 4px;">[${tag}]</span>
+        <span style="color:var(--pm-text);">${escapeHtml(r.key)}</span>
+        <span style="color:var(--pm-text-mute);"> = </span>
+        ${oldVal}<span style="color:var(--pm-text);">${escapeHtml(r.value || '(空)')}</span>
+      </div>`;
+    }).join('');
+
+    document.getElementById('env-import-modal').classList.add('show');
+  } catch (e) {
+    toast('解析失败: ' + e.message, 'err');
+    console.error('导入失败:', e);
+  }
+  input.value = '';  // 清空 input，允许重复导入同一文件
+}
+
+function envImportCancel() {
+  pendingImport = null;
+  document.getElementById('env-import-modal').classList.remove('show');
+}
+
+async function envImportApply(mode) {
+  if (!pendingImport) return;
+  const { newValues } = pendingImport;
+  let changeCount = 0;
+  let overwriteCount = 0;
+  for (const nv of newValues) {
+    const existing = envData.find(v => v.key === nv.key);
+    if (!existing) {
+      envData.push(nv);
+      changeCount++;
+    } else if (mode === 'overwrite') {
+      existing.value = nv.value;
+      existing.enabled = nv.enabled;
+      if (nv.description && !existing.description) existing.description = nv.description;
+      changeCount++;
+      overwriteCount++;
+    }
+  }
+  envImportCancel();
+  if (changeCount > 0) {
+    await saveEnv();
+  }
+  // 无论是否有变更，都重新拉取并渲染（让用户看到当前 env 内容）
+  await loadEnv();
+  // 确保 env 页面可见
+  document.querySelectorAll('.header-tab').forEach(x => x.classList.remove('active'));
+  document.querySelector('.header-tab[data-page="env"]').classList.add('active');
+  document.querySelectorAll('.main').forEach(x => x.style.display = 'none');
+  document.getElementById('page-env').style.display = 'flex';
+  if (changeCount > 0) {
+    toast(`导入完成：${changeCount} 个变量${overwriteCount > 0 ? `（含覆盖 ${overwriteCount}）` : '（新增）'}${changeCount > 0 ? '，已保存' : ''}`, 'ok');
+  } else {
+    toast(`无变更（${newValues.length} 个变量均已存在）`, 'info');
+  }
+}
+
+function escapeHtml(s) {
+  // 复用已有的 esc() 函数，避免重复定义
+  return esc(s);
+}
+
+function renderEnv(data) {
+  const tb = document.getElementById('env-tbody');
+  if (!tb) { console.error('[renderEnv] #env-tbody not found'); return; }
+  tb.innerHTML = '';
+  for (const v of data) {
+    // 兼容 Newman 导出格式：description 可能是字符串或 {content, type} 对象
+    let desc = v.description || '';
+    if (typeof desc === 'object' && desc !== null) desc = desc.content || '';
+    desc = String(desc);
+    // enabled 可能不存在（Newman 导出不带 enabled 字段，默认 true）
+    const enabled = v.enabled !== false;
+    let tag = '';
+    if (desc.includes('[用户输入')) tag = '<span class="tag tag-user">用户</span>';
+    else if (desc.includes('[运行时')) tag = '<span class="tag tag-runtime">运行时</span>';
+    else if (desc.includes('[环境配置]')) tag = '<span class="tag tag-config">配置</span>';
+    else if (desc.includes('[约定值]')) tag = '<span class="tag tag-convention">约定</span>';
+    const tr = document.createElement('tr');
+    tr.dataset.key = v.key;
+    tr.dataset.desc = desc;
+    tr.innerHTML = `
+      <td><div class="env-toggle ${enabled ? 'on' : ''}" onclick="toggleEnv('${v.key}', this)"></div></td>
+      <td class="env-key">${v.key}</td>
+      <td><input class="env-value-input" value="${esc(v.value || '')}" onchange="updateEnv('${v.key}', this.value)" ${v.key.includes('token') ? 'type="password"' : ''}></td>
+      <td class="env-desc">${tag}${esc(desc)}</td>
+    `;
+    tb.appendChild(tr);
+  }
+}
+
+function toggleEnv(key, el) {
+  const v = envData.find(x => x.key === key);
+  if (v) { v.enabled = !v.enabled; el.classList.toggle('on'); }
+}
+function updateEnv(key, value) {
+  const v = envData.find(x => x.key === key);
+  if (v) v.value = value;
+}
+function filterEnv(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('#env-tbody tr').forEach(tr => {
+    const m = (tr.dataset.key || '').toLowerCase().includes(q) || (tr.dataset.desc || '').toLowerCase().includes(q);
+    tr.style.display = m ? '' : 'none';
+  });
+}
+async function saveEnv() {
+  const r = await fetch('/api/env', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ values: envData }) });
+  const j = await r.json();
+  toast(j.ok ? '已保存到 ' + j.saved : '保存失败: ' + j.error, j.ok ? 'ok' : 'err');
+}
+
+// 清空所有变量的值（保留 key 和描述），需用户确认
+function clearEnvValues() {
+  if (!envData.length) { toast('当前无变量', 'info'); return; }
+  if (!confirm(`确认清空 ${envData.length} 个变量的值？\n（保留 key 和描述，仅 value 置空，需手动点"保存"生效）`)) return;
+  let n = 0;
+  for (const v of envData) {
+    if (v.value !== '' && v.value !== undefined) { v.value = ''; n++; }
+  }
+  renderEnv(envData);
+  toast(`已清空 ${n} 个变量的值（未保存，请点"保存"）`, 'ok');
+}
+
+// 全部禁用（保留值，仅切换 enabled=false）
+function disableAllEnv() {
+  if (!envData.length) { toast('当前无变量', 'info'); return; }
+  if (!confirm(`确认禁用全部 ${envData.length} 个变量？\n（需手动点"保存"生效）`)) return;
+  let n = 0;
+  for (const v of envData) {
+    if (v.enabled !== false) { v.enabled = false; n++; }
+  }
+  renderEnv(envData);
+  toast(`已禁用 ${n} 个变量（未保存，请点"保存"）`, 'ok');
+}
+
+// AI Agent 修改环境变量快捷入口
+async function envAiModify() {
+  if (aiBusy) { toast('Agent 正在处理其他任务', 'err'); return; }
+
+  // 弹出输入框收集用户指令
+  const userInstruction = prompt(
+    '请用自然语言描述要如何修改环境变量：\n\n示例：\n• 把 device_sn 改为 K1-2026-000001\n• 清空所有 token 类变量的值\n• 把 s5_test_family_id 改为 family-new-001\n• 把所有 enabled=false 的变量删除',
+    ''
+  );
+  if (!userInstruction || !userInstruction.trim()) return;
+
+  // 确保 AI 侧栏可见
+  document.body.classList.remove('ai-collapsed');
+  document.querySelector('.ai-sidebar')?.classList.remove('collapsed');
+
+  // 构造 Agent 专用 prompt（通过 HTTP API 修改，不直接改文件）
+  const API_BASE = 'http://localhost:8088';
+  const varsList = envData.map(v => `- ${v.key} = ${v.value || '(空)'}  ${v.description && typeof v.description === 'object' ? v.description.content : v.description || ''}`).join('\n');
+
+  const prompt = `【环境变量修改任务】请通过 HTTP API 完成（严禁直接修改项目文件）：
+
+执行步骤：
+1. 用 curl 读取当前 env：
+   curl -s ${API_BASE}/api/env
+2. 解析返回的 JSON，找到 values 数组
+3. 根据用户指令修改对应变量：
+   用户指令：${userInstruction}
+4. 用 curl POST 保存修改后的完整 values 数组：
+   curl -X POST ${API_BASE}/api/env -H "Content-Type: application/json" -d '{"values": [<修改后的完整 values 数组>]}'
+5. 用 curl 通知前端刷新：
+   curl -X POST ${API_BASE}/api/notify/env-updated -H "Content-Type: application/json" -d '{"reason":"ai_env_modify"}'
+6. 告诉我修改了哪些变量（列出 key 和新旧值）
+
+注意：
+- 严禁直接读写 postman/ 目录下的文件
+- 必须通过 HTTP API 操作
+- 保留所有未提及变量的原值
+- 保留 description 字段
+
+当前环境变量列表（${envData.length} 个，仅供参考，实际以 API 返回为准）：
+${varsList}
+
+完成后用简洁中文回复修改结果。`;
+
+  // 调用 Agent
+  await aiSendAgent(prompt, true);
+  // 滚动 AI 侧栏到可视区
+  const aiBody = document.getElementById('ai-body');
+  if (aiBody) aiBody.scrollTop = aiBody.scrollHeight;
+}
+
+// ============ Runner ============
+async function loadRunCollections() {
+  const r = await fetch('/api/collections');
+  const j = await r.json();
+  if (!j.ok) return;
+  const sel = document.getElementById('run-collection');
+  sel.innerHTML = '<option value="">— 选择 —</option>' + j.data.map(c => `<option>${c.name}</option>`).join('');
+}
+async function loadRunFolders() {
+  const col = document.getElementById('run-collection').value;
+  if (!col) return;
+  const r = await fetch(`/api/collections/${encodeURIComponent(col)}/folders`);
+  const j = await r.json();
+  if (!j.ok) return;
+  const box = document.getElementById('run-folders');
+  box.innerHTML = j.data.map(f =>
+    `<label class="runner-folder-item"><input type="checkbox" value="${esc(f.name)}"> ${esc(f.name)} <span class="runner-folder-count">(${f.requestCount})</span></label>`
+  ).join('');
+}
+let runEvt = null;
+let runAbort = null; // 批量运行时用于 abort fetch
+async function runFolder() {
+  const col = document.getElementById('run-collection').value;
+  if (!col) return;
+  const checked = [...document.querySelectorAll('#run-folders input:checked')].map(x => x.value);
+  if (checked.length === 0) {
+    addRunConsole('请至少选择一个文件夹', 'err');
+    return;
+  }
+  const strategy = document.querySelector('input[name="run-strategy"]:checked')?.value || 'stopOnFail';
+  const stopOnFail = strategy === 'stopOnFail';
+
+  document.getElementById('run-btn').style.display = 'none';
+  document.getElementById('stop-btn').style.display = 'inline-block';
+  document.getElementById('run-console').innerHTML = '';
+
+  // 单个 folder 走原 /api/run（保持兼容）
+  if (checked.length === 1) {
+    await runSingleFolder(col, checked[0]);
+    return;
+  }
+
+  // 多个 folder 走 /api/run-batch（顺序运行，支持 stopOnFail）
+  addRunConsole(`▶ 批量运行 ${checked.length} 个场景（策略：${stopOnFail ? '失败停止' : '失败继续'}）`, 'info');
+  addRunConsole(`  顺序: ${checked.join(' → ')}`, 'info');
+  addRunConsole('', '');
+
+  runAbort = new AbortController();
+  try {
+    const resp = await fetch('/api/run-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ collection: col, folders: checked, stopOnFail }),
+      signal: runAbort.signal
+    });
+    // 读取 SSE 流
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split('\n\n');
+      buffer = events.pop() || '';
+      for (const evtBlock of events) {
+        const lines = evtBlock.split('\n');
+        let eventType = '', dataStr = '';
+        for (const line of lines) {
+          if (line.startsWith('event: ')) eventType = line.slice(7);
+          else if (line.startsWith('data: ')) dataStr = line.slice(6);
+        }
+        if (!eventType) continue;
+        const d = dataStr ? JSON.parse(dataStr) : {};
+        handleBatchEvent(eventType, d);
+      }
+    }
+  } catch (e) {
+    if (e.name === 'AbortError') addRunConsole('已停止', 'err');
+    else addRunConsole('错误: ' + e.message, 'err');
+  } finally {
+    runAbort = null;
+    document.getElementById('run-btn').style.display = 'inline-block';
+    document.getElementById('stop-btn').style.display = 'none';
+  }
+}
+
+function handleBatchEvent(eventType, d) {
+  if (eventType === 'batch_start') {
+    // 已在 runFolder 里打印
+  } else if (eventType === 'folder_start') {
+    addRunConsole(`\n┌── 场景 ${d.index + 1}/${d.total}: ${d.folder} ──`, 'info');
+  } else if (eventType === 'stdout') {
+    addRunConsole(d.line);
+  } else if (eventType === 'stderr') {
+    addRunConsole(d.line, 'err');
+  } else if (eventType === 'folder_end') {
+    const stats = d.stats || {};
+    const pass = d.passed;
+    const icon = pass ? '✅' : '❌';
+    const total = stats.totalTests || 0;
+    const failedAsserts = stats.failedAssertions || 0;
+    const failedReqs = stats.failedRequests || 0;
+    const passed = total - failedAsserts;
+    let line = `└── ${icon} ${d.folder}: ${passed}/${total} 断言通过`;
+    if (!pass) {
+      line += `（${failedAsserts} 断言失败`;
+      if (failedReqs > 0) line += `，${failedReqs} 请求失败`;
+      line += '）';
+    }
+    line += ` → reports/${d.reportFile}`;
+    addRunConsole(line, pass ? 'ok' : 'err');
+  } else if (eventType === 'batch_end') {
+    const summary = d.summary || [];
+    addRunConsole('', '');
+    addRunConsole('═════════════════════════════', 'info');
+    addRunConsole(`批量运行总结（${summary.length}/${summary.length} 场景已执行）`, 'info');
+    summary.forEach(s => {
+      const stats = s.stats || {};
+      const icon = s.passed ? '✅' : '❌';
+      const total = stats.totalTests || 0;
+      const failedAsserts = stats.failedAssertions || 0;
+      const failedReqs = stats.failedRequests || 0;
+      const passed = total - failedAsserts;
+      let line = `  ${icon} ${s.folder}: ${passed}/${total} 断言通过`;
+      if (!s.passed) {
+        line += `（${failedAsserts} 断言失败`;
+        if (failedReqs > 0) line += `，${failedReqs} 请求失败`;
+        line += '）';
+      }
+      addRunConsole(line, s.passed ? 'ok' : 'err');
+    });
+    if (d.stoppedReason) {
+      addRunConsole('', '');
+      addRunConsole('⚠️ ' + d.stoppedReason, 'err');
+    }
+  }
+}
+
+async function runSingleFolder(col, folder) {
+  const params = new URLSearchParams({ collection: col });
+  params.set('folder', folder);
+  runEvt = new EventSource('/api/run?' + params);
+
+  runEvt.addEventListener('start', (e) => {
+    const d = JSON.parse(e.data);
+    addRunConsole(`▶ 运行: ${d.collection} / ${folder || '(全部)'}`, 'info');
+  });
+  runEvt.addEventListener('stdout', (e) => {
+    const d = JSON.parse(e.data);
+    addRunConsole(d.line);
+  });
+  runEvt.addEventListener('stderr', (e) => {
+    const d = JSON.parse(e.data);
+    addRunConsole(d.line, 'err');
+  });
+  runEvt.addEventListener('end', (e) => {
+    const d = JSON.parse(e.data);
+    const stats = d.stats || {};
+    // Newman stats 语义:
+    //   totalTests = stats.tests.total(测试用例总数)
+    //   failedAssertions = stats.assertions.failed(pm.test 断言失败数,准确)
+    //   failedRequests = stats.requests.failed(HTTP 非 2xx 请求数)
+    //   failuresCount = failures[] 数组长度(所有失败记录,含断言+脚本异常)
+    //   failedTests = failedAssertions + failuresCount(已废弃,会重复计数导致负数)
+    const total = stats.totalTests || 0;
+    const failedAsserts = stats.failedAssertions || 0;
+    const failedReqs = stats.failedRequests || 0;
+    const passed = total - failedAsserts;
+    const allPassed = d.code === 0 && failedAsserts === 0 && failedReqs === 0;
+    if (allPassed) {
+      addRunConsole(`\n✅ 完成（${passed}/${total} 断言通过）`, 'ok');
+    } else {
+      let line = `\n❌ exit ${d.code}（${passed}/${total} 断言通过，${failedAsserts} 断言失败`;
+      if (failedReqs > 0) line += `，${failedReqs} 请求失败`;
+      line += '）';
+      addRunConsole(line, 'err');
+    }
+    if (d.reportFile) addRunConsole(`报告: reports/${d.reportFile}`, 'info');
+    runEvt.close();
+    document.getElementById('run-btn').style.display = 'inline-block';
+    document.getElementById('stop-btn').style.display = 'none';
+  });
+  runEvt.onerror = () => {
+    runEvt.close();
+    document.getElementById('run-btn').style.display = 'inline-block';
+    document.getElementById('stop-btn').style.display = 'none';
+  };
+}
+function stopRun() {
+  if (runEvt) { runEvt.close(); addRunConsole('已停止', 'err'); }
+  if (runAbort) { runAbort.abort(); }
+  document.getElementById('run-btn').style.display = 'inline-block';
+  document.getElementById('stop-btn').style.display = 'none';
+}
+function addRunConsole(text, cls) {
+  const con = document.getElementById('run-console');
+  const colors = { info: '#4d9eff', err: '#ff5757', ok: '#00d9a3' };
+
+  // 智能识别 Newman CLI 输出格式，按请求分组展示
+  // 格式：
+  //   ↳ {请求名}                       <- 请求开始（Newman 用 ↳ 符号）
+  //   GET/POST {url} [{状态}]          <- HTTP 调用
+  //   ✓ {断言名}                        <- 断言通过
+  //   ✗ {断言名}                        <- 断言失败
+  //   ┌── ... ──                        <- 我们自定义的 folder 分隔头
+  //   └── ...                           <- 我们自定义的 folder 结束
+  //   ═══...                            <- 我们自定义的总结分隔
+  if (text.startsWith('↳ ')) {
+    // 请求开始：创建请求分组块
+    const reqDiv = document.createElement('div');
+    reqDiv.className = 'run-req-block';
+    const title = document.createElement('div');
+    title.className = 'run-req-title';
+    title.textContent = text;
+    reqDiv.appendChild(title);
+    con.appendChild(reqDiv);
+  } else if (text.startsWith('  ✓ ') || text.startsWith('  ✗ ')) {
+    // 断言结果
+    const div = document.createElement('div');
+    div.className = 'run-assertion ' + (text.startsWith('  ✓ ') ? 'pass' : 'fail');
+    div.textContent = text;
+    con.appendChild(div);
+  } else if (text.startsWith('  GET ') || text.startsWith('  POST ') || text.startsWith('  PUT ') || text.startsWith('  DELETE ') || text.startsWith('  PATCH ')) {
+    // HTTP 调用行
+    const div = document.createElement('div');
+    div.className = 'run-http-call';
+    // 识别状态码染色
+    const m = text.match(/\[(\d{3})\s/);
+    if (m) {
+      const code = parseInt(m[1]);
+      if (code >= 200 && code < 300) div.classList.add('http-ok');
+      else if (code >= 400) div.classList.add('http-err');
+    }
+    div.textContent = text;
+    con.appendChild(div);
+  } else if (text.startsWith('┌──') || text.startsWith('└──') || text.startsWith('═══')) {
+    // 自定义分隔头/结束
+    const div = document.createElement('div');
+    div.className = 'run-separator';
+    if (text.startsWith('└──') && text.includes('❌')) div.style.color = colors.err;
+    else if (text.startsWith('└──') && text.includes('✅')) div.style.color = colors.ok;
+    else div.style.color = colors.info;
+    div.textContent = text;
+    con.appendChild(div);
+  } else if (text.startsWith('▶ ') || text.startsWith('⚠️') || text.startsWith('✅') || text.startsWith('❌')) {
+    // 重要状态行
+    const div = document.createElement('div');
+    div.className = 'run-status';
+    if (text.startsWith('❌') || text.startsWith('⚠️')) div.style.color = colors.err;
+    else if (text.startsWith('✅')) div.style.color = colors.ok;
+    else div.style.color = colors.info;
+    div.textContent = text;
+    con.appendChild(div);
+  } else {
+    // 普通文本
+    const div = document.createElement('div');
+    if (colors[cls]) div.style.color = colors[cls];
+    div.textContent = text;
+    con.appendChild(div);
+  }
+  con.scrollTop = con.scrollHeight;
+}
+
+// ============ 报告 ============
+let reportsData = [];       // 服务端返回的报告列表
+let reportsSelected = new Set();  // 勾选的报告名
+let currentReport = null;   // 当前预览的报告名
+
+async function loadReports() {
+  const r = await fetch('/api/reports');
+  const j = await r.json();
+  if (!j.ok) return;
+  reportsData = j.data || [];
+  reportsSelected = new Set();
+  currentReport = null;
+  const list = document.getElementById('reports-list');
+  const countEl = document.getElementById('reports-count');
+  const selAll = document.getElementById('reports-select-all');
+  const sendSel = document.getElementById('reports-send-selected');
+  const sendAll = document.getElementById('reports-send-all');
+  if (!reportsData.length) {
+    list.innerHTML = '<div class="empty"><div class="empty-icon">○</div>暂无报告</div>';
+    countEl.textContent = '0 个报告';
+    selAll.disabled = true;
+    sendSel.disabled = true;
+    sendAll.disabled = true;
+    reportsPreviewReset();
+    return;
+  }
+  selAll.disabled = false;
+  sendAll.disabled = false;
+  countEl.textContent = `${reportsData.length} 个报告`;
+  selAll.checked = false;
+  list.innerHTML = reportsData.map(r => `
+    <div class="report-card" data-name="${escapeAttr(r.name)}" onclick="reportsSelectPreview('${escapeAttr(r.name)}')">
+      <input type="checkbox" data-name="${escapeAttr(r.name)}" onclick="event.stopPropagation(); reportsToggleOne('${escapeAttr(r.name)}', this.checked)">
+      <div class="report-card-body">
+        <div class="report-name">${escapeHtml(r.name)}</div>
+        <div class="report-meta">
+          <span>${(r.size/1024).toFixed(1)} KB</span>
+          <span>${new Date(r.mtime).toLocaleString('zh-CN')}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  // 自动预览第一个
+  if (reportsData.length > 0) reportsSelectPreview(reportsData[0].name);
+  reportsUpdateSendBtn();
+}
+
+function escapeAttr(s) {
+  return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+function reportsSelectPreview(name) {
+  currentReport = name;
+  // 高亮当前卡片
+  document.querySelectorAll('#reports-list .report-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.name === name);
+  });
+  // iframe 预览
+  const frame = document.getElementById('reports-preview-frame');
+  const empty = document.getElementById('reports-preview-empty');
+  const title = document.getElementById('reports-preview-title');
+  const sendCur = document.getElementById('reports-send-current');
+  const newTab = document.getElementById('reports-new-tab');
+  title.textContent = name;
+  frame.src = '/api/reports/' + encodeURIComponent(name);
+  frame.style.display = 'block';
+  empty.style.display = 'none';
+  sendCur.style.display = '';
+  newTab.style.display = '';
+  // 同步当前查看的报告指针到后端，供 Agent 按需查询
+  if (typeof putContext === 'function') putContext();
+}
+
+function reportsPreviewReset() {
+  const frame = document.getElementById('reports-preview-frame');
+  const empty = document.getElementById('reports-preview-empty');
+  const title = document.getElementById('reports-preview-title');
+  const sendCur = document.getElementById('reports-send-current');
+  const newTab = document.getElementById('reports-new-tab');
+  frame.src = 'about:blank';
+  frame.style.display = 'none';
+  empty.style.display = 'flex';
+  title.textContent = '未选中报告';
+  sendCur.style.display = 'none';
+  newTab.style.display = 'none';
+  currentReport = null;
+  if (typeof putContext === 'function') putContext();
+}
+
+function reportsOpenInNewTab() {
+  if (!currentReport) return;
+  window.open('/api/reports/' + encodeURIComponent(currentReport), '_blank');
+}
+
+function reportsToggleOne(name, checked) {
+  if (checked) reportsSelected.add(name);
+  else reportsSelected.delete(name);
+  // 同步全选框状态
+  const allBoxes = document.querySelectorAll('#reports-list input[type="checkbox"]');
+  const allChecked = [...allBoxes].every(b => b.checked);
+  document.getElementById('reports-select-all').checked = allChecked;
+  reportsUpdateSendBtn();
+}
+
+function reportsToggleAll(checked) {
+  const allBoxes = document.querySelectorAll('#reports-list input[type="checkbox"]');
+  reportsSelected = new Set();
+  allBoxes.forEach(b => {
+    b.checked = checked;
+    if (checked) reportsSelected.add(b.dataset.name);
+  });
+  reportsUpdateSendBtn();
+}
+
+function reportsUpdateSendBtn() {
+  const sendSel = document.getElementById('reports-send-selected');
+  sendSel.disabled = reportsSelected.size === 0;
+  sendSel.textContent = reportsSelected.size > 0
+    ? `发送选中给 Agent (${reportsSelected.size})`
+    : '发送选中给 Agent';
+}
+
+// 发送报告给 Agent：selected（勾选项）/ all（全部）/ current（当前预览）
+async function reportsSendToAgent(mode) {
+  let names = [];
+  if (mode === 'selected') names = [...reportsSelected];
+  else if (mode === 'all') names = reportsData.map(r => r.name);
+  else if (mode === 'current') {
+    if (!currentReport) return;
+    names = [currentReport];
+  }
+  if (!names.length) {
+    toast('没有可发送的报告', 'err');
+    return;
+  }
+  if (aiBusy) {
+    toast('Agent 正在处理其他任务，请稍后', 'err');
+    return;
+  }
+
+  // 展开 AI 侧栏
+  document.body.classList.remove('ai-collapsed');
+  const sb = document.querySelector('.ai-sidebar');
+  if (sb?.classList.contains('collapsed')) {
+    sb.classList.remove('collapsed');
+  }
+
+  toast(`正在提取 ${names.length} 份报告…`, 'info');
+
+  // 调用批量提取接口
+  let reportText = '';
+  try {
+    const r = await fetch('/api/reports/batch-text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ names })
+    });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error);
+    reportText = j.text;
+  } catch (e) {
+    toast('提取报告失败: ' + e.message, 'err');
+    return;
+  }
+
+  // 构造 prompt 发给 Agent
+  const prompt = `【请分析以下 Newman 测试报告】
+共 ${names.length} 份报告：${names.join(', ')}
+
+请从资深 QA 角度：
+1. 汇总通过率 / 失败用例数
+2. 列出每个失败用例的：请求名、错误信息、可能根因
+3. 跨报告对比：是否有重复失败的用例？是否回归？
+4. 给出修复优先级建议
+
+=== 报告内容 ===
+${reportText}`;
+
+  await aiSend(prompt, true);
+}
+
+// ============ Toast ============
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show';
+  if (type === 'err') t.style.background = '#dc3545';
+  else if (type === 'ok') t.style.background = '#00a65a';
+  else t.style.background = '#212121';
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============ 报告目录栏拖拽调宽 ============
+function initReportsListResizer() {
+  const resizer = document.getElementById('reports-list-resizer');
+  const pane = document.getElementById('reports-list-pane');
+  if (!resizer || !pane) return;
+  let dragging = false, startX = 0, startW = 0;
+  resizer.addEventListener('mousedown', (e) => {
+    dragging = true;
+    startX = e.clientX;
+    startW = pane.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    let w = startW + dx;
+    const min = 180, max = 500;
+    if (w < min) w = min;
+    if (w > max) w = max;
+    pane.style.width = w + 'px';
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    resizer.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+}
+
+// ============ 代码编辑器高亮（textarea + pre 叠加层） ============
+function initCodeEditors() {
+  document.querySelectorAll('.code-editor-wrap').forEach(wrap => {
+    const input = wrap.querySelector('.code-editor-input');
+    const highlight = wrap.querySelector('.code-editor-highlight');
+    if (!input || !highlight) return;
+    // 同步高亮内容
+    const sync = () => {
+      const code = input.value;
+      // 末尾补一个空格，避免最后一行换行丢失
+      const safeCode = code.endsWith('\n') ? code + ' ' : code;
+      highlight.innerHTML = highlightCode(safeCode, 'js') + '\n';
+    };
+    // 同步滚动
+    input.addEventListener('scroll', () => {
+      highlight.scrollTop = input.scrollTop;
+      highlight.scrollLeft = input.scrollLeft;
+    });
+    // 同步内容
+    input.addEventListener('input', sync);
+    // Tab 键插入两个空格
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        input.value = input.value.slice(0, start) + '  ' + input.value.slice(end);
+        input.selectionStart = input.selectionEnd = start + 2;
+        sync();
+      }
+    });
+    // 初始渲染
+    sync();
+  });
+}
+
+// 外部更新 textarea 时（如 loadRequestDetail）触发高亮刷新
+function refreshCodeEditor(id) {
+  const input = document.getElementById(id);
+  if (!input) return;
+  const wrap = input.closest('.code-editor-wrap');
+  if (!wrap) return;
+  const highlight = wrap.querySelector('.code-editor-highlight');
+  if (!highlight) return;
+  const code = input.value;
+  const safeCode = code.endsWith('\n') ? code + ' ' : code;
+  highlight.innerHTML = highlightCode(safeCode, 'js') + '\n';
+  highlight.scrollTop = input.scrollTop;
+  highlight.scrollLeft = input.scrollLeft;
+}
+
+// ============ 初始化 ============
+loadCollections();
+loadEnv();
+aiInit();
+initReportsListResizer();
+initCodeEditors();
+
+// ============ SSE 实时通知（CLI 修改 env 后自动刷新） ============
+let sseSource = null;
+let sseReconnectTimer = null;
+function connectSSE() {
+  if (sseSource) { try { sseSource.close(); } catch {} }
+  const es = new EventSource('/api/events');
+  sseSource = es;
+  es.addEventListener('env_updated', (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      console.log('[SSE] env_updated:', d.reason);
+      loadEnv();
+      const activePage = document.querySelector('.header-tab.active')?.dataset.page;
+      if (activePage === 'env') {
+        toast(`环境变量已更新（${d.reason}）`, 'info');
+      }
+    } catch (err) {
+      console.error('[SSE] parse error:', err);
+    }
+  });
+  es.addEventListener('request_updated', (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      console.log('[SSE] request_updated:', d);
+      // 如果当前正在查看被修改的请求，自动重新加载
+      if (currentCol === d.collection && currentReq === d.requestName) {
+        loadRequestDetail(currentCol, currentReq);
+        toast(`请求 "${d.requestName}" 已更新（${d.changed.join(', ')}）`, 'info');
+      } else {
+        toast(`请求 "${d.requestName}" 在集合 "${d.collection}" 中被更新`, 'info');
+      }
+    } catch (err) {
+      console.error('[SSE] parse error:', err);
+    }
+  });
+  es.onerror = () => {
+    console.warn('[SSE] 连接断开，3 秒后重连');
+    try { es.close(); } catch {}
+    sseSource = null;
+    clearTimeout(sseReconnectTimer);
+    sseReconnectTimer = setTimeout(connectSSE, 3000);
+  };
+}
+connectSSE();
+
+// ============ AI 助手 ============
+
+const AI_PRESETS = {
+  glm:      { base_url: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-plus' },
+  deepseek: { base_url: 'https://api.deepseek.com/v1',          model: 'deepseek-chat' },
+  openai:   { base_url: 'https://api.openai.com/v1',            model: 'gpt-4o-mini' },
+  moonshot: { base_url: 'https://api.moonshot.cn/v1',           model: 'moonshot-v1-8k' },
+  custom:   { base_url: '',                                       model: '' }
+};
+
+let aiMessages = []; // {role: 'user'|'assistant', content, ctx?}
+let aiBusy = false;
+let aiCtrl = null;   // AbortController
+let aiSessionId = null; // Trae CLI 会话 ID（用于续会话）
+
+function aiInit() {
+  loadAiConfig();
+  // 输入框 Enter 发送（思考时也允许：先停止当前执行，再发送新消息）
+  document.getElementById('ai-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (aiBusy) {
+        // 思考中：先停止当前 Agent，再发送新消息
+        aiStop();
+        // 等待 abort 完成（fetch 会被 catch，ui 会被 aiSetBusy(false)）
+        setTimeout(() => aiSend(), 200);
+      } else {
+        aiSend();
+      }
+    }
+  });
+}
+
+async function loadAiConfig() {
+  try {
+    const r = await fetch('/api/ai/config');
+    const j = await r.json();
+    if (!j.ok) return;
+    const d = j.data;
+    const dot = document.getElementById('ai-dot');
+    const status = document.getElementById('ai-status');
+    if (d.has_key) {
+      dot.className = 'ai-dot ok';
+      status.textContent = d.model;
+    } else {
+      dot.className = 'ai-dot warn';
+      status.textContent = '未配置';
+    }
+  } catch (e) {}
+}
+
+function aiToggleCollapse() {
+  const sb = document.getElementById('ai-sidebar');
+  sb.classList.toggle('collapsed');
+  document.body.classList.toggle('ai-collapsed');
+  document.getElementById('ai-collapse-btn').textContent = sb.classList.contains('collapsed') ? '»' : '«';
+}
+
+function aiNewChat() {
+  if (aiBusy) return;
+  aiMessages = [];
+  aiSessionId = null; // 重置 Trae CLI 会话
+  const body = document.getElementById('ai-body');
+  body.innerHTML = '';
+  const empty = document.createElement('div');
+  empty.className = 'ai-empty';
+  empty.id = 'ai-empty';
+  empty.innerHTML = `<div class="ai-empty-icon">⚡</div><div>QA Agent</div><div style="margin-top:8px;font-size:11px">资深 QA 工程师 · 可读写文件/跑命令/调用 HTTP API</div>`;
+  body.appendChild(empty);
+  aiUpdateCtxHint();
+}
+
+// 切换 AI 模式（已废弃，保留空函数避免报错）
+function aiSwitchMode(mode) { /* no-op */ }
+
+// ============ 当前上下文同步到后端（供 Agent 按需查询） ============
+// 只同步指针（页面/集合/请求名/报告名），不同步内容；内容 Agent 按需调 API 获取
+let putContextTimer = null;
+function putContext() {
+  // 节流：连续切换请求/报告时，100ms 内只发一次
+  if (putContextTimer) clearTimeout(putContextTimer);
+  putContextTimer = setTimeout(async () => {
+    putContextTimer = null;
+    try {
+      const activePage = document.querySelector('.header-tab.active')?.dataset.page || 'builder';
+      const payload = {
+        page: activePage,
+        collection: currentCol || '',
+        requestName: currentReq || '',
+        reportName: (typeof currentReport !== 'undefined' ? currentReport : '') || '',
+        reports: (typeof reportsData !== 'undefined' ? reportsData.map(r => r.name) : [])
+      };
+      await fetch('/api/context/current', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      // 静默失败：上下文同步是辅助能力，不应阻塞用户操作
+      console.warn('putContext failed:', e.message);
+    }
+  }, 100);
+}
+
+// 收集当前请求上下文（用于注入 prompt）
+function aiCollectContext() {
+  // 根据当前激活页面收集不同上下文
+  const activePage = document.querySelector('.header-tab.active')?.dataset.page || 'builder';
+
+  if (activePage === 'builder') {
+    if (!currentReq) return null;
+    const method = document.getElementById('req-method').value || 'GET';
+    const url = document.getElementById('req-url').value || '';
+    const body = document.getElementById('req-body').value || '';
+    const headers = [...document.querySelectorAll('#headers-tbody tr')].map(tr => {
+      const inputs = tr.querySelectorAll('input');
+      return `${inputs[1].value}: ${inputs[2].value}`;
+    }).filter(Boolean).join('\n');
+    // textarea 用 value
+    const prereq = document.getElementById('req-prerequest').value || '';
+    const test = document.getElementById('req-test').value || '';
+    const respStatus = document.getElementById('resp-status').textContent;
+    const respBody = document.getElementById('resp-body').textContent || '';
+    const respConsole = document.getElementById('resp-console').textContent || '';
+    return { page: 'builder', name: currentReq, collection: currentCol, method, url, headers, body, prereq, test, respStatus, respBody, respConsole };
+  }
+
+  if (activePage === 'env') {
+    // 环境变量页：返回变量列表摘要
+    const vars = envData.map(v => `${v.enabled ? '✓' : '✗'} ${v.key} = ${v.value || '(空)'} ${v.description ? '// ' + v.description : ''}`).join('\n');
+    return { page: 'env', name: `环境变量（${envData.length} 个）`, envList: vars };
+  }
+
+  if (activePage === 'runner') {
+    // Runner 页：返回最近运行输出
+    const console = document.getElementById('run-console')?.textContent || '';
+    const col = document.getElementById('run-collection')?.value || '';
+    return { page: 'runner', name: `Runner: ${col}`, consoleOutput: console.slice(-2000) };
+  }
+
+  if (activePage === 'reports') {
+    // 报告页：返回报告列表 + 当前预览报告名
+    const reports = [...document.querySelectorAll('.report-card')].map(c => c.querySelector('.report-name')?.textContent || '').filter(Boolean);
+    return { page: 'reports', name: `报告列表（${reports.length} 个）`, reports, currentReport };
+  }
+
+  return null;
+}
+
+function aiUpdateCtxHint() {
+  const hint = document.getElementById('ai-ctx-hint');
+  const ctx = aiCollectContext();
+  if (!ctx) {
+    hint.innerHTML = '<span class="ctx-empty">上下文：无</span>';
+    return;
+  }
+  // 根据页面渲染不同的上下文 pill
+  const pageLabels = { builder: '构建器', env: '环境变量', runner: 'Runner', reports: '报告' };
+  const pageLabel = pageLabels[ctx.page] || ctx.page;
+  let pills = [];
+  pills.push(`<span class="ctx-pill ctx-page">${pageLabel}</span>`);
+  if (ctx.page === 'builder') {
+    if (ctx.collection) pills.push(`<span class="ctx-pill ctx-collection" title="${esc(ctx.collection)}">${esc(ctx.collection.replace(/\.postman_collection\.json$/, ''))}</span>`);
+    if (ctx.name) pills.push(`<span class="ctx-pill ctx-request" title="${esc(ctx.name)}">${esc(ctx.name)}</span>`);
+  } else if (ctx.page === 'reports') {
+    if (ctx.currentReport) pills.push(`<span class="ctx-pill ctx-request" title="${esc(ctx.currentReport)}">${esc(ctx.currentReport)}</span>`);
+    else if (ctx.reports && ctx.reports.length) pills.push(`<span class="ctx-pill ctx-collection">${ctx.reports.length} 个报告</span>`);
+  } else if (ctx.page === 'env') {
+    pills.push(`<span class="ctx-pill ctx-collection">${ctx.name}</span>`);
+  } else if (ctx.page === 'runner') {
+    pills.push(`<span class="ctx-pill ctx-collection">${esc(ctx.name)}</span>`);
+  }
+  hint.innerHTML = pills.join('');
+}
+
+// 快捷操作
+function aiShortcut(type) {
+  if (aiBusy) return;
+  if (!currentReq) { toast('请先在左侧选中一个请求', 'err'); return; }
+  const ctx = aiCollectContext();
+  let prompt = '';
+  switch (type) {
+    case 'explain':
+      prompt = `解释这个 API 请求的作用、参数含义、预期响应。请求名：${ctx.name}\n方法：${ctx.method}\nURL：${ctx.url}\nHeaders:\n${ctx.headers}\nBody:\n${ctx.body}`;
+      break;
+    case 'diagnose':
+      prompt = `诊断这个 API 请求的响应。如果状态码非 2xx 或有错误，请指出原因并给出修复建议。\n请求名：${ctx.name}\n方法：${ctx.method}\nURL：${ctx.url}\n响应状态：${ctx.respStatus}\n响应 Body：\n${ctx.respBody.slice(0, 2000)}\nConsole 输出：\n${ctx.respConsole.slice(0, 1000)}`;
+      break;
+    case 'test_script':
+      prompt = `为这个 Postman 请求生成一段 test 脚本（使用 pm.test/pm.expect），针对响应做关键字段断言。\n请求名：${ctx.name}\n方法：${ctx.method}\nURL：${ctx.url}\n现有 test 脚本：\n${ctx.test}\n请直接输出脚本代码，用 \`\`\`javascript 代码块包裹。`;
+      break;
+    case 'prerequest':
+      prompt = `为这个 Postman 请求生成一段 prerequest 脚本。请求需要 Bearer token、trace_id、Idempotency-Key 等。\n请求名：${ctx.name}\n方法：${ctx.method}\nURL：${ctx.url}\n现有 prerequest：\n${ctx.prereq}\n请直接输出脚本代码，用 \`\`\`javascript 代码块包裹。`;
+      break;
+    case 'auth':
+      prompt = `解释 Lumi API 的鉴权机制：device_proof / pairing_proof 的 HMAC-SHA256 计算方式、canonical request 格式、nonce/timestamp/credential_version 的作用。结合这个请求的 prerequest 脚本说明：\n${ctx.prereq}`;
+      break;
+    case 'env':
+      // 异步：先拉当前 ENV，再构造 prompt
+      aiEnvShortcut();
+      return;
+  }
+  aiSend(prompt, true);
+}
+
+// AI 修改环境变量快捷入口
+async function aiEnvShortcut() {
+  if (aiBusy) return;
+  try {
+    const r = await fetch('/api/env');
+    const j = await r.json();
+    if (!j.ok) return;
+    // 拼接当前环境变量列表（含值）
+    const lines = j.data.map(v => `- ${v.key} = ${v.value || '(空)'}  ${v.description ? '// ' + v.description : ''}`).join('\n');
+    const prompt = `我要修改环境变量。下面是当前所有环境变量（${j.data.length} 个，来自 ${j.source}）：\n\n${lines}\n\n请告诉我你想怎么修改（例如：把 device_sn 改成 K1-2026-000002；新增 test_flag=1；删除 xxx）。如果你想让我批量修改，请用 JSON 代码块输出变更，格式如下：\n\`\`\`json\n{"set": {"key": "new_value", ...}, "delete": ["key1", ...]}\n\`\`\`\n\n我会解析你的输出并应用到环境变量。`;
+    aiSend(prompt, true);
+  } catch (e) {
+    toast('读取环境变量失败: ' + e.message, 'err');
+  }
+}
+
+// 从 AI 响应中解析 env 变更 JSON 并应用
+async function aiTryApplyEnvChanges(text) {
+  // 匹配 ```json ... ``` 代码块
+  const m = text.match(/```json\s*\n([\s\S]*?)```/);
+  if (!m) return false;
+  let changes;
+  try { changes = JSON.parse(m[1]); } catch { return false; }
+  if (!changes.set && !changes.delete) return false;
+
+  // 拉当前 env
+  const r = await fetch('/api/env');
+  const j = await r.json();
+  if (!j.ok) return false;
+  const values = j.data.map(v => ({ key: v.key, value: v.value, enabled: v.enabled !== false, description: v.description || '' }));
+
+  // 应用 set
+  if (changes.set && typeof changes.set === 'object') {
+    for (const [k, v] of Object.entries(changes.set)) {
+      const existing = values.find(x => x.key === k);
+      if (existing) existing.value = String(v);
+      else values.push({ key: k, value: String(v), enabled: true, description: '[AI 添加]' });
+    }
+  }
+  // 应用 delete
+  if (Array.isArray(changes.delete)) {
+    for (const k of changes.delete) {
+      const i = values.findIndex(x => x.key === k);
+      if (i >= 0) values.splice(i, 1);
+    }
+  }
+  // 保存
+  const sr = await fetch('/api/env', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ values }) });
+  const sj = await sr.json();
+  if (sj.ok) {
+    toast(`AI 已应用变更：set ${Object.keys(changes.set || {}).length}, delete ${(changes.delete || []).length}`, 'ok');
+    loadEnv();
+    return true;
+  }
+  return false;
+}
+
+async function aiSend(forcePrompt, isShortcut) {
+  if (aiBusy) return;
+  const input = document.getElementById('ai-input');
+  const userText = forcePrompt || input.value.trim();
+  if (!userText) return;
+
+  // 直接调用 Agent（Trae CLI）
+  return aiSendAgent(userText, isShortcut);
+}
+
+// Agent 模式：调用 Trae CLI
+async function aiSendAgent(userText, isShortcut) {
+  // 清空空状态
+  const empty = document.getElementById('ai-empty');
+  if (empty) empty.remove();
+
+  // 显示用户消息
+  aiRenderMsg('user', userText, null);
+  document.getElementById('ai-input').value = '';
+  aiSetBusy(true);
+
+  // 创建 assistant 占位
+  const aiMsgEl = aiRenderMsg('assistant', '', null);
+  const bubble = aiMsgEl.querySelector('.ai-msg-bubble');
+  bubble.innerHTML = '<div class="ai-typing"><span></span><span></span><span></span></div>';
+  let accText = '';
+  let accReasoning = '';
+  let toolEvents = [];
+
+  try {
+    aiCtrl = new AbortController();
+    // 构造精简上下文指针（不注入内容，避免污染 prompt；Agent 按需调用 API 获取详情）
+    const ctx = aiCollectContext();
+    const ctxHint = ctx ? [
+      `[当前上下文指针 - 不含内容，按需调用 API 获取详情]`,
+      `页面: ${ctx.page}`,
+      ctx.page === 'builder' ? `集合: ${ctx.collection || '(未选)'}  请求: ${ctx.name || '(未选)'}` : null,
+      ctx.page === 'reports' ? `当前报告: ${ctx.currentReport || '(未选)'}  报告列表: ${ctx.reports.join(', ') || '无'}` : null,
+      ctx.page === 'runner' ? `${ctx.name}` : null,
+      ctx.page === 'env' ? `${ctx.name}` : null,
+      `最近一次请求-响应详情见文件: /Users/hydramr/API-Test/.workspace/last-request.json`,
+      `上下文详情获取: GET /api/context/current（指针）或 GET /api/collections/:name/requests/:requestName（请求定义）或 GET /api/reports/:name/text（报告摘要）`,
+      `[上下文指针结束] 用户问题: ${userText}`
+    ].filter(Boolean).join('\n') : userText;
+    const resp = await fetch('/api/ai/trae', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: ctxHint,
+        sessionId: aiSessionId,
+        cwd: '/Users/hydramr/API-Test'
+      }),
+      signal: aiCtrl.signal
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${resp.status}`);
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    let currentEvent = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() || '';
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          currentEvent = line.slice(7).trim();
+        } else if (line.startsWith('data: ')) {
+          const payload = line.slice(6);
+          try {
+            const d = JSON.parse(payload);
+            // 处理 trae 事件
+            if (currentEvent === 'trae') {
+              if (d.type === 'stream_event' && d.delta) {
+                // 正文内容
+                if (d.delta.content) {
+                  accText += d.delta.content;
+                  bubble.innerHTML = renderAgentContent(accText, accReasoning, toolEvents, true);
+                  aiScrollBottom();
+                }
+                // 思考过程
+                if (d.delta.reasoning_content) {
+                  accReasoning += d.delta.reasoning_content;
+                  bubble.innerHTML = renderAgentContent(accText, accReasoning, toolEvents, true);
+                  aiScrollBottom();
+                }
+              }
+              // 工具调用事件（如果有的话，未来扩展）
+              if (d.type === 'tool_use' || d.type === 'tool_result') {
+                toolEvents.push(d);
+                bubble.innerHTML = renderAgentContent(accText, accReasoning, toolEvents, true);
+                aiScrollBottom();
+              }
+            } else if (currentEvent === 'done') {
+              if (d.sessionId) aiSessionId = d.sessionId;
+              // 流结束：思考过程自动折叠（用户可点击展开回顾）
+              bubble.innerHTML = renderAgentContent(accText, accReasoning, toolEvents, false);
+            } else if (currentEvent === 'error') {
+              throw new Error(d.message || d.error || 'Agent 错误');
+            }
+          } catch (e) {
+            if (e.message) console.warn('Agent event parse error:', e.message);
+          }
+        }
+      }
+    }
+    aiMessages.push({ role: 'assistant', content: accText || '(Agent 无输出)' });
+    if (aiSessionId) {
+      toast(`会话 ID: ${aiSessionId.slice(0, 8)}...（已记录，可续会话）`, 'info');
+    }
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      bubble.innerHTML = '<span style="color:var(--pm-text-mute)">已停止</span>';
+    } else {
+      bubble.innerHTML = `<span style="color:var(--pm-red)">⚠ ${e.message}</span>`;
+    }
+  } finally {
+    aiSetBusy(false);
+    aiCtrl = null;
+  }
+}
+
+// 渲染 Agent 输出（含思考过程折叠 + 正文 + 工具调用）
+// isStreaming=true 时思考过程默认展开（用户可看到 Agent 思考）；流结束自动折叠
+function renderAgentContent(text, reasoning, tools, isStreaming) {
+  let html = '';
+  // 思考过程（流式时展开，结论形成后自动折叠）
+  if (reasoning) {
+    const openAttr = isStreaming ? ' open' : '';
+    const label = isStreaming ? '思考中...' : '思考过程（已折叠，点击展开）';
+    html += `<details${openAttr} class="ai-reasoning" style="margin-bottom:8px;border-left:2px solid var(--pm-purple);padding-left:8px;">
+      <summary style="cursor:pointer;color:var(--pm-purple);font-size:11px;">${label}</summary>
+      <div style="margin-top:4px;color:var(--pm-text-dim);font-size:11px;white-space:pre-wrap;">${escapeHtml(reasoning)}</div>
+    </details>`;
+  }
+  // 工具调用
+  if (tools.length > 0) {
+    html += `<div style="margin-bottom:8px;font-size:11px;color:var(--pm-text-dim);">🔧 工具调用 ${tools.length} 次</div>`;
+  }
+  // 正文
+  if (text) {
+    html += aiRenderMarkdown(text);
+  }
+  return html || '<div class="ai-typing"><span></span><span></span><span></span></div>';
+}
+
+// 对话模式：调用 OpenAI 兼容接口
+async function aiSendChat(userText, isShortcut) {
+  // 检查配置
+  const cfgR = await fetch('/api/ai/config');
+  const cfgJ = await cfgR.json();
+  if (!cfgJ.ok || !cfgJ.data.has_key) {
+    toast('请先配置 AI API Key', 'err');
+    aiOpenConfig();
+    return;
+  }
+
+  // 清空空状态
+  const empty = document.getElementById('ai-empty');
+  if (empty) empty.remove();
+
+  // 添加用户消息
+  aiMessages.push({ role: 'user', content: userText });
+  // 显示用户消息（如果有上下文，显示 ctx pill）
+  const ctx = currentReq ? aiCollectContext() : null;
+  aiRenderMsg('user', userText, isShortcut ? ctx : (currentReq ? { name: currentReq } : null));
+  document.getElementById('ai-input').value = '';
+  aiSetBusy(true);
+
+  // 构造发送给后端的消息：自动注入当前请求/响应上下文
+  const sendMessages = [];
+  if (ctx) {
+    sendMessages.push({
+      role: 'system',
+      content: aiBuildContextPrompt(ctx)
+    });
+  }
+  sendMessages.push(...aiMessages.map(m => ({ role: m.role, content: m.content })));
+
+  // 创建 assistant 占位
+  const aiMsgEl = aiRenderMsg('assistant', '', null);
+  const bubble = aiMsgEl.querySelector('.ai-msg-bubble');
+  bubble.innerHTML = '<div class="ai-typing"><span></span><span></span><span></span></div>';
+  let accText = '';
+
+  try {
+    aiCtrl = new AbortController();
+    const resp = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: sendMessages }),
+      signal: aiCtrl.signal
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${resp.status}`);
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const d = JSON.parse(line.slice(6));
+          if (d.type === 'delta') {
+            accText += d.content;
+            bubble.innerHTML = aiRenderMarkdown(accText);
+            aiScrollBottom();
+          } else if (d.type === 'error') {
+            throw new Error(d.error);
+          } else if (d.type === 'done') {
+            // 完成
+          }
+        } catch (e) {
+          if (e.message) {
+            bubble.innerHTML = `<span style="color:var(--pm-red)">⚠ ${e.message}</span>`;
+          }
+        }
+      }
+    }
+    aiMessages.push({ role: 'assistant', content: accText });
+    // 自动检测 AI 输出中的 env 变更 JSON 代码块并应用
+    if (accText.includes('```json')) {
+      const applied = await aiTryApplyEnvChanges(accText);
+      if (applied) {
+        // 在 bubble 后追加"已应用"标记
+        const tag = document.createElement('div');
+        tag.style.cssText = 'margin-top:6px;padding:4px 8px;background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:3px;font-size:11px;color:var(--pm-green)';
+        tag.textContent = '✓ 已自动应用到环境变量';
+        bubble.appendChild(tag);
+      }
+    }
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      bubble.innerHTML = '<span style="color:var(--pm-text-mute)">已停止</span>';
+      aiMessages.push({ role: 'assistant', content: accText || '（已停止）' });
+    } else {
+      bubble.innerHTML = `<span style="color:var(--pm-red)">⚠ ${e.message}</span>`;
+    }
+  } finally {
+    aiSetBusy(false);
+    aiCtrl = null;
+  }
+}
+
+// 构造注入 AI 的上下文 prompt
+function aiBuildContextPrompt(ctx) {
+  const parts = [`[当前上下文 - 用户正在 Newman Web Console 中测试，当前页面: ${ctx.page}]`];
+
+  if (ctx.page === 'builder') {
+    parts.push(`请求名: ${ctx.name}`);
+    parts.push(`方法: ${ctx.method}`);
+    parts.push(`URL: ${ctx.url}`);
+    if (ctx.headers) parts.push(`Headers:\n${ctx.headers}`);
+    if (ctx.body && ctx.body !== '(无 body)') parts.push(`Body:\n${ctx.body.slice(0, 800)}`);
+    if (ctx.respStatus && ctx.respStatus !== '未发送') {
+      parts.push(`响应状态: ${ctx.respStatus}`);
+    }
+    if (ctx.respBody && ctx.respBody.length > 0 && !ctx.respBody.startsWith('点击 Send')) {
+      parts.push(`响应 Body:\n${ctx.respBody.slice(0, 1500)}`);
+    }
+    if (ctx.respConsole && ctx.respConsole.trim().length > 0) {
+      parts.push(`Newman Console 输出:\n${ctx.respConsole.slice(0, 800)}`);
+    }
+  } else if (ctx.page === 'env') {
+    parts.push(`页面: 环境变量管理`);
+    parts.push(`当前环境变量列表:\n${ctx.envList.slice(0, 2000)}`);
+  } else if (ctx.page === 'runner') {
+    parts.push(`页面: Collection Runner`);
+    parts.push(`集合: ${ctx.name}`);
+    if (ctx.consoleOutput) parts.push(`运行输出:\n${ctx.consoleOutput.slice(-1500)}`);
+  } else if (ctx.page === 'reports') {
+    parts.push(`页面: 历史报告`);
+    parts.push(`报告列表: ${ctx.reports.join(', ') || '无'}`);
+  }
+
+  parts.push(`[上下文结束] 用户基于此上下文提问，请直接回答，不要反问用户补充上下文信息。`);
+  return parts.join('\n\n');
+}
+
+function aiRenderMsg(role, content, ctx) {
+  const body = document.getElementById('ai-body');
+  const div = document.createElement('div');
+  div.className = `ai-msg ${role}`;
+  const roleLabel = role === 'user' ? '你' : 'AI';
+  const tag = role === 'user' ? 'ai-tag-user' : 'ai-tag-ai';
+  const ctxPills = ctx ? `<span class="ai-tag ai-tag-ctx">上下文：${esc(ctx.name)}</span>` : '';
+  div.innerHTML = `
+    <div class="ai-msg-role"><span class="ai-tag ${tag}">${roleLabel}</span>${ctxPills}</div>
+    <div class="ai-msg-bubble"></div>
+  `;
+  body.appendChild(div);
+  const bubble = div.querySelector('.ai-msg-bubble');
+  if (content) bubble.innerHTML = aiRenderMarkdown(content);
+  aiScrollBottom();
+  return div;
+}
+
+// 极简 Markdown 渲染（段落/代码块/行内 code）
+function aiRenderMarkdown(text) {
+  // 先提取代码块
+  const blocks = [];
+  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (m, lang, code) => {
+    blocks.push({ lang: (lang || '').toLowerCase(), code });
+    return `\x00BLOCK${blocks.length - 1}\x00`;
+  });
+  // 转义 HTML
+  text = esc(text);
+  // 段落
+  text = text.split(/\n\n+/).map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+  // 行内 code
+  text = text.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  // 还原代码块（带语法高亮）
+  text = text.replace(/\x00BLOCK(\d+)\x00/g, (m, i) => {
+    const b = blocks[parseInt(i)];
+    return `<pre><code class="language-${esc(b.lang || '')}">${highlightCode(b.code, b.lang)}</code></pre>`;
+  });
+  return text;
+}
+
+// 代码语法高亮：JSON 用 JSON 高亮，JS / 其他用简易 JS 高亮
+function highlightCode(code, lang) {
+  if (!code) return '';
+  if (lang === 'json') return highlightJson(code);
+  // 默认按 JS 高亮：注释、字符串、数字、关键字、函数名
+  let str = code;
+  // 先占位：注释和字符串（避免被后续规则误伤）
+  const placeholders = [];
+  str = str.replace(/(\/\/[^\n]*|\/\*[\s\S]*?\*\/)/g, (m) => {
+    placeholders.push(`<span class="js-comment">${esc(m)}</span>`);
+    return `\x00C${placeholders.length - 1}\x00`;
+  });
+  str = str.replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g, (m) => {
+    placeholders.push(`<span class="js-string">${esc(m)}</span>`);
+    return `\x00C${placeholders.length - 1}\x00`;
+  });
+  // 转义剩余文本
+  str = esc(str);
+  // 数字
+  str = str.replace(/\b(-?\d+(?:\.\d+)?)\b/g, '<span class="js-number">$1</span>');
+  // 关键字
+  str = str.replace(/\b(const|let|var|function|return|if|else|for|while|try|catch|finally|throw|new|class|extends|this|typeof|instanceof|in|of|await|async|yield|break|continue|switch|case|default|do|void|delete|import|export|from|require|module|exports|true|false|null|undefined|NaN|Infinity)\b/g, '<span class="js-bool">$1</span>');
+  // 函数名（xxx( 形式）
+  str = str.replace(/\b([a-zA-Z_$][\w$]*)(\s*\()/g, '<span class="js-fn">$1</span>$2');
+  // 还原占位
+  str = str.replace(/\x00C(\d+)\x00/g, (m, i) => placeholders[parseInt(i)]);
+  return str;
+}
+
+function aiScrollBottom() {
+  const body = document.getElementById('ai-body');
+  body.scrollTop = body.scrollHeight;
+}
+
+function aiSetBusy(busy) {
+  aiBusy = busy;
+  const sendBtn = document.getElementById('ai-send-btn');
+  const stopBtn = document.getElementById('ai-stop-btn');
+  const busyBar = document.getElementById('ai-busy-bar');
+  const input = document.getElementById('ai-input');
+  const status = document.getElementById('ai-status');
+  // 思考时不禁用输入框 — 允许用户继续追加消息
+  // 但禁用发送按钮（避免并发请求），改为显示停止按钮
+  sendBtn.disabled = busy;
+  if (busy) {
+    sendBtn.style.display = 'none';
+    stopBtn.classList.add('show');
+    busyBar.classList.add('show');
+    // 输入框保持可用，placeholder 提示可追加或停止
+    input.placeholder = '思考中… 可继续输入消息，按 Enter 追加发送（会先停止当前执行）';
+    if (status) {
+      status.textContent = '思考中…';
+      status.style.color = 'var(--pm-accent)';
+    }
+  } else {
+    sendBtn.style.display = 'flex';
+    stopBtn.classList.remove('show');
+    busyBar.classList.remove('show');
+    input.placeholder = '问点什么... (Enter 发送 / Shift+Enter 换行)';
+    if (status) {
+      status.style.color = '';
+      // 恢复由 loadAiConfig 设置的状态文本
+      loadAiConfig();
+    }
+  }
+  document.querySelectorAll('.ai-shortcut').forEach(b => b.disabled = busy);
+  if (!busy) aiUpdateCtxHint();
+}
+
+// 停止 Agent 执行
+function aiStop() {
+  if (!aiBusy || !aiCtrl) return;
+  try {
+    aiCtrl.abort();
+  } catch {}
+  // aiCtrl.abort() 会触发 fetch 的 AbortError，由 aiSendAgent 的 catch 块处理 UI
+}
+
+// ============ AI 配置弹窗 ============
+
+async function aiOpenConfig() {
+  const r = await fetch('/api/ai/config');
+  const j = await r.json();
+  if (!j.ok) return;
+  document.getElementById('ai-cfg-base_url').value = j.data.base_url;
+  document.getElementById('ai-cfg-model').value = j.data.model;
+  document.getElementById('ai-cfg-temperature').value = j.data.temperature;
+  document.getElementById('ai-cfg-system_prompt').value = j.data.system_prompt;
+  document.getElementById('ai-cfg-api_key').value = '';
+  document.getElementById('ai-cfg-key-hint').textContent = j.data.has_key ? `当前: ${j.data.api_key_masked} (留空则保留)` : '';
+  document.getElementById('ai-config-modal').classList.add('show');
+}
+
+function aiCloseConfig() {
+  document.getElementById('ai-config-modal').classList.remove('show');
+}
+
+function aiPreset(key) {
+  const p = AI_PRESETS[key] || AI_PRESETS.custom;
+  if (p.base_url) document.getElementById('ai-cfg-base_url').value = p.base_url;
+  if (p.model) document.getElementById('ai-cfg-model').value = p.model;
+}
+
+async function aiSaveConfig() {
+  const body = {
+    base_url: document.getElementById('ai-cfg-base_url').value.trim(),
+    model: document.getElementById('ai-cfg-model').value.trim(),
+    api_key: document.getElementById('ai-cfg-api_key').value,
+    temperature: parseFloat(document.getElementById('ai-cfg-temperature').value),
+    system_prompt: document.getElementById('ai-cfg-system_prompt').value
+  };
+  const r = await fetch('/api/ai/config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const j = await r.json();
+  if (j.ok) {
+    toast('已保存', 'ok');
+    aiCloseConfig();
+    loadAiConfig();
+  } else {
+    toast('保存失败: ' + j.error, 'err');
+  }
+}
+</script>
+
+</body>
+</html>
