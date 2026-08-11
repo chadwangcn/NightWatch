@@ -81,7 +81,7 @@
           "name": "H3 GET /readyz",
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/readyz",
+            "url": "{{origin_url}}/readyz",
             "header": [
               {
                 "key": "Accept",
@@ -95,11 +95,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('200 or 503', () => [200, 503].includes(pm.response.code));",
-                  "if (pm.response.code === 200) {",
-                  "  const j = pm.response.json();",
-                  "  pm.test('ready', () => pm.expect(j.data.status).to.eql('ready'));",
-                  "}"
+                  "// /readyz 是内部接口，外部访问应返回 404",
+                  "pm.test('readyz is internal-only (404 externally)', () => pm.response.to.have.status(404));"
                 ]
               }
             }

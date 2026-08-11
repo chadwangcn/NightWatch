@@ -2,7 +2,7 @@
   "info": {
     "name": "Lumi S5 Content Media",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Lumi S5 Content Media API 测试集合（对齐 2026-08 最新真源）\n\n真源文档：\n- docs/api/public/device-content.v1.md  — 设备 CMS / Catalog / PlayResource\n- docs/api/operations/publishing.v1.md  — 运营分类 / 上传 / 发布 / 查询\n- docs/api/external-api-test-guide.v1.md  — 端到端联调指南\n\n覆盖范围（黑盒测试，仅设备 + 运营两个面，不含 internal）：\n- 00 健康检查（/healthz /readyz）\n- 01 设备 API · CMS / Catalog / PlayResource（3 个端点）\n- 02 运营 API · Categories / Uploads / Publications / Source-intakes（11 个端点）\n- 10 场景A · 端到端最小验收（对应 external-api-test-guide 步骤 1-11）\n- 11 场景B · 个人内容（private_child 可见性边界）\n- 12 场景C · 鉴权与参数负向\n\n两种使用方式：\n1. 单接口测试：每个请求独立 Send，prerequest 脚本自动生成 trace_id/request_id/idempotency_key\n2. 场景序列测试：Collection Runner 选中文件夹按顺序执行，环境变量自动串联\n\n★ 环境变量（全局共享）\n本集合与 `Lumi device-platform` 集合共用同一份环境文件 `lumi-device-platform.postman_environment.json`。\n所有 token 和身份字段都由 device-platform 集合签发后直接被本集合消费，无需切换或复制环境：\n  - device_access_token    ← device-platform A1/B3 产出 → 用于 /v1/device/*\n  - device_sn              ← 同一环境 → 用于 X-Lumi-Device-ID header\n  - operator_access_token  ← device-platform 04.operator-sessions 产出 → 用于 /ops/v1/*\n  - s5_* 前缀变量          ← S5 专属（admin 域名/CMS page_key/测试资产/运行时产出）\n\n关键鉴权规则（对齐 device-content.v1.md）：\n- 设备请求必须含 Authorization: Bearer {{device_access_token}} + X-Lumi-Device-ID: {{device_sn}}\n- 设备请求 body 不得携带 device_sn / user_id / child_id / family_id / role / visibility_scope / audience_surface / publication_version_id\n- 设备请求 body 必须含 client_capabilities，audio 客户端必须声明 supported_audio_codecs 至少含 audio/mp4, audio/mpeg, audio/wav\n- 运营写请求必须含 Idempotency-Key 头，DELETE category 还需 If-Match + X-Operation-Reason\n- PlayResource 同时接受 device token 和 user token（本集合只测 device token 路径）"
+    "description": "Lumi S5 Content Media API 测试集合（对齐 2026-08 最新真源）\n\n真源文档：\n- docs/api/public/device-content.v1.md  — 设备 CMS / Catalog / PlayResource / Signed Resource / Library / Recommendations / Categories\n- docs/api/public/guardian-content.v1.md  — 家长 CMS / Catalog / Library / Recommendations / Categories / Publications Command / Uploads\n- docs/api/operations/publishing.v1.md  — 运营分类 / 上传 / 发布 / 查询 / CMS 页面编排\n- docs/api/external-api-test-guide.v1.md  — 端到端联调指南\n\n覆盖范围（黑盒测试，三个外部面 + 运营 CMS 编排，不含纯 internal API）：\n- 00 健康检查（/healthz /readyz）— 2 个端点\n- 01 设备 API · CMS / Catalog / PlayResource / Signed Resource / Categories / Library / Recommendations（7 个端点）\n- 02 运营 API · Categories / Uploads / Publications / Source-intakes（11 个端点）\n- 03 家长 API · CMS / Catalog / Categories / Library / Recommendations / Publications Command / Uploads（10 个端点）\n- 04 运营 API · CMS Pages（6 个端点：draft / list / get / publish / withdraw / rollback）\n- 10 场景A · 端到端最小验收（对应 external-api-test-guide 步骤 1-11）\n- 11 场景B · 个人内容（private_child 可见性边界）\n- 12 场景C · 鉴权与参数负向（含家长 public visibility / 跨家庭命令）\n\n端点统计：\n- 设备面 7 个（原 3 + 新 4：Signed Resource / Categories / Library / Recommendations）\n- 家长面 10 个\n- 运营面 17 个（原 11 + 新 6 CMS 页面编排）\n- 合计 34 个接口级请求 + 健康检查 2 + 场景序列 23（A 11 / B 4 / C 8）= 59 个请求\n\n两种使用方式：\n1. 单接口测试：每个请求独立 Send，prerequest 脚本自动生成 trace_id/request_id/idempotency_key\n2. 场景序列测试：Collection Runner 选中文件夹按顺序执行，环境变量自动串联\n\n★ 环境变量（全局共享）\n本集合与 `Lumi device-platform` 集合共用同一份环境文件 `lumi-device-platform.postman_environment.json`。\n所有 token 和身份字段都由 device-platform 集合签发后直接被本集合消费，无需切换或复制环境：\n  - device_access_token    ← device-platform A1/B3 产出 → 用于 /v1/device/*\n  - user_access_token      ← device-platform user-sessions 产出 → 用于 /v1/guardian/*\n  - device_sn              ← 同一环境 → 用于 X-Lumi-Device-ID header\n  - operator_access_token  ← device-platform 04.operator-sessions 产出 → 用于 /ops/v1/*\n  - s5_* 前缀变量          ← S5 专属（admin 域名/CMS page_key/测试资产/运行时产出）\n\n关键鉴权规则（对齐 device-content.v1.md / guardian-content.v1.md）：\n- 设备请求必须含 Authorization: Bearer {{device_access_token}} + X-Lumi-Device-ID: {{device_sn}}\n- 设备请求 body 不得携带 device_sn / user_id / child_id / family_id / role / visibility_scope / audience_surface / publication_version_id\n- 设备请求 body 必须含 client_capabilities，audio 客户端必须声明 supported_audio_codecs 至少含 audio/mp4, audio/mpeg, audio/wav\n- 设备响应 caller_identity.caller_type 应为 \"device\"（断言）\n- 家长请求必须含 Authorization: Bearer {{user_access_token}}\n- 家长写请求还需 Idempotency-Key header（command / uploads/sessions / :complete / DELETE）\n- 家长响应 caller_identity.caller_type 应为 \"guardian\"（断言）\n- 家长 command 仅支持 hide_from_child / show_to_child（非 publish/pause/revoke）\n- 家长上传 visibility_scope 仅接受 private_child，public 一律 403 guardian_public_visibility_denied\n- 运营请求必须含 Authorization: Bearer {{operator_access_token}}\n- 运营写请求必须含 Idempotency-Key 头，DELETE category 还需 If-Match + X-Operation-Reason\n- PlayResource 同时接受 device token 和 user token（本集合只测 device token 路径）\n- SignedResource (/v1/device/content-resources/{resource_id}) 不需 Authorization，签名参数在 query string"
   },
   "variable": [
     { "key": "trace_id", "value": "" },
@@ -33,7 +33,7 @@
           "name": "GET /healthz (S5 liveness)",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{base_url}}/healthz", "host": ["{{base_url}}"], "path": ["healthz"] }
+            "url": { "raw": "{{origin_url}}/healthz", "host": ["{{origin_url}}"], "path": ["healthz"] }
           },
           "event": [{
             "listen": "test",
@@ -44,16 +44,16 @@
           }]
         },
         {
-          "name": "GET /readyz (S5 readiness)",
+          "name": "GET /readyz (S5 readiness, internal-only)",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{base_url}}/readyz", "host": ["{{base_url}}"], "path": ["readyz"] }
+            "url": { "raw": "{{origin_url}}/readyz", "host": ["{{origin_url}}"], "path": ["readyz"] }
           },
           "event": [{
             "listen": "test",
             "script": { "type": "text/javascript", "exec": [
-              "pm.test('readyz returns 200', () => pm.response.to.have.status(200));",
-              "try { const j = pm.response.json(); pm.test('status is ready', () => pm.expect(j.status).to.eql('ready')); } catch(e) {}"
+              "// /readyz 是内部接口，不对外暴露，外部访问应返回 404",
+              "pm.test('readyz is internal-only (404 externally)', () => pm.response.to.have.status(404));"
             ]}
           }]
         }
@@ -61,8 +61,8 @@
     },
 
     {
-      "name": "01 · 设备 API · CMS Catalog PlayResource",
-      "description": "设备内容 API（device-content.v1.md）。Device Token + DeviceBinding Gate，仅音频。\n\n所有请求必须含：\n- Authorization: Bearer {{device_access_token}}\n- X-Lumi-Device-ID: {{device_sn}}\n- Content-Type: application/json\n- body 中非空 trace_id、request_id、client_capabilities\n\nclient_capabilities 必须含 audio/video/image 布尔字段 + supported_audio_codecs 数组（至少 audio/mp4, audio/mpeg, audio/wav）。\n\nbody 不得携带 device_sn / user_id / child_id / family_id / role / visibility_scope / audience_surface / publication_version_id（违规返回 400 identity_context_field_forbidden）。\n\n【单接口测试依赖】\n- D-CMS: 仅依赖 device_access_token + device_sn\n- D-Catalog: 依赖 target.target_type + target.target_id（从 D-CMS 响应取得）\n- D-Play: 依赖 media_id（从 D-Catalog 响应取得）",
+      "name": "01 · 设备 API · CMS Catalog PlayResource Categories Library Recommendations",
+      "description": "设备内容 API（device-content.v1.md）。Device Token + DeviceBinding Gate，仅音频。\n\n包含 7 个端点：\n- POST /v1/device/cms/pages/{page_key}:resolve  — CMS 页面\n- POST /v1/device/catalog:resolve  — Catalog 展开\n- POST /v1/device/play/resources  — PlayResource 签发\n- GET /v1/device/content-resources/{resource_id}  — Signed Resource（CDN 字节流，无需 Authorization）\n- POST /v1/device/categories:list  — 设备可见分类\n- POST /v1/device/library/query  — 设备书架\n- POST /v1/device/recommendations/query  — 设备推荐\n\n所有请求（除 Signed Resource）必须含：\n- Authorization: Bearer {{device_access_token}}\n- X-Lumi-Device-ID: {{device_sn}}\n- Content-Type: application/json\n- body 中非空 trace_id、request_id（client_capabilities 设备面必填）\n\nclient_capabilities 必须含 audio/video/image 布尔字段 + supported_audio_codecs 数组（至少 audio/mp4, audio/mpeg, audio/wav）。\n\nbody 不得携带 device_sn / user_id / child_id / family_id / role / visibility_scope / audience_surface / publication_version_id（违规返回 400 identity_context_field_forbidden）。\n\n响应 caller_identity.caller_type 应为 \"device\"（断言）。\n\n【单接口测试依赖】\n- D-CMS: 仅依赖 device_access_token + device_sn\n- D-Catalog: 依赖 target.target_type + target.target_id（从 D-CMS 响应取得）\n- D-Play: 依赖 media_id（从 D-Catalog 响应取得）\n- D-SignedResource: 依赖 D-Play 响应中 audio url 上的 query 参数（device_id / expires / signature）和 resource_id\n- D-Categories / D-Library / D-Recommendations: 仅依赖 device_access_token + device_sn",
       "item": [
         {
           "name": "D-CMS · POST /v1/device/cms/pages/{page_key}:resolve",
@@ -200,6 +200,114 @@
             "url": { "raw": "{{base_url}}/v1/device/play/resources", "host": ["{{base_url}}"], "path": ["v1","device","play","resources"] },
             "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"media_id\": \"{{s5_media_id}}\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
           }
+        },
+        {
+          "name": "D-SignedResource · GET /v1/device/content-resources/{resource_id}",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('SignedResource returns 200 or 206', () => pm.expect([200, 206]).to.include(pm.response.code));",
+              "pm.test('SignedResource 至少收到 1 字节', () => pm.expect(pm.response.byteLength).to.be.above(0));",
+              "pm.test('Content-Type 是音频/二进制', () => {",
+              "  const ct = pm.response.headers.get('Content-Type') || '';",
+              "  pm.expect(['audio/mpeg', 'audio/mp4', 'audio/wav', 'application/octet-stream', 'image/png'].some(t => ct.includes(t))).to.be.true;",
+              "});"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{s5_cdn_audio_url}}", "host": ["{{s5_cdn_audio_url}}"] },
+            "description": "GET /v1/device/content-resources/{resource_id}\n\n注意：此处直接复用 D-Play 响应提取的 s5_cdn_audio_url（已含 resource_id 路径段 + device_id / expires / signature 三个 query 参数）。SignedResource security 不需要 Authorization header。\n\n响应是二进制音频字节流，不在 JSON 中内联。"
+          }
+        },
+        {
+          "name": "D-Categories · POST /v1/device/categories:list",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_dcat_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_dcat_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Device categories returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('caller_type is device', () => pm.expect(j.data.caller_identity.caller_type).to.eql('device'));",
+              "pm.test('categories is array', () => pm.expect(j.data.categories).to.be.an('array'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/categories:list", "host": ["{{base_url}}"], "path": ["v1","device","categories:list"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"locale\": \"zh-CN\",\n  \"timezone\": \"Asia/Shanghai\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "D-Library · POST /v1/device/library/query",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_dlib_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_dlib_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Device library returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('caller_type is device', () => pm.expect(j.data.caller_identity.caller_type).to.eql('device'));",
+              "pm.test('items is array', () => pm.expect(j.data.items).to.be.an('array'));",
+              "pm.test('has_more is boolean', () => pm.expect(j.data.has_more).to.be.a('boolean'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/library/query", "host": ["{{base_url}}"], "path": ["v1","device","library","query"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"locale\": \"zh-CN\",\n  \"timezone\": \"Asia/Shanghai\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]},\n  \"viewer\": {\"viewer_surface\": \"child_device\"},\n  \"limit\": 20,\n  \"page_token\": null\n}" }
+          }
+        },
+        {
+          "name": "D-Recommendations · POST /v1/device/recommendations/query",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_drec_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_drec_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Device recommendations returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('caller_type is device', () => pm.expect(j.data.caller_identity.caller_type).to.eql('device'));",
+              "pm.test('scenario is child_audio_home', () => pm.expect(j.data.scenario).to.eql('child_audio_home'));",
+              "pm.test('items is array', () => pm.expect(j.data.items).to.be.an('array'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/device/recommendations/query", "host": ["{{base_url}}"], "path": ["v1","device","recommendations","query"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"locale\": \"zh-CN\",\n  \"timezone\": \"Asia/Shanghai\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]},\n  \"viewer\": {\"viewer_surface\": \"child_device\"},\n  \"scenario\": \"child_audio_home\",\n  \"limit\": 10,\n  \"page_token\": null\n}" }
+          }
         }
       ]
     },
@@ -223,7 +331,7 @@
             "header": [
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories?include_retired=false", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories"], "query": [{"key":"include_retired","value":"false"}] }
+            "url": { "raw": "{{admin_base_url}}/ops/v1/categories?include_retired=false", "host": ["{{admin_base_url}}"], "path": ["ops","v1","categories"], "query": [{"key":"include_retired","value":"false"}] }
           }
         },
         {
@@ -253,7 +361,7 @@
               { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories"] },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/categories", "host": ["{{admin_base_url}}"], "path": ["ops","v1","categories"] },
             "body": { "mode": "raw", "raw": "{\n  \"category_key\": \"api_acceptance_{{idempotency_key}}\",\n  \"name\": \"API acceptance test\",\n  \"description\": \"Temporary test category\",\n  \"parent_category_id\": null,\n  \"sort_order\": 100,\n  \"reason\": \"external API acceptance\"\n}" }
           }
         },
@@ -273,59 +381,393 @@
             "header": [
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories/{{s5_category_id}}", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories","{{s5_category_id}}"] }
+            "url": { "raw": "{{admin_base_url}}/ops/v1/categories/{{s5_category_id}}", "host": ["{{admin_base_url}}"], "path": ["ops","v1","categories","{{s5_category_id}}"] }
           }
         },
         {
-          "name": "OP-Cat-Update · PUT /ops/v1/categories/{category_id}",
+          "name": "OP-C04 · POST /ops/v1/categories/{category_id}:revise",
           "event": [{
             "listen": "prerequest",
             "script": { "type": "text/javascript", "exec": [
-              "pm.variables.set('idempotency_key', 'idem_cat_update_' + Math.random().toString(36).slice(2,14));"
+              "pm.variables.set('idempotency_key', 'idem_cat_revise_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('trace_id', 'trace_cat_revise_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_cat_revise_' + Math.random().toString(36).slice(2,14));"
             ]}
           }, {
             "listen": "test",
             "script": { "type": "text/javascript", "exec": [
-              "pm.test('Update category returns 200', () => pm.response.to.have.status(200));",
+              "pm.test('Revise category returns 200', () => pm.response.to.have.status(200));",
               "const j = pm.response.json();",
               "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has trace_id', () => pm.expect(j.trace_id).to.be.a('string'));",
+              "pm.test('has request_id', () => pm.expect(j.request_id).to.be.a('string'));",
+              "pm.test('category_id is preserved', () => pm.expect(j.data.category_id).to.eql(pm.environment.get('s5_category_id')));",
+              "pm.test('revision advanced', () => pm.expect(Number(j.data.revision)).to.be.above(Number(pm.environment.get('s5_category_revision'))));",
+              "pm.test('display_name is revised', () => pm.expect(j.data.display_name).to.include('revised'));",
+              "pm.test('sort_order is revised', () => pm.expect(j.data.sort_order).to.eql(101));",
+              "pm.test('no parent_category_id leaked', () => pm.expect(j.data).to.not.have.property('parent_category_id'));",
               "try { pm.environment.set('s5_category_revision', j.data.revision); } catch(e) {}"
             ]}
           }],
           "request": {
-            "method": "PUT",
+            "method": "POST",
             "header": [
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
               { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "If-Match", "value": "{{s5_category_revision}}" },
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories/{{s5_category_id}}", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories","{{s5_category_id}}"] },
-            "body": { "mode": "raw", "raw": "{\n  \"category_key\": \"api_acceptance_updated\",\n  \"name\": \"API acceptance test (updated)\",\n  \"description\": \"Updated temporary test category\",\n  \"parent_category_id\": null,\n  \"sort_order\": 101,\n  \"expected_revision\": \"{{s5_category_revision}}\",\n  \"reason\": \"external API acceptance update\"\n}" }
+            "url": { "raw": "{{admin_base_url}}/ops/v1/categories/{{s5_category_id}}:revise", "host": ["{{admin_base_url}}"], "path": ["ops","v1","categories","{{s5_category_id}}:revise"] },
+            "body": { "mode": "raw", "raw": "{\n  \"display_name\": \"API acceptance test (revised)\",\n  \"description\": \"Revised temporary test category\",\n  \"sort_order\": 101,\n  \"reason\": \"external API acceptance - revise category\"\n}" }
           }
         },
         {
-          "name": "OP-Cat-Delete · DELETE /ops/v1/categories/{category_id}",
+          "name": "OP-C04-N · If-Match 冲突 → 409 operation_revision_conflict",
           "event": [{
             "listen": "prerequest",
             "script": { "type": "text/javascript", "exec": [
-              "pm.variables.set('idempotency_key', 'idem_cat_delete_' + Math.random().toString(36).slice(2,14));"
+              "pm.variables.set('idempotency_key', 'idem_cat_revise_conflict_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Conflict returns 409', () => pm.response.to.have.status(409));",
+              "const j = pm.response.json();",
+              "pm.test('success is false', () => pm.expect(j.success).to.eql(false));",
+              "pm.test('error.code is operation_revision_conflict', () => pm.expect(j.error.code).to.eql('operation_revision_conflict'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "If-Match", "value": "0" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/categories/{{s5_category_id}}:revise", "host": ["{{admin_base_url}}"], "path": ["ops","v1","categories","{{s5_category_id}}:revise"] },
+            "body": { "mode": "raw", "raw": "{\n  \"display_name\": \"Conflict probe\",\n  \"sort_order\": 1,\n  \"reason\": \"external API acceptance - If-Match conflict test\"\n}" }
+          }
+        },
+        {
+          "name": "OP-C05 · POST /ops/v1/categories/{category_id}:retire",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cat_retire_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('trace_id', 'trace_cat_retire_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_cat_retire_' + Math.random().toString(36).slice(2,14));"
             ]}
           }, {
             "listen": "test",
             "script": { "type": "text/javascript", "exec": [
               "pm.test('Retire category returns 200', () => pm.response.to.have.status(200));",
               "const j = pm.response.json();",
-              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));"
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('state is retired', () => pm.expect(j.data.state).to.eql('retired'));",
+              "pm.test('no cascade params accepted', () => pm.expect(j.data).to.not.have.property('parent_category_id'));"
             ]}
           }],
           "request": {
-            "method": "DELETE",
+            "method": "POST",
             "header": [
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
               { "key": "If-Match", "value": "{{s5_category_revision}}" },
-              { "key": "X-Operation-Reason", "value": "external API acceptance cleanup" }
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories/{{s5_category_id}}", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories","{{s5_category_id}}"] }
+            "url": { "raw": "{{admin_base_url}}/ops/v1/categories/{{s5_category_id}}:retire", "host": ["{{admin_base_url}}"], "path": ["ops","v1","categories","{{s5_category_id}}:retire"] },
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"external API acceptance - retire category\"\n}" }
+          }
+        },
+        {
+          "name": "OP-C06 · GET /ops/v1/categories/{category_id}/content",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Category content lookup returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('items is array', () => pm.expect(j.data.items).to.be.an('array'));",
+              "pm.test('has snapshot_at', () => pm.expect(j.data.snapshot_at).to.be.a('string'));",
+              "pm.test('next_cursor is null or string', () => pm.expect(j.data.next_cursor === null || typeof j.data.next_cursor === 'string').to.be.true);"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/categories/{{s5_category_id}}/content?limit=10", "host": ["{{admin_base_url}}"], "path": ["ops","v1","categories","{{s5_category_id}}","content"], "query": [{"key":"limit","value":"10"}] }
+          }
+        },
+        {
+          "name": "OP-C06-N · 未知 category → 404 category_not_found",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Unknown category returns 404', () => pm.response.to.have.status(404));",
+              "const j = pm.response.json();",
+              "pm.test('success is false', () => pm.expect(j.success).to.eql(false));",
+              "pm.test('error.code is category_not_found', () => pm.expect(j.error.code).to.eql('category_not_found'));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/categories/cat_nonexistent_000/content", "host": ["{{admin_base_url}}"], "path": ["ops","v1","categories","cat_nonexistent_000","content"] }
+          }
+        },
+        {
+          "name": "OP-C07 · POST /ops/v1/content/{content_type}/{content_id}/categories:replace",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cat_replace_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('trace_id', 'trace_cat_replace_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_cat_replace_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Replace categories returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has target', () => pm.expect(j.data.target).to.be.an('object'));",
+              "pm.test('category_refs is array', () => pm.expect(j.data.category_refs).to.be.an('array'));",
+              "pm.test('has category_assignment_revision', () => pm.expect(j.data.category_assignment_revision).to.be.a('number'));",
+              "try { pm.environment.set('s5_category_assignment_revision', j.data.category_assignment_revision); } catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/content/programs/{{s5_program_id}}/categories:replace", "host": ["{{admin_base_url}}"], "path": ["ops","v1","content","programs","{{s5_program_id}}","categories:replace"] },
+            "body": { "mode": "raw", "raw": "{\n  \"category_ids\": [\"{{s5_category_id}}\"],\n  \"reason\": \"external API acceptance - replace categories\"\n}" }
+          }
+        },
+        {
+          "name": "OP-C07-N · 未知 category → 422 category_assignment_invalid",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cat_replace_invalid_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Invalid category returns 422', () => pm.response.to.have.status(422));",
+              "const j = pm.response.json();",
+              "pm.test('success is false', () => pm.expect(j.success).to.eql(false));",
+              "pm.test('error.code is category_assignment_invalid', () => pm.expect(j.error.code).to.eql('category_assignment_invalid'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/content/programs/{{s5_program_id}}/categories:replace", "host": ["{{admin_base_url}}"], "path": ["ops","v1","content","programs","{{s5_program_id}}","categories:replace"] },
+            "body": { "mode": "raw", "raw": "{\n  \"category_ids\": [\"cat_unknown_000\"],\n  \"reason\": \"external API acceptance - invalid category\"\n}" }
+          }
+        },
+        {
+          "name": "OP-L01 · GET /ops/v1/content/{content_type} (channels)",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('List channels returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('items is array', () => pm.expect(j.data.items).to.be.an('array'));",
+              "pm.test('has snapshot_at', () => pm.expect(j.data.snapshot_at).to.be.a('string'));",
+              "pm.test('next_cursor is null or string', () => pm.expect(j.data.next_cursor === null || typeof j.data.next_cursor === 'string').to.be.true);",
+              "if (j.data.items && j.data.items.length > 0) {",
+              "  const item = j.data.items[0];",
+              "  pm.test('item has content_type', () => pm.expect(item.content_type).to.eql('channel'));",
+              "  pm.test('item has content_id', () => pm.expect(item.content_id).to.be.a('string'));",
+              "  pm.test('item has display_name', () => pm.expect(item.display_name).to.be.a('string'));",
+              "  pm.test('item has state', () => pm.expect(item.state).to.be.a('string'));",
+              "  pm.test('item has updated_at', () => pm.expect(item.updated_at).to.be.a('string'));",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/content/channels?limit=10&sort=updated_desc", "host": ["{{admin_base_url}}"], "path": ["ops","v1","content","channels"], "query": [{"key":"limit","value":"10"},{"key":"sort","value":"updated_desc"}] }
+          }
+        },
+        {
+          "name": "OP-L01-Q · GET /ops/v1/content/{content_type} (programs by parent)",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('List programs by parent returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('items is array', () => pm.expect(j.data.items).to.be.an('array'));",
+              "if (j.data.items && j.data.items.length > 0) {",
+              "  pm.environment.set('s5_program_id', j.data.items[0].content_id);",
+              "  console.log('✅ program_id captured: ' + j.data.items[0].content_id);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/content/programs?parent_type=channel&parent_id={{s5_channel_id}}&limit=10", "host": ["{{admin_base_url}}"], "path": ["ops","v1","content","programs"], "query": [{"key":"parent_type","value":"channel"},{"key":"parent_id","value":"{{s5_channel_id}}"},{"key":"limit","value":"10"}] }
+          }
+        },
+        {
+          "name": "OP-L01-N · parent_type 与 parent_id 组合无效 → 422 content_parent_filter_invalid",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Invalid parent filter returns 422', () => pm.response.to.have.status(422));",
+              "const j = pm.response.json();",
+              "pm.test('success is false', () => pm.expect(j.success).to.eql(false));",
+              "pm.test('error.code is content_parent_filter_invalid', () => pm.expect(j.error.code).to.eql('content_parent_filter_invalid'));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/content/channels?parent_type=program&parent_id=invalid", "host": ["{{admin_base_url}}"], "path": ["ops","v1","content","channels"], "query": [{"key":"parent_type","value":"program"},{"key":"parent_id","value":"invalid"}] }
+          }
+        },
+        {
+          "name": "OP-L02 · GET /ops/v1/content/{content_type}/{content_id} (program detail)",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Get program detail returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('content_type is program', () => pm.expect(j.data.content_type).to.eql('program'));",
+              "pm.test('has content_id', () => pm.expect(j.data.content_id).to.be.a('string'));",
+              "pm.test('has display_name', () => pm.expect(j.data.display_name).to.be.a('string'));",
+              "pm.test('has state', () => pm.expect(j.data.state).to.be.a('string'));",
+              "pm.test('has categories[]', () => pm.expect(j.data.categories).to.be.an('array'));",
+              "pm.test('has category_assignment_revision', () => pm.expect(j.data.category_assignment_revision).to.be.a('number'));",
+              "pm.test('has channels[]', () => pm.expect(j.data.channels).to.be.an('array'));",
+              "pm.test('has episodes[]', () => pm.expect(j.data.episodes).to.be.an('array'));",
+              "pm.test('no storage:// leaked', () => pm.expect(JSON.stringify(j.data)).to.not.include('storage://'));",
+              "pm.test('no bucket/object key leaked', () => pm.expect(JSON.stringify(j.data)).to.not.match(/bucket|object_key/));",
+              "if (j.data.episodes && j.data.episodes.length > 0) {",
+              "  pm.environment.set('s5_episode_id', j.data.episodes[0].episode_id);",
+              "  console.log('✅ episode_id captured: ' + j.data.episodes[0].episode_id);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/content/programs/{{s5_program_id}}", "host": ["{{admin_base_url}}"], "path": ["ops","v1","content","programs","{{s5_program_id}}"] }
+          }
+        },
+        {
+          "name": "OP-L02-N · 类型不匹配 → 404 content_not_found",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Type mismatch returns 404', () => pm.response.to.have.status(404));",
+              "const j = pm.response.json();",
+              "pm.test('success is false', () => pm.expect(j.success).to.eql(false));",
+              "pm.test('error.code is content_not_found', () => pm.expect(j.error.code).to.eql('content_not_found'));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/content/channels/{{s5_program_id}}", "host": ["{{admin_base_url}}"], "path": ["ops","v1","content","channels","{{s5_program_id}}"] }
+          }
+        },
+        {
+          "name": "OP-L03 · POST /ops/v1/content/episodes/{episode_id}:preview",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_ep_preview_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_ep_preview_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Episode preview returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has episode_id', () => pm.expect(j.data.episode_id).to.be.a('string'));",
+              "pm.test('has binding_id', () => pm.expect(j.data.binding_id).to.be.a('string'));",
+              "pm.test('has media_id', () => pm.expect(j.data.media_id).to.be.a('string'));",
+              "pm.test('has play_resource', () => pm.expect(j.data.play_resource).to.be.an('object'));",
+              "pm.test('CDN domain is media-lumi.cinmoore.cn', () => pm.expect(JSON.stringify(j.data.play_resource)).to.include('media-lumi.cinmoore.cn'));",
+              "pm.test('no storage:// leaked', () => pm.expect(JSON.stringify(j.data)).to.not.include('storage://'));",
+              "pm.test('no object key leaked', () => pm.expect(JSON.stringify(j.data)).to.not.match(/object_key/));",
+              "try { pm.environment.set('s5_episode_media_id', j.data.media_id); } catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/content/episodes/{{s5_episode_id}}:preview", "host": ["{{admin_base_url}}"], "path": ["ops","v1","content","episodes","{{s5_episode_id}}:preview"] },
+            "body": { "mode": "raw", "raw": "{\n  \"client_capabilities\": {\"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "OP-L03-N · 无唯一 primary → 422 episode_primary_media_ambiguous",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_ep_ambig_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_ep_ambig_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Ambiguous primary returns 422', () => pm.response.to.have.status(422));",
+              "const j = pm.response.json();",
+              "pm.test('success is false', () => pm.expect(j.success).to.eql(false));",
+              "pm.test('error.code is episode_primary_media_ambiguous', () => pm.expect(j.error.code).to.eql('episode_primary_media_ambiguous'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/content/episodes/ep_ambiguous_000:preview", "host": ["{{admin_base_url}}"], "path": ["ops","v1","content","episodes","ep_ambiguous_000:preview"] },
+            "body": { "mode": "raw", "raw": "{\n  \"binding_id\": \"b_invalid_000\"\n}" }
           }
         },
         {
@@ -353,7 +795,7 @@
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
               { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/uploads", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","uploads"] },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads"] },
             "body": { "mode": "formdata", "formdata": [
               { "key": "file", "type": "file", "src": "{{s5_test_audio_path}}" }
             ] }
@@ -374,7 +816,7 @@
             "header": [
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/uploads/{{s5_upload_id}}", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","uploads","{{s5_upload_id}}"] }
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads/{{s5_upload_id}}", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads","{{s5_upload_id}}"] }
           }
         },
         {
@@ -405,7 +847,7 @@
               { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications"] },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/publications", "host": ["{{admin_base_url}}"], "path": ["ops","v1","publications"] },
             "body": { "mode": "raw", "raw": "{\n  \"upload_id\": \"{{s5_upload_id}}\",\n  \"title\": \"API acceptance audio\",\n  \"synopsis\": \"External API test content\",\n  \"locale\": \"zh-CN\",\n  \"content_type\": \"audio_story\",\n  \"category_ids\": [\"{{s5_category_id}}\"],\n  \"content_grade\": {\"age_band\": \"3-8\", \"safety_grade\": \"safe_default\", \"review_ref\": \"test_review\"},\n  \"rights\": {\"rights_ref\": \"test_rights\", \"review_ref\": \"test_review\"},\n  \"visibility_scope\": \"public\",\n  \"audience_surface\": \"child_device\",\n  \"handoff_bindings\": [],\n  \"reason\": \"external API acceptance\"\n}" }
           }
         },
@@ -424,7 +866,7 @@
             "header": [
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications/{{s5_publication_id}}", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_id}}"] }
+            "url": { "raw": "{{admin_base_url}}/ops/v1/publications/{{s5_publication_id}}", "host": ["{{admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_id}}"] }
           }
         },
         {
@@ -450,7 +892,7 @@
               { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications/{{s5_publication_version_id}}:command", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_version_id}}:command"] },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/publications/{{s5_publication_version_id}}:command", "host": ["{{admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_version_id}}:command"] },
             "body": { "mode": "raw", "raw": "{\n  \"command\": \"publish\",\n  \"expected_revision\": \"{{s5_publication_revision}}\",\n  \"reason\": \"external API acceptance\"\n}" }
           }
         },
@@ -474,7 +916,7 @@
             "header": [
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/source-intakes?source_type=uploaded_direct&limit=10", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","source-intakes"], "query": [{"key":"source_type","value":"uploaded_direct"},{"key":"limit","value":"10"}] }
+            "url": { "raw": "{{admin_base_url}}/ops/v1/source-intakes?source_type=uploaded_direct&limit=10", "host": ["{{admin_base_url}}"], "path": ["ops","v1","source-intakes"], "query": [{"key":"source_type","value":"uploaded_direct"},{"key":"limit","value":"10"}] }
           }
         },
         {
@@ -492,7 +934,744 @@
             "header": [
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/source-intakes/{{s5_intake_id}}", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","source-intakes","{{s5_intake_id}}"] }
+            "url": { "raw": "{{admin_base_url}}/ops/v1/source-intakes/{{s5_intake_id}}", "host": ["{{admin_base_url}}"], "path": ["ops","v1","source-intakes","{{s5_intake_id}}"] }
+          }
+        },
+        {
+          "name": "OP-UploadSession-Create · POST /ops/v1/uploads/sessions",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_upload_session_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('trace_id', 'trace_upload_session_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_upload_session_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Create upload session returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has session_id', () => pm.expect(j.data.session_id).to.be.a('string'));",
+              "pm.test('has upload_endpoint', () => pm.expect(j.data.upload_endpoint).to.be.a('string'));",
+              "pm.test('has part_size', () => pm.expect(j.data.part_size).to.be.a('number'));",
+              "pm.test('has total_parts', () => pm.expect(j.data.total_parts).to.be.a('number'));",
+              "pm.test('no storage:// leaked', () => pm.expect(JSON.stringify(j.data)).to.not.include('storage://'));",
+              "pm.test('no bucket/object key leaked', () => pm.expect(JSON.stringify(j.data)).to.not.match(/bucket|object_key/));",
+              "try {",
+              "  pm.environment.set('s5_upload_session_id', j.data.session_id);",
+              "  pm.environment.set('s5_upload_part_size', j.data.part_size);",
+              "  pm.environment.set('s5_upload_total_parts', j.data.total_parts);",
+              "  pm.environment.set('s5_upload_endpoint', j.data.upload_endpoint);",
+              "} catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads/sessions", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads","sessions"] },
+            "body": { "mode": "raw", "raw": "{\n  \"filename\": \"sample.wav\",\n  \"mime_type\": \"audio/wav\",\n  \"size\": {{s5_expected_size}},\n  \"sha256\": \"{{s5_expected_checksum}}\",\n  \"reason\": \"external API acceptance - large file upload session\"\n}" }
+          }
+        },
+        {
+          "name": "OP-UploadSession-Part · POST /ops/v1/uploads/{session_id}/parts",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_upload_part_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('trace_id', 'trace_upload_part_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_upload_part_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Upload part returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has part_number', () => pm.expect(j.data.part_number).to.be.a('number'));",
+              "pm.test('has etag', () => pm.expect(j.data.etag).to.be.a('string'));",
+              "try { pm.environment.set('s5_upload_part_etag', j.data.etag); } catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
+              { "key": "Content-Type", "value": "application/octet-stream" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads/{{s5_upload_session_id}}/parts?part_number=1", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads","{{s5_upload_session_id}}","parts"], "query": [{"key":"part_number","value":"1"}] },
+            "body": { "mode": "file", "file": { "src": "{{s5_test_audio_path}}" } }
+          }
+        },
+        {
+          "name": "OP-UploadSession-Complete · POST /ops/v1/uploads/{session_id}:complete",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_upload_complete_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('trace_id', 'trace_upload_complete_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_upload_complete_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Complete upload session returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has upload_id', () => pm.expect(j.data.upload_id).to.be.a('string'));",
+              "pm.test('has state', () => pm.expect(j.data.state).to.eql('completed'));",
+              "pm.test('sha256 matches expected', () => pm.expect(j.data.sha256).to.eql(pm.environment.get('s5_expected_checksum')));",
+              "pm.test('size matches expected', () => pm.expect(String(j.data.size)).to.eql(pm.environment.get('s5_expected_size')));",
+              "try { pm.environment.set('s5_upload_id', j.data.upload_id); } catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads/{{s5_upload_session_id}}:complete", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads","{{s5_upload_session_id}}:complete"] },
+            "body": { "mode": "raw", "raw": "{\n  \"parts\": [{\"part_number\": 1, \"etag\": \"{{s5_upload_part_etag}}\"}],\n  \"sha256\": \"{{s5_expected_checksum}}\",\n  \"reason\": \"external API acceptance - complete large file upload\"\n}" }
+          }
+        },
+        {
+          "name": "OP-UploadSession-Complete-N · 缺 sha256 → 400",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_upload_complete_no_sha_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Missing sha256 returns 400', () => pm.response.to.have.status(400));",
+              "const j = pm.response.json();",
+              "pm.test('success is false', () => pm.expect(j.success).to.eql(false));",
+              "pm.test('has error.code', () => pm.expect(j.error.code).to.be.a('string'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads/{{s5_upload_session_id}}:complete", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads","{{s5_upload_session_id}}:complete"] },
+            "body": { "mode": "raw", "raw": "{\n  \"parts\": [{\"part_number\": 1, \"etag\": \"{{s5_upload_part_etag}}\"}],\n  \"reason\": \"external API acceptance - missing sha256\"\n}" }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "03 · 家长 API · CMS Catalog Categories Library Recommendations PublicationCommand Uploads",
+      "description": "家长内容 API（guardian-content.v1.md）。Guardian User Token (user_access_v1)。\n\n包含 10 个端点：\n- POST /v1/guardian/cms/pages/{page_key}:resolve\n- POST /v1/guardian/catalog:resolve\n- POST /v1/guardian/categories:list\n- POST /v1/guardian/library/query\n- POST /v1/guardian/recommendations/query\n- POST /v1/guardian/publications/{publication_id}:command  (hide_from_child / show_to_child)\n- POST /v1/guardian/uploads/sessions  (创建家庭直传会话)\n- POST /v1/guardian/uploads/sessions/{session_id}:complete\n- GET /v1/guardian/uploads\n- DELETE /v1/guardian/uploads/{upload_id}\n\n所有请求必须含：\n- Authorization: Bearer {{user_access_token}}\n- Content-Type: application/json\n- body 中非空 trace_id / request_id（RequestContext）\n\n写请求还需 Idempotency-Key header（command / uploads/sessions / :complete / DELETE）。\n\n响应 caller_identity.caller_type 应为 \"guardian\"（断言）。\n\n家长面 command 仅支持 hide_from_child / show_to_child（非 publish/pause/revoke）。\n家长上传 visibility_scope 仅接受 private_child，public 一律 403 guardian_public_visibility_denied。\n跨家庭 child_profile_id 一律 403 cross_family_access_denied。\n\n错误响应不泄露 storage://、源文件名或原始 metadata。",
+      "item": [
+        {
+          "name": "G-CMS · POST /v1/guardian/cms/pages/{page_key}:resolve",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_gcms_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_gcms_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Guardian CMS returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has page_key', () => pm.expect(j.data.page_key).to.be.a('string'));",
+              "pm.test('sections is array', () => pm.expect(j.data.sections).to.be.an('array'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/guardian/cms/pages/{{s5_cms_page_key}}:resolve", "host": ["{{base_url}}"], "path": ["v1","guardian","cms","pages","{{s5_cms_page_key}}:resolve"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"known_projection_revision\": null,\n  \"cursor\": null,\n  \"limit\": {\"sections\": 6, \"items_per_section\": 20},\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "G-Catalog · POST /v1/guardian/catalog:resolve",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_gcat_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_gcat_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Guardian Catalog returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has projection_revision', () => pm.expect(j.data.projection_revision).to.be.a('string'));",
+              "pm.test('has entity', () => pm.expect(j.data.entity).to.be.an('object'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/guardian/catalog:resolve", "host": ["{{base_url}}"], "path": ["v1","guardian","catalog:resolve"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"target\": {\"target_type\": \"{{s5_catalog_target_type}}\", \"target_id\": \"{{s5_catalog_target_id}}\"},\n  \"cursor\": null,\n  \"limit\": 50,\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "G-Categories · POST /v1/guardian/categories:list",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_gcatlist_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_gcatlist_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Guardian categories returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('caller_type is guardian', () => pm.expect(j.data.caller_identity.caller_type).to.eql('guardian'));",
+              "pm.test('categories is array', () => pm.expect(j.data.categories).to.be.an('array'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/guardian/categories:list", "host": ["{{base_url}}"], "path": ["v1","guardian","categories:list"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"locale\": \"zh-CN\",\n  \"timezone\": \"Asia/Shanghai\"\n}" }
+          }
+        },
+        {
+          "name": "G-Library · POST /v1/guardian/library/query",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_glib_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_glib_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Guardian library returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('caller_type is guardian', () => pm.expect(j.data.caller_identity.caller_type).to.eql('guardian'));",
+              "pm.test('items is array', () => pm.expect(j.data.items).to.be.an('array'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/guardian/library/query", "host": ["{{base_url}}"], "path": ["v1","guardian","library","query"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"locale\": \"zh-CN\",\n  \"timezone\": \"Asia/Shanghai\",\n  \"viewer\": {\"viewer_surface\": \"guardian_app\"},\n  \"limit\": 20,\n  \"page_token\": null\n}" }
+          }
+        },
+        {
+          "name": "G-Recommendations · POST /v1/guardian/recommendations/query",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_grec_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_grec_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Guardian recommendations returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('caller_type is guardian', () => pm.expect(j.data.caller_identity.caller_type).to.eql('guardian'));",
+              "pm.test('scenario is child_audio_home', () => pm.expect(j.data.scenario).to.eql('child_audio_home'));",
+              "pm.test('items is array', () => pm.expect(j.data.items).to.be.an('array'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/guardian/recommendations/query", "host": ["{{base_url}}"], "path": ["v1","guardian","recommendations","query"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"locale\": \"zh-CN\",\n  \"timezone\": \"Asia/Shanghai\",\n  \"viewer\": {\"viewer_surface\": \"guardian_app\"},\n  \"scenario\": \"child_audio_home\",\n  \"limit\": 10,\n  \"page_token\": null\n}" }
+          }
+        },
+        {
+          "name": "G-PubCommand · POST /v1/guardian/publications/{publication_id}:command",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_gcmd_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('trace_id', 'trace_gcmd_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_gcmd_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Guardian publication command returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('caller_type is guardian', () => pm.expect(j.data.caller_identity.caller_type).to.eql('guardian'));",
+              "pm.test('command is hide_from_child', () => pm.expect(j.data.command).to.eql('hide_from_child'));",
+              "pm.test('status is accepted', () => pm.expect(j.data.status).to.eql('accepted'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/guardian/publications/{{s5_publication_id}}:command", "host": ["{{base_url}}"], "path": ["v1","guardian","publications","{{s5_publication_id}}:command"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"command\": \"hide_from_child\",\n  \"reason\": \"external API acceptance - guardian hide from child\",\n  \"child_profile_id\": \"{{child_profile_id}}\"\n}" }
+          }
+        },
+        {
+          "name": "G-UploadSession-Create · POST /v1/guardian/uploads/sessions",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_gus_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('trace_id', 'trace_gus_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_gus_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Guardian upload session returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('caller_type is guardian', () => pm.expect(j.data.caller_identity.caller_type).to.eql('guardian'));",
+              "pm.test('status is initialized', () => pm.expect(j.data.status).to.eql('initialized'));",
+              "pm.test('visibility_scope is private_child', () => pm.expect(j.data.visibility_scope).to.eql('private_child'));",
+              "try {",
+              "  pm.environment.set('s5_guardian_upload_session_id', j.data.session_id);",
+              "  console.log('✅ Guardian upload session created: ' + j.data.session_id);",
+              "} catch(e) { console.warn('⚠️ 无法提取 session_id'); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/guardian/uploads/sessions", "host": ["{{base_url}}"], "path": ["v1","guardian","uploads","sessions"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"locale\": \"zh-CN\",\n  \"timezone\": \"Asia/Shanghai\",\n  \"target_child_id\": \"{{s5_test_child_id}}\",\n  \"source_type\": \"uploaded_direct\",\n  \"visibility_scope\": \"private_child\",\n  \"audience_surface\": \"guardian_app\",\n  \"content_type\": \"audio_story\",\n  \"metadata\": {\"title\": \"Guardian family original audio\", \"language\": \"zh-CN\"},\n  \"license_declaration\": {\"owner_attested\": true, \"source\": \"family_original\"},\n  \"file_manifest\": [\n    {\"role\": \"audio\", \"media_type\": \"audio/mpeg\", \"size_bytes\": 1024, \"checksum_sha256\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"}\n  ]\n}" }
+          }
+        },
+        {
+          "name": "G-UploadSession-Complete · POST /v1/guardian/uploads/sessions/{session_id}:complete",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_guc_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('trace_id', 'trace_guc_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_guc_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Guardian upload complete returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('caller_type is guardian', () => pm.expect(j.data.caller_identity.caller_type).to.eql('guardian'));",
+              "pm.test('status is review_pending', () => pm.expect(j.data.status).to.eql('review_pending'));",
+              "pm.test('publication_version_id is null', () => pm.expect(j.data.publication_version_id).to.be.null);",
+              "try {",
+              "  pm.environment.set('s5_guardian_upload_id', j.data.upload_id);",
+              "  console.log('✅ Guardian upload completed: ' + j.data.upload_id);",
+              "} catch(e) { console.warn('⚠️ 无法提取 upload_id'); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/guardian/uploads/sessions/{{s5_guardian_upload_session_id}}:complete", "host": ["{{base_url}}"], "path": ["v1","guardian","uploads","sessions","{{s5_guardian_upload_session_id}}:complete"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"locale\": \"zh-CN\",\n  \"timezone\": \"Asia/Shanghai\",\n  \"uploaded_objects\": [\n    {\"role\": \"audio\", \"object_ref\": \"obj_staging_guc_001\", \"media_type\": \"audio/mpeg\", \"size_bytes\": 1024, \"checksum_sha256\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"}\n  ],\n  \"guardian_intent\": {\"requested_visibility_scope\": \"private_child\", \"requested_audience_surface\": \"guardian_app\"}\n}" }
+          }
+        },
+        {
+          "name": "G-Upload-List · GET /v1/guardian/uploads",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Guardian uploads list returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('caller_type is guardian', () => pm.expect(j.data.caller_identity.caller_type).to.eql('guardian'));",
+              "pm.test('uploads is array', () => pm.expect(j.data.uploads).to.be.an('array'));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/guardian/uploads", "host": ["{{base_url}}"], "path": ["v1","guardian","uploads"] }
+          }
+        },
+        {
+          "name": "G-Upload-Delete · DELETE /v1/guardian/uploads/{upload_id}",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_gud_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Guardian upload delete returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('caller_type is guardian', () => pm.expect(j.data.caller_identity.caller_type).to.eql('guardian'));",
+              "pm.test('status is deleted', () => pm.expect(j.data.status).to.eql('deleted'));"
+            ]}
+          }],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/guardian/uploads/{{s5_guardian_upload_id}}", "host": ["{{base_url}}"], "path": ["v1","guardian","uploads","{{s5_guardian_upload_id}}"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "04 · 运营 API · CMS Pages",
+      "description": "运营 CMS 页面编排 API（publishing.v1.md）。Operator Token + Idempotency-Key（写操作）。\n\n包含 6 个端点：\n- POST /ops/v1/cms/pages  — 保存页面草稿\n- GET /ops/v1/cms/pages  — 列出页面\n- GET /ops/v1/cms/pages/{page_key}  — 获取单个页面\n- POST /ops/v1/cms/pages/{page_key}:publish  — 发布页面\n- POST /ops/v1/cms/pages/{page_key}:withdraw  — 撤回页面\n- POST /ops/v1/cms/pages/{page_key}:rollback  — 回滚页面\n\n所有请求必须含：\n- Authorization: Bearer {{operator_access_token}}\n- X-Trace-ID / X-Request-ID（未提供时服务生成）\n\n写请求必须含：\n- Idempotency-Key 头（缺失返回 400 operation_idempotency_key_missing）\n\n注：代码层面 /ops/v1/* 标记为 x-lumi-access: internal，但 publishing.v1.md 把 CMS 页面编排作为运营 API 描述，README.md:45 也把 /ops/v1/* 列为外部 operation，故本集合保留运营面端点。",
+      "item": [
+        {
+          "name": "OP-CMS-Draft · POST /ops/v1/cms/pages",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cms_draft_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Save CMS page draft returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('state is draft', () => pm.expect(j.data.state).to.eql('draft'));",
+              "try {",
+              "  pm.environment.set('s5_cms_page_revision_id', j.data.current_revision_id);",
+              "  console.log('✅ CMS page draft saved, revision=' + j.data.current_revision_id);",
+              "} catch(e) { console.warn('⚠️ 无法提取 current_revision_id'); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/cms/pages", "host": ["{{admin_base_url}}"], "path": ["ops","v1","cms","pages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"page_key\": \"{{s5_cms_page_key}}\",\n  \"title\": \"API acceptance CMS page\",\n  \"sections\": [\n    {\n      \"section_id\": \"home_recommended\",\n      \"component_type\": \"horizontal_cards\",\n      \"title\": \"今日推荐\",\n      \"items\": [\n        {\"section_item_id\": \"item_validation_story\", \"target\": {\"target_type\": \"program\", \"target_id\": \"program_validation_story\"}, \"title\": \"验证故事\", \"subtitle\": \"儿童音频\"}\n      ],\n      \"next_cursor\": null\n    }\n  ],\n  \"reason\": \"external API acceptance - save CMS draft\"\n}" }
+          }
+        },
+        {
+          "name": "OP-CMS-List · GET /ops/v1/cms/pages",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('List CMS pages returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('items is array', () => pm.expect(j.data.items).to.be.an('array'));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/cms/pages", "host": ["{{admin_base_url}}"], "path": ["ops","v1","cms","pages"] }
+          }
+        },
+        {
+          "name": "OP-CMS-Get · GET /ops/v1/cms/pages/{page_key}",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Get CMS page returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has page_key', () => pm.expect(j.data.page_key).to.eql(pm.environment.get('s5_cms_page_key')));"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/cms/pages/{{s5_cms_page_key}}", "host": ["{{admin_base_url}}"], "path": ["ops","v1","cms","pages","{{s5_cms_page_key}}"] }
+          }
+        },
+        {
+          "name": "OP-CMS-Publish · POST /ops/v1/cms/pages/{page_key}:publish",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cms_pub_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Publish CMS page returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('state is published', () => pm.expect(j.data.state).to.eql('published'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/cms/pages/{{s5_cms_page_key}}:publish", "host": ["{{admin_base_url}}"], "path": ["ops","v1","cms","pages","{{s5_cms_page_key}}:publish"] },
+            "body": { "mode": "raw", "raw": "{\n  \"expected_revision_id\": \"{{s5_cms_page_revision_id}}\",\n  \"reason\": \"external API acceptance - publish CMS page\"\n}" }
+          }
+        },
+        {
+          "name": "OP-CMS-Withdraw · POST /ops/v1/cms/pages/{page_key}:withdraw",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cms_wd_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Withdraw CMS page returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('state is withdrawn', () => pm.expect(j.data.state).to.eql('withdrawn'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/cms/pages/{{s5_cms_page_key}}:withdraw", "host": ["{{admin_base_url}}"], "path": ["ops","v1","cms","pages","{{s5_cms_page_key}}:withdraw"] },
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"external API acceptance - withdraw CMS page\"\n}" }
+          }
+        },
+        {
+          "name": "OP-CMS-Rollback · POST /ops/v1/cms/pages/{page_key}:rollback",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cms_rb_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Rollback CMS page returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('state is published', () => pm.expect(j.data.state).to.eql('published'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/cms/pages/{{s5_cms_page_key}}:rollback", "host": ["{{admin_base_url}}"], "path": ["ops","v1","cms","pages","{{s5_cms_page_key}}:rollback"] },
+            "body": { "mode": "raw", "raw": "{\n  \"target_revision_id\": \"{{s5_cms_page_revision_id}}\",\n  \"reason\": \"external API acceptance - rollback CMS page\"\n}" }
+          }
+        },
+        {
+          "name": "OP-M04 · POST /ops/v1/cms/pages/{page_key}:revise",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cms_revise_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('trace_id', 'trace_cms_revise_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_cms_revise_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Revise CMS page returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has page_key', () => pm.expect(j.data.page_key).to.eql(pm.environment.get('s5_cms_page_key')));",
+              "pm.test('has revision_id', () => pm.expect(j.data.revision_id).to.be.a('string'));",
+              "pm.test('has state', () => pm.expect(j.data.state).to.eql('draft'));",
+              "pm.test('revision is immutable', () => pm.expect(j.data.immutable).to.eql(true));",
+              "pm.test('target_type uses new contract', () => pm.expect(JSON.stringify(j.data)).to.not.match(/target_type.*media|media_item/));",
+              "pm.test('no URL/script/CSS in page', () => pm.expect(JSON.stringify(j.data)).to.not.match(/https?:\\/\\/[^\\\"\\\\s]/));",
+              "try { pm.environment.set('s5_cms_page_revision_id', j.data.revision_id); } catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "If-Match", "value": "{{s5_cms_page_revision_id}}" },
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/cms/pages/{{s5_cms_page_key}}:revise", "host": ["{{admin_base_url}}"], "path": ["ops","v1","cms","pages","{{s5_cms_page_key}}:revise"] },
+            "body": { "mode": "raw", "raw": "{\n  \"surface\": \"guardian_app\",\n  \"title\": \"内容首页 (revised)\",\n  \"sections\": [{\n    \"section_key\": \"featured\",\n    \"title\": \"精选\",\n    \"layout\": \"story_card_rail\",\n    \"items\": [{\n      \"item_key\": \"story_one\",\n      \"target\": {\"target_type\": \"episode\", \"target_id\": \"{{s5_episode_id}}\"},\n      \"action\": {\"action_type\": \"open_catalog\"}\n    }]\n  }],\n  \"reason\": \"external API acceptance - revise CMS page\"\n}" }
+          }
+        },
+        {
+          "name": "OP-M04-N · target_type=media → 422 cms_target_type_legacy_read_only",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cms_revise_legacy_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Legacy media target returns 422', () => pm.response.to.have.status(422));",
+              "const j = pm.response.json();",
+              "pm.test('success is false', () => pm.expect(j.success).to.eql(false));",
+              "pm.test('error.code is cms_target_type_legacy_read_only', () => pm.expect(j.error.code).to.eql('cms_target_type_legacy_read_only'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/cms/pages/{{s5_cms_page_key}}:revise", "host": ["{{admin_base_url}}"], "path": ["ops","v1","cms","pages","{{s5_cms_page_key}}:revise"] },
+            "body": { "mode": "raw", "raw": "{\n  \"surface\": \"guardian_app\",\n  \"title\": \"Legacy probe\",\n  \"sections\": [{\n    \"section_key\": \"legacy\",\n    \"title\": \"Legacy\",\n    \"layout\": \"story_card_rail\",\n    \"items\": [{\n      \"item_key\": \"legacy_item\",\n      \"target\": {\"target_type\": \"media\", \"target_id\": \"m_legacy_000\"},\n      \"action\": {\"action_type\": \"open_catalog\"}\n    }]\n  }],\n  \"reason\": \"external API acceptance - legacy target probe\"\n}" }
+          }
+        },
+        {
+          "name": "OP-M05 · POST /ops/v1/cms/pages/{page_key}:preview",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_cms_preview_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_cms_preview_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Preview CMS page returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success is true', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has page', () => pm.expect(j.data.page).to.be.an('object'));",
+              "pm.test('has sections[]', () => pm.expect(j.data.sections).to.be.an('array'));",
+              "pm.test('has resolved_tree[]', () => pm.expect(j.data.resolved_tree).to.be.an('array'));",
+              "pm.test('has issues[]', () => pm.expect(j.data.issues).to.be.an('array'));",
+              "pm.test('has gate_summary', () => pm.expect(j.data.gate_summary).to.be.an('object'));",
+              "pm.test('has evaluated_at', () => pm.expect(j.data.evaluated_at).to.be.a('string'));",
+              "if (j.data.resolved_tree && j.data.resolved_tree.length > 0) {",
+              "  const node = j.data.resolved_tree[0];",
+              "  pm.test('tree node has node_type', () => pm.expect(node.node_type).to.be.a('string'));",
+              "  pm.test('tree node has node_id', () => pm.expect(node.node_id).to.be.a('string'));",
+              "  pm.test('tree node has children[]', () => pm.expect(node.children).to.be.an('array'));",
+              "}",
+              "if (j.data.issues && j.data.issues.length > 0) {",
+              "  const issue = j.data.issues[0];",
+              "  pm.test('issue has code', () => pm.expect(issue.code).to.be.a('string'));",
+              "  pm.test('issue has severity', () => pm.expect(['error','warning']).to.include(issue.severity));",
+              "  pm.test('issue has message_key', () => pm.expect(issue.message_key).to.be.a('string'));",
+              "}",
+              "pm.test('no play URL pre-signed in preview', () => pm.expect(JSON.stringify(j.data)).to.not.match(/play_resource|play_manifest/));",
+              "pm.test('no storage:// leaked', () => pm.expect(JSON.stringify(j.data)).to.not.include('storage://'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "X-Trace-ID", "value": "{{trace_id}}" },
+              { "key": "X-Request-ID", "value": "{{request_id}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/cms/pages/{{s5_cms_page_key}}:preview", "host": ["{{admin_base_url}}"], "path": ["ops","v1","cms","pages","{{s5_cms_page_key}}:preview"] },
+            "body": { "mode": "raw", "raw": "{\n  \"revision_id\": \"{{s5_cms_page_revision_id}}\",\n  \"surface\": \"guardian_app\"\n}" }
+          }
+        },
+        {
+          "name": "OP-M06-N · publish 含 error issue → 422 cms_publish_blocked",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_cms_publish_blocked_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Publish blocked returns 422', () => pm.response.to.have.status(422));",
+              "const j = pm.response.json();",
+              "pm.test('success is false', () => pm.expect(j.success).to.eql(false));",
+              "pm.test('error.code is cms_publish_blocked', () => pm.expect(j.error.code).to.eql('cms_publish_blocked'));"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/cms/pages/{{s5_cms_page_key}}:publish", "host": ["{{admin_base_url}}"], "path": ["ops","v1","cms","pages","{{s5_cms_page_key}}:publish"] },
+            "body": { "mode": "raw", "raw": "{\n  \"revision_id\": \"rev_nonexistent_000\",\n  \"review_case_id\": \"case_test_001\",\n  \"reason\": \"external API acceptance - publish blocked probe\"\n}" }
           }
         }
       ]
@@ -512,7 +1691,7 @@
           }],
           "request": {
             "method": "GET",
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories"] }
+            "url": { "raw": "{{admin_base_url}}/ops/v1/categories", "host": ["{{admin_base_url}}"], "path": ["ops","v1","categories"] }
           }
         },
         {
@@ -530,7 +1709,7 @@
             "header": [
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories?include_retired=false", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories"], "query": [{"key":"include_retired","value":"false"}] }
+            "url": { "raw": "{{admin_base_url}}/ops/v1/categories?include_retired=false", "host": ["{{admin_base_url}}"], "path": ["ops","v1","categories"], "query": [{"key":"include_retired","value":"false"}] }
           }
         },
         {
@@ -559,7 +1738,7 @@
               { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories"] },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/categories", "host": ["{{admin_base_url}}"], "path": ["ops","v1","categories"] },
             "body": { "mode": "raw", "raw": "{\n  \"category_key\": \"a3_acceptance_{{idempotency_key}}\",\n  \"name\": \"A3 acceptance category\",\n  \"description\": \"Temporary\",\n  \"parent_category_id\": null,\n  \"sort_order\": 200,\n  \"reason\": \"external API acceptance\"\n}" }
           }
         },
@@ -585,7 +1764,7 @@
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
               { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/uploads", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","uploads"] },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads"] },
             "body": { "mode": "formdata", "formdata": [
               { "key": "file", "type": "file", "src": "{{s5_test_audio_path}}" }
             ] }
@@ -618,7 +1797,7 @@
               { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications"] },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/publications", "host": ["{{admin_base_url}}"], "path": ["ops","v1","publications"] },
             "body": { "mode": "raw", "raw": "{\n  \"upload_id\": \"{{s5_upload_id}}\",\n  \"title\": \"A5 acceptance audio\",\n  \"synopsis\": \"External API test content\",\n  \"locale\": \"zh-CN\",\n  \"content_type\": \"audio_story\",\n  \"category_ids\": [\"{{s5_category_id}}\"],\n  \"content_grade\": {\"age_band\": \"3-8\", \"safety_grade\": \"safe_default\", \"review_ref\": \"test_review\"},\n  \"rights\": {\"rights_ref\": \"test_rights\", \"review_ref\": \"test_review\"},\n  \"visibility_scope\": \"public\",\n  \"audience_surface\": \"child_device\",\n  \"handoff_bindings\": [],\n  \"reason\": \"external API acceptance\"\n}" }
           }
         },
@@ -645,7 +1824,7 @@
               { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications/{{s5_publication_version_id}}:command", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_version_id}}:command"] },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/publications/{{s5_publication_version_id}}:command", "host": ["{{admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_version_id}}:command"] },
             "body": { "mode": "raw", "raw": "{\n  \"command\": \"publish\",\n  \"expected_revision\": \"{{s5_publication_revision}}\",\n  \"reason\": \"external API acceptance\"\n}" }
           }
         },
@@ -810,7 +1989,7 @@
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
               { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/uploads", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","uploads"] },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads"] },
             "body": { "mode": "formdata", "formdata": [
               { "key": "file", "type": "file", "src": "{{s5_test_audio_path}}" }
             ] }
@@ -842,7 +2021,7 @@
               { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications"] },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/publications", "host": ["{{admin_base_url}}"], "path": ["ops","v1","publications"] },
             "body": { "mode": "raw", "raw": "{\n  \"upload_id\": \"{{s5_upload_id}}\",\n  \"title\": \"B2 private child audio\",\n  \"synopsis\": \"Private child content visibility test\",\n  \"locale\": \"zh-CN\",\n  \"content_type\": \"audio_story\",\n  \"category_ids\": [],\n  \"content_grade\": {\"age_band\": \"3-8\", \"safety_grade\": \"safe_default\", \"review_ref\": \"test_review\"},\n  \"rights\": {\"rights_ref\": \"test_rights\", \"review_ref\": \"test_review\"},\n  \"visibility_scope\": \"private_child\",\n  \"owner_binding\": {\"owner_type\": \"child\", \"family_id\": \"{{s5_test_family_id}}\", \"child_id\": \"{{s5_test_child_id}}\"},\n  \"audience_surface\": \"child_device\",\n  \"handoff_bindings\": [],\n  \"reason\": \"private child visibility test\"\n}" }
           }
         },
@@ -868,7 +2047,7 @@
               { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/publications/{{s5_publication_version_id}}:command", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_version_id}}:command"] },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/publications/{{s5_publication_version_id}}:command", "host": ["{{admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_version_id}}:command"] },
             "body": { "mode": "raw", "raw": "{\n  \"command\": \"publish\",\n  \"expected_revision\": \"{{s5_publication_revision}}\",\n  \"reason\": \"private child visibility test\"\n}" }
           }
         },
@@ -904,7 +2083,7 @@
 
     {
       "name": "12 · 场景C · 鉴权与参数负向",
-      "description": "鉴权与参数负向用例，对应 device-content.v1.md 的错误码表。\n\n覆盖：\n- 无 token / 无效 token → 401\n- 身份字段透传 → 400 identity_context_field_forbidden\n- 音频能力不完整 → 400 client_audio_capability_incomplete\n- 缺 Idempotency-Key → 400 operation_idempotency_key_missing",
+      "description": "鉴权与参数负向用例，对应 device-content.v1.md / guardian-content.v1.md 的错误码表。\n\n覆盖：\n- 无 token / 无效 token → 401\n- 身份字段透传 → 400 identity_context_field_forbidden\n- 音频能力不完整 → 400 client_audio_capability_incomplete\n- 缺 Idempotency-Key → 400 operation_idempotency_key_missing\n- 无效 target_type → 400 content_target_invalid\n- 家长上传 public visibility → 403 guardian_public_visibility_denied\n- 家长 command 跨家庭 child_profile_id → 403 cross_family_access_denied",
       "item": [
         {
           "name": "N1 · 无 token 调 CMS → 401",
@@ -1007,7 +2186,7 @@
               { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": { "raw": "{{s5_admin_base_url}}/ops/v1/categories", "host": ["{{s5_admin_base_url}}"], "path": ["ops","v1","categories"] },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/categories", "host": ["{{admin_base_url}}"], "path": ["ops","v1","categories"] },
             "body": { "mode": "raw", "raw": "{\n  \"category_key\": \"n5_test\",\n  \"name\": \"N5 test\",\n  \"description\": \"\",\n  \"parent_category_id\": null,\n  \"sort_order\": 999,\n  \"reason\": \"negative test\"\n}" }
           }
         },
@@ -1038,6 +2217,1578 @@
             ],
             "url": { "raw": "{{base_url}}/v1/device/catalog:resolve", "host": ["{{base_url}}"], "path": ["v1","device","catalog:resolve"] },
             "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"target\": {\"target_type\": \"invalid_type\", \"target_id\": \"nonexistent\"},\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]}\n}" }
+          }
+        },
+        {
+          "name": "N7 · 家长上传 public visibility → 403 guardian_public_visibility_denied",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_n7_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('trace_id', 'trace_n7_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_n7_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('N7: public visibility 返回 403', () => pm.response.to.have.status(403));",
+              "try {",
+              "  const j = pm.response.json();",
+              "  pm.test('error.code 是 guardian_public_visibility_denied', () => pm.expect(j.error.code).to.eql('guardian_public_visibility_denied'));",
+              "} catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/guardian/uploads/sessions", "host": ["{{base_url}}"], "path": ["v1","guardian","uploads","sessions"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"locale\": \"zh-CN\",\n  \"timezone\": \"Asia/Shanghai\",\n  \"target_child_id\": \"{{s5_test_child_id}}\",\n  \"source_type\": \"uploaded_direct\",\n  \"visibility_scope\": \"public\",\n  \"audience_surface\": \"guardian_app\",\n  \"content_type\": \"audio_story\",\n  \"metadata\": {\"title\": \"N7 negative public visibility\"},\n  \"license_declaration\": {\"owner_attested\": true, \"source\": \"family_original\"},\n  \"file_manifest\": [\n    {\"role\": \"audio\", \"media_type\": \"audio/mpeg\", \"size_bytes\": 1024, \"checksum_sha256\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\"}\n  ]\n}" }
+          }
+        },
+        {
+          "name": "N8 · 家长 command 跨家庭 child_profile_id → 403 cross_family_access_denied",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'idem_n8_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('trace_id', 'trace_n8_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_n8_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('N8: 跨家庭 child_profile_id 返回 403', () => pm.response.to.have.status(403));",
+              "try {",
+              "  const j = pm.response.json();",
+              "  pm.test('error.code 是 cross_family_access_denied', () => pm.expect(j.error.code).to.eql('cross_family_access_denied'));",
+              "} catch(e) {}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/v1/guardian/publications/{{s5_publication_id}}:command", "host": ["{{base_url}}"], "path": ["v1","guardian","publications","{{s5_publication_id}}:command"] },
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"command\": \"hide_from_child\",\n  \"reason\": \"N8 cross-family negative test\",\n  \"child_profile_id\": \"child_cross_family_invalid_{{request_id}}\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 · 场景D · 运营上传→设备播放 E2E 内容一致性",
+      "description": "跨系统端到端：运营登录→上传→发布→设备CMS→Catalog→Play→CDN sha256校验。验证上传内容与设备获取内容字节级一致。",
+      "item": [
+        {
+          "name": "D0 · 运营登录",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"account\":\"{{operator_account}}\",\"password\":\"{{operator_password}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{admin_base_url}}/ops/v1/operator-sessions",
+              "host": [
+                "{{admin_base_url}}"
+              ],
+              "path": [
+                "ops",
+                "v1",
+                "operator-sessions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 运营登录获取 operator_access_token",
+                  "// 若环境变量已有 token 则跳过",
+                  "const existingToken = pm.environment.get('operator_access_token');",
+                  "if (existingToken) {",
+                  "  console.log('✅ D0 已有 operator_access_token，跳过登录');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('has operator_access_token', () => pm.expect(j.operator_access_token).to.be.a('string'));",
+                  "pm.test('has expires_in', () => pm.expect(j.expires_in).to.be.a('number'));",
+                  "pm.environment.set('operator_access_token', j.operator_access_token);",
+                  "console.log('✅ D0 登录成功，token 已写入环境变量');"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "D1 · 预置 expected_checksum",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{origin_url}}/healthz",
+              "host": [
+                "{{origin_url}}"
+              ],
+              "path": [
+                "healthz"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// sample.wav 的 sha256（44 字节，预先计算）",
+                  "pm.environment.set('s5_expected_checksum', '8b8fbafe8679076454429756fa72f11d5f442c87381cc6a4285451d826a9e629');",
+                  "pm.environment.set('s5_expected_size', 44);",
+                  "pm.environment.set('s5_expected_mime', 'audio/wav');",
+                  "console.log('✅ D1 预置 expected_checksum=' + pm.environment.get('s5_expected_checksum'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('expected_checksum 已设置', () => pm.expect(pm.environment.get('s5_expected_checksum')).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "D2 · 运营上传音频",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operator_access_token}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/Users/hydramr/API-Test/test-assets/sample.wav"
+                },
+                {
+                  "key": "category_key",
+                  "type": "text",
+                  "value": "k1_content_validation"
+                },
+                {
+                  "key": "source_type",
+                  "type": "text",
+                  "value": "uploaded_direct"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{admin_base_url}}/ops/v1/uploads",
+              "host": [
+                "{{admin_base_url}}"
+              ],
+              "path": [
+                "ops",
+                "v1",
+                "uploads"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('idempotency_key', 'op-upload-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+                  "pm.test('has upload_id', () => pm.expect(j.data.upload_id).to.be.a('string'));",
+                  "pm.environment.set('s5_upload_id', j.data.upload_id);",
+                  "console.log('✅ D2 上传成功 upload_id=' + j.data.upload_id);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "D3 · 创建 Publication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operator_access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"upload_id\": \"{{s5_upload_id}}\",\n  \"title\": \"E2E 内容一致性测试\",\n  \"synopsis\": \"运营上传→设备播放 字节级校验\",\n  \"locale\": \"zh-CN\",\n  \"content_type\": \"audio_story\",\n  \"category_ids\": [\n    \"{{s5_category_id}}\"\n  ],\n  \"content_grade\": {\n    \"age_band\": \"3-6\",\n    \"safety_grade\": \"safe\",\n    \"review_ref\": \"e2e-test\"\n  },\n  \"rights\": {\n    \"rights_ref\": \"internal-test\",\n    \"review_ref\": \"e2e\"\n  },\n  \"visibility_scope\": \"public\",\n  \"audience_surface\": \"device\",\n  \"reason\": \"E2E consistency test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{admin_base_url}}/ops/v1/publications",
+              "host": [
+                "{{admin_base_url}}"
+              ],
+              "path": [
+                "ops",
+                "v1",
+                "publications"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('idempotency_key', 'op-pub-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+                  "pm.test('has publication_id', () => pm.expect(j.data.publication_id).to.be.a('string'));",
+                  "pm.test('has publication_version_id', () => pm.expect(j.data.publication_version_id).to.be.a('string'));",
+                  "pm.environment.set('s5_publication_id', j.data.publication_id);",
+                  "pm.environment.set('s5_publication_version_id', j.data.publication_version_id);",
+                  "console.log('✅ D3 publication_id=' + j.data.publication_id + ' version_id=' + j.data.publication_version_id);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "D4 · 发布命令",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operator_access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"command\":\"publish\",\"expected_revision\":1,\"reason\":\"E2E publish\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{admin_base_url}}/ops/v1/publications/{{s5_publication_version_id}}:command",
+              "host": [
+                "{{admin_base_url}}"
+              ],
+              "path": [
+                "ops",
+                "v1",
+                "publications",
+                "{{s5_publication_version_id}}:command"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('idempotency_key', 'op-cmd-' + Date.now() + '-' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+                  "pm.test('state is published', () => pm.expect(j.data.state).to.eql('published'));",
+                  "console.log('✅ D4 发布成功 state=published');"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "D5 · 设备 CMS 可见性",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Lumi-Device-ID",
+                "value": "{{device_sn}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"client_capabilities\": {\n    \"audio\": true,\n    \"video\": true,\n    \"image\": true,\n    \"supported_audio_codecs\": [\n      \"audio/mp4\",\n      \"audio/mpeg\",\n      \"audio/wav\"\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/device/cms/pages/{{s5_cms_page_key}}:resolve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "device",
+                "cms",
+                "pages",
+                "{{s5_cms_page_key}}:resolve"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('trace_id', 'trace_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));",
+                  "pm.variables.set('request_id', 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+                  "pm.test('has page_key', () => pm.expect(j.data.page_key).to.be.a('string'));",
+                  "pm.test('has projection_revision', () => pm.expect(j.data.projection_revision).to.be.a('string'));",
+                  "pm.test('sections is array', () => pm.expect(j.data.sections).to.be.an('array'));",
+                  "// 提取第一个 target 用于后续 Catalog 展开",
+                  "if (j.data.sections && j.data.sections.length > 0) {",
+                  "  const section = j.data.sections[0];",
+                  "  if (section.items && section.items.length > 0) {",
+                  "    const item = section.items[0];",
+                  "    if (item.target) {",
+                  "      pm.environment.set('s5_target_type', item.target.target_type);",
+                  "      pm.environment.set('s5_target_id', item.target.target_id);",
+                  "      console.log('✅ D5 提取 target_type=' + item.target.target_type + ' target_id=' + item.target.target_id);",
+                  "    }",
+                  "  }",
+                  "}",
+                  "// 身份字段不泄露断言",
+                  "const bodyStr = JSON.stringify(j);",
+                  "pm.test('no publication_version_id leaked', () => pm.expect(bodyStr).to.not.include('publication_version_id'));",
+                  "pm.test('no owner_binding leaked', () => pm.expect(bodyStr).to.not.include('owner_binding'));",
+                  "pm.test('no family_id leaked', () => pm.expect(bodyStr).to.not.include('family_id'));",
+                  "pm.test('no child_id leaked', () => pm.expect(bodyStr).to.not.include('child_id'));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "D6 · 设备 Catalog 展开",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Lumi-Device-ID",
+                "value": "{{device_sn}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"target\": {\n    \"target_type\": \"{{s5_target_type}}\",\n    \"target_id\": \"{{s5_target_id}}\"\n  },\n  \"client_capabilities\": {\n    \"audio\": true,\n    \"video\": true,\n    \"image\": true,\n    \"supported_audio_codecs\": [\n      \"audio/mp4\",\n      \"audio/mpeg\",\n      \"audio/wav\"\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/device/catalog:resolve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "device",
+                "catalog:resolve"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('trace_id', 'trace_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));",
+                  "pm.variables.set('request_id', 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+                  "pm.test('has projection_revision', () => pm.expect(j.data.projection_revision).to.be.a('string'));",
+                  "// 递归查找 media_id",
+                  "function findMediaId(node) {",
+                  "  if (!node) return null;",
+                  "  if (node.media_id) return node.media_id;",
+                  "  if (node.children && Array.isArray(node.children)) {",
+                  "    for (const child of node.children) {",
+                  "      const mid = findMediaId(child);",
+                  "      if (mid) return mid;",
+                  "    }",
+                  "  }",
+                  "  return null;",
+                  "}",
+                  "const mediaId = findMediaId(j.data);",
+                  "pm.test('found media_id', () => pm.expect(mediaId).to.be.a('string'));",
+                  "if (mediaId) {",
+                  "  pm.environment.set('s5_media_id', mediaId);",
+                  "  console.log('✅ D6 提取 media_id=' + mediaId);",
+                  "}",
+                  "// 身份字段不泄露",
+                  "const bodyStr = JSON.stringify(j);",
+                  "pm.test('no publication_version_id leaked', () => pm.expect(bodyStr).to.not.include('publication_version_id'));",
+                  "pm.test('no owner_binding leaked', () => pm.expect(bodyStr).to.not.include('owner_binding'));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "D7 · 设备 PlayResource",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{device_access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Lumi-Device-ID",
+                "value": "{{device_sn}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"media_id\": \"{{s5_media_id}}\",\n  \"client_capabilities\": {\n    \"audio\": true,\n    \"video\": true,\n    \"image\": true,\n    \"supported_audio_codecs\": [\n      \"audio/mp4\",\n      \"audio/mpeg\",\n      \"audio/wav\"\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/device/play/resources",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "device",
+                "play",
+                "resources"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('trace_id', 'trace_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));",
+                  "pm.variables.set('request_id', 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+                  "pm.test('media_id matches request', () => pm.expect(j.data.media_id).to.eql(pm.environment.get('s5_media_id')));",
+                  "pm.test('state is issued', () => pm.expect(j.data.play_resource.state).to.eql('issued'));",
+                  "pm.test('has expires_at', () => pm.expect(j.data.play_resource.expires_at).to.be.a('string'));",
+                  "// expires_at 时效性验证",
+                  "const expiresAt = new Date(j.data.play_resource.expires_at).getTime();",
+                  "const now = Date.now();",
+                  "pm.test('expires_at is in future', () => pm.expect(expiresAt).to.be.greaterThan(now));",
+                  "// 提取 CDN URL",
+                  "const items = j.data.play_resource.play_manifest?.items || [];",
+                  "const audioItem = items.find(i => i.role === 'audio') || items[0];",
+                  "pm.test('has audio item', () => pm.expect(audioItem).to.be.an('object'));",
+                  "if (audioItem && audioItem.url) {",
+                  "  pm.environment.set('s5_cdn_audio_url', audioItem.url);",
+                  "  pm.environment.set('s5_play_media_type', audioItem.media_type);",
+                  "  console.log('✅ D7 提取 CDN URL=' + audioItem.url.slice(0, 80) + '...');",
+                  "  console.log('✅ D7 media_type=' + audioItem.media_type);",
+                  "}",
+                  "// 身份字段不泄露",
+                  "const bodyStr = JSON.stringify(j);",
+                  "pm.test('no publication_version_id leaked', () => pm.expect(bodyStr).to.not.include('publication_version_id'));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "D8 · CDN 下载 sha256 校验",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{s5_cdn_audio_url}}",
+              "host": [
+                "{{s5_cdn_audio_url}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200 or 206', () => {",
+                  "  const code = pm.response.code;",
+                  "  pm.expect(code === 200 || code === 206).to.be.true;",
+                  "});",
+                  "const bodyText = pm.response.text();",
+                  "const actualChecksum = CryptoJS.SHA256(bodyText).toString();",
+                  "const expectedChecksum = pm.environment.get('s5_expected_checksum');",
+                  "pm.test('sha256 matches upload file', () => pm.expect(actualChecksum).to.eql(expectedChecksum));",
+                  "// 字节数校验",
+                  "const expectedSize = parseInt(pm.environment.get('s5_expected_size'), 10);",
+                  "pm.test('byte size matches', () => pm.expect(bodyText.length).to.eql(expectedSize));",
+                  "console.log('✅ D8 CDN 下载 sha256=' + actualChecksum);",
+                  "console.log('✅ D8 expected sha256=' + expectedChecksum);",
+                  "console.log('✅ D8 一致性校验: ' + (actualChecksum === expectedChecksum ? 'PASS ✓' : 'FAIL ✗'));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "D9 · 一致性总结",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{origin_url}}/healthz",
+              "host": [
+                "{{origin_url}}"
+              ],
+              "path": [
+                "healthz"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const report = [",
+                  "  '========== S5 E2E 内容一致性报告 ==========',",
+                  "  '1. 运营登录: ' + (pm.environment.get('operator_access_token') ? 'PASS ✓' : 'FAIL ✗'),",
+                  "  '2. 上传 upload_id: ' + (pm.environment.get('s5_upload_id') || 'MISSING'),",
+                  "  '3. publication_id: ' + (pm.environment.get('s5_publication_id') || 'MISSING'),",
+                  "  '4. publication_version_id: ' + (pm.environment.get('s5_publication_version_id') || 'MISSING'),",
+                  "  '5. 设备 CMS target: ' + (pm.environment.get('s5_target_id') || 'MISSING'),",
+                  "  '6. 设备 Catalog media_id: ' + (pm.environment.get('s5_media_id') || 'MISSING'),",
+                  "  '7. CDN URL: ' + (pm.environment.get('s5_cdn_audio_url') ? 'EXTRACTED ✓' : 'MISSING'),",
+                  "  '8. play media_type: ' + (pm.environment.get('s5_play_media_type') || 'MISSING'),",
+                  "  '9. expected_checksum: ' + (pm.environment.get('s5_expected_checksum') || 'MISSING'),",
+                  "  '===========================================',",
+                  "];",
+                  "report.forEach(line => console.log(line));",
+                  "pm.test('E2E 链路完整性', () => {",
+                  "  pm.expect(pm.environment.get('s5_upload_id')).to.be.a('string');",
+                  "  pm.expect(pm.environment.get('s5_publication_id')).to.be.a('string');",
+                  "  pm.expect(pm.environment.get('s5_media_id')).to.be.a('string');",
+                  "  pm.expect(pm.environment.get('s5_cdn_audio_url')).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+
+    {
+      "name": "14 · 场景E · 多资产批量上传→设备访问内容一致性",
+      "description": "基于真实音频测试包（k1_audio_model_test_pack_3_8_v0_1）的场景化测试：\n\n选取 6 个代表性资产（6 类内容各 1 个，均 3-4 年龄段）：\n- 讲故事: K1AUD_STORY_01_3_4.mp3 (小雨滴找朋友, 22.0s, sha256=6aa123e8...)\n- 儿歌:   K1AUD_SONG_01_3_4.mp3  (拍拍小手找颜色, 22.0s, sha256=52cd171b...)\n- 动物声音: K1AUD_ANIMAL_01_3_4.mp3 (早安小农场, 14.13s, sha256=50a99b8f...)\n- 通话故事: K1AUD_CALL_01_3_4.mp3  (给奶奶的一朵云, 22.0s, sha256=7e0819ac...)\n- 古诗词: K1AUD_POEM_01_3_4.mp3   (咏鹅, 20.0s, sha256=b68814d4...)\n- 英语启蒙: K1AUD_ENGLISH_01_3_4.mp3 (Hello Little Sun, 20.0s, sha256=78c65a74...)\n\n验证目标：\n1. 6 个资产批量上传后全部成功创建\n2. 单个 PublicationVersion 包含全部 6 个 media_item\n3. 设备 Catalog 能展开全部 6 个 media_id\n4. 每个资产 CDN 下载 sha256 与 manifest 中记录的 sha256_mp3 完全一致\n5. 6 个资产 media_id 在 上传→Catalog→Play 全链路中保持一致\n\n前置条件：\n- operator_account / operator_password 已配置\n- device_access_token / device_sn 已配置\n- s5_test_audio_pack_base 指向本地音频包根目录\n\n依赖契约：content-library.v1.md + publishing.v1.md + device-content.v1.md",
+      "item": [
+        {
+          "name": "E0 · 运营登录",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Operator login returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('has access_token', () => pm.expect(j.data.access_token).to.be.a('string'));",
+              "pm.test('token_type is Bearer', () => pm.expect(j.data.token_type).to.eql('Bearer'));",
+              "try {",
+              "  pm.environment.set('operator_access_token', j.data.access_token);",
+              "  console.log('✅ E0 运营登录成功');",
+              "} catch(e) { console.warn('⚠️ 无法提取 access_token'); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"account\": \"{{operator_account}}\",\n  \"password\": \"{{operator_password}}\"\n}" },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/operator-sessions", "host": ["{{admin_base_url}}"], "path": ["ops","v1","operator-sessions"] }
+          }
+        },
+        {
+          "name": "E1 · 校验本地 6 个资产 sha256（manifest 锚点）",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "const manifest = {",
+              "  story:   { asset_id: 'K1AUD_STORY_01_3_4',   file: 'K1AUD_STORY_01_3_4.mp3',   sha256: '6aa123e8b95cba316158f59d37c2908af823251ead4ac560aab13e1d66088cf3', duration: 22.0,  category: '讲故事', title: '小雨滴找朋友' },",
+              "  song:    { asset_id: 'K1AUD_SONG_01_3_4',    file: 'K1AUD_SONG_01_3_4.mp3',    sha256: '52cd171b0635e7bee820afac39d63331f1e07e14e6d228f435c9369e307b2aa8', duration: 22.0,  category: '儿歌',   title: '拍拍小手找颜色' },",
+              "  animal:  { asset_id: 'K1AUD_ANIMAL_01_3_4', file: 'K1AUD_ANIMAL_01_3_4.mp3', sha256: '50a99b8f8eb6778a3c5a8c3f1363d6316b4dd20dbfca9c858fa09deb01ad9b9f', duration: 14.13, category: '动物声音', title: '早安小农场' },",
+              "  call:    { asset_id: 'K1AUD_CALL_01_3_4',   file: 'K1AUD_CALL_01_3_4.mp3',   sha256: '7e0819ac4d8fd3c64a3b6c5b96ebe1d9adf9147c5ea5b86406c6e11af144e65a', duration: 22.0,  category: '通话故事', title: '给奶奶的一朵云' },",
+              "  poem:    { asset_id: 'K1AUD_POEM_01_3_4',   file: 'K1AUD_POEM_01_3_4.mp3',   sha256: 'b68814d434313ea293574a905bcf52e1b0b595ece78404a92b42a252f5d80233', duration: 20.0,  category: '古诗词',   title: '咏鹅' },",
+              "  english: { asset_id: 'K1AUD_ENGLISH_01_3_4',file: 'K1AUD_ENGLISH_01_3_4.mp3',sha256: '78c65a74ec042da57e26bd8da1f0fc040085b2e0bcd618603fe203d20b493ee6', duration: 20.0,  category: '英语启蒙', title: 'Hello Little Sun' }",
+              "};",
+              "pm.variables.set('e_manifest', JSON.stringify(manifest));",
+              "const base = pm.environment.get('s5_test_audio_pack_base');",
+              "Object.keys(manifest).forEach(k => {",
+              "  pm.variables.set('e_' + k + '_path', base + '/audio/mp3/' + manifest[k].file);",
+              "  pm.variables.set('e_' + k + '_sha256', manifest[k].sha256);",
+              "  pm.variables.set('e_' + k + '_asset_id', manifest[k].asset_id);",
+              "  pm.variables.set('e_' + k + '_duration', manifest[k].duration);",
+              "  pm.variables.set('e_' + k + '_title', manifest[k].title);",
+              "  pm.variables.set('e_' + k + '_category', manifest[k].category);",
+              "});"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Manifest variables are set', () => {",
+              "  const manifest = JSON.parse(pm.variables.get('e_manifest'));",
+              "  pm.expect(Object.keys(manifest).length).to.eql(6);",
+              "  ['story','song','animal','call','poem','english'].forEach(k => {",
+              "    pm.expect(pm.environment.get('e_' + k + '_path'), 'path for ' + k).to.be.a('string');",
+              "    pm.expect(pm.environment.get('e_' + k + '_sha256'), 'sha256 for ' + k).to.match(/^[0-9a-f]{64}$/);",
+              "    pm.expect(pm.environment.get('e_' + k + '_asset_id'), 'asset_id for ' + k).to.be.a('string');",
+              "  });",
+              "});",
+              "console.log('✅ E1 6 个资产 sha256 锚点已预置');"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{origin_url}}/healthz", "host": ["{{origin_url}}"], "path": ["healthz"] }
+          }
+        },
+        {
+          "name": "E2 · 上传资产 1/6 讲故事·小雨滴找朋友",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'e2_story_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Upload story returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has upload_id', () => pm.expect(j.data.upload_id).to.be.a('string'));",
+              "pm.test('sha256 matches manifest', () => pm.expect(j.data.sha256).to.eql(pm.environment.get('e_story_sha256')));",
+              "pm.environment.set('e_story_upload_id', j.data.upload_id);",
+              "pm.environment.set('e_story_media_id', j.data.media_id);",
+              "console.log('✅ E2 讲故事上传 success upload_id=' + j.data.upload_id + ' media_id=' + j.data.media_id);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "{{e_story_path}}" },
+                { "key": "category_key", "type": "text", "value": "k1_content_validation" },
+                { "key": "source_type", "type": "text", "value": "uploaded_direct" },
+                { "key": "asset_id", "type": "text", "value": "{{e_story_asset_id}}" },
+                { "key": "title", "type": "text", "value": "{{e_story_title}}" }
+              ]
+            },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads"] }
+          }
+        },
+        {
+          "name": "E3 · 上传资产 2/6 儿歌·拍拍小手找颜色",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'e3_song_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Upload song returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('sha256 matches manifest', () => pm.expect(j.data.sha256).to.eql(pm.environment.get('e_song_sha256')));",
+              "pm.environment.set('e_song_upload_id', j.data.upload_id);",
+              "pm.environment.set('e_song_media_id', j.data.media_id);",
+              "console.log('✅ E3 儿歌上传 success media_id=' + j.data.media_id);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "{{e_song_path}}" },
+                { "key": "category_key", "type": "text", "value": "k1_content_validation" },
+                { "key": "source_type", "type": "text", "value": "uploaded_direct" },
+                { "key": "asset_id", "type": "text", "value": "{{e_song_asset_id}}" },
+                { "key": "title", "type": "text", "value": "{{e_song_title}}" }
+              ]
+            },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads"] }
+          }
+        },
+        {
+          "name": "E4 · 上传资产 3/6 动物声音·早安小农场",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'e4_animal_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Upload animal returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('sha256 matches manifest', () => pm.expect(j.data.sha256).to.eql(pm.environment.get('e_animal_sha256')));",
+              "pm.environment.set('e_animal_upload_id', j.data.upload_id);",
+              "pm.environment.set('e_animal_media_id', j.data.media_id);",
+              "console.log('✅ E4 动物声音上传 success media_id=' + j.data.media_id);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "{{e_animal_path}}" },
+                { "key": "category_key", "type": "text", "value": "k1_content_validation" },
+                { "key": "source_type", "type": "text", "value": "uploaded_direct" },
+                { "key": "asset_id", "type": "text", "value": "{{e_animal_asset_id}}" },
+                { "key": "title", "type": "text", "value": "{{e_animal_title}}" }
+              ]
+            },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads"] }
+          }
+        },
+        {
+          "name": "E5 · 上传资产 4/6 通话故事·给奶奶的一朵云",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'e5_call_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Upload call returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('sha256 matches manifest', () => pm.expect(j.data.sha256).to.eql(pm.environment.get('e_call_sha256')));",
+              "pm.environment.set('e_call_upload_id', j.data.upload_id);",
+              "pm.environment.set('e_call_media_id', j.data.media_id);",
+              "console.log('✅ E5 通话故事上传 success media_id=' + j.data.media_id);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "{{e_call_path}}" },
+                { "key": "category_key", "type": "text", "value": "k1_content_validation" },
+                { "key": "source_type", "type": "text", "value": "uploaded_direct" },
+                { "key": "asset_id", "type": "text", "value": "{{e_call_asset_id}}" },
+                { "key": "title", "type": "text", "value": "{{e_call_title}}" }
+              ]
+            },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads"] }
+          }
+        },
+        {
+          "name": "E6 · 上传资产 5/6 古诗词·咏鹅",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'e6_poem_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Upload poem returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('sha256 matches manifest', () => pm.expect(j.data.sha256).to.eql(pm.environment.get('e_poem_sha256')));",
+              "pm.environment.set('e_poem_upload_id', j.data.upload_id);",
+              "pm.environment.set('e_poem_media_id', j.data.media_id);",
+              "console.log('✅ E6 古诗词上传 success media_id=' + j.data.media_id);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "{{e_poem_path}}" },
+                { "key": "category_key", "type": "text", "value": "k1_content_validation" },
+                { "key": "source_type", "type": "text", "value": "uploaded_direct" },
+                { "key": "asset_id", "type": "text", "value": "{{e_poem_asset_id}}" },
+                { "key": "title", "type": "text", "value": "{{e_poem_title}}" }
+              ]
+            },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads"] }
+          }
+        },
+        {
+          "name": "E7 · 上传资产 6/6 英语启蒙·Hello Little Sun",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'e7_english_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Upload english returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('sha256 matches manifest', () => pm.expect(j.data.sha256).to.eql(pm.environment.get('e_english_sha256')));",
+              "pm.environment.set('e_english_upload_id', j.data.upload_id);",
+              "pm.environment.set('e_english_media_id', j.data.media_id);",
+              "console.log('✅ E7 英语启蒙上传 success media_id=' + j.data.media_id);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "{{e_english_path}}" },
+                { "key": "category_key", "type": "text", "value": "k1_content_validation" },
+                { "key": "source_type", "type": "text", "value": "uploaded_direct" },
+                { "key": "asset_id", "type": "text", "value": "{{e_english_asset_id}}" },
+                { "key": "title", "type": "text", "value": "{{e_english_title}}" }
+              ]
+            },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/uploads", "host": ["{{admin_base_url}}"], "path": ["ops","v1","uploads"] }
+          }
+        },
+        {
+          "name": "E8 · 创建 PublicationVersion（包含 6 个 media_id）",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'e8_pub_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));",
+              "const mediaIds = [",
+              "  pm.environment.get('e_story_media_id'),",
+              "  pm.environment.get('e_song_media_id'),",
+              "  pm.environment.get('e_animal_media_id'),",
+              "  pm.environment.get('e_call_media_id'),",
+              "  pm.environment.get('e_poem_media_id'),",
+              "  pm.environment.get('e_english_media_id')",
+              "].filter(Boolean);",
+              "pm.variables.set('e_media_ids_json', JSON.stringify(mediaIds.map(id => ({media_id: id, role: 'primary'}))));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Create publication returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has publication_id', () => pm.expect(j.data.publication_id).to.be.a('string'));",
+              "pm.test('has publication_version_id', () => pm.expect(j.data.publication_version_id).to.be.a('string'));",
+              "pm.test('has revision', () => pm.expect(j.data.revision).to.be.a('number'));",
+              "pm.environment.set('s5_publication_id', j.data.publication_id);",
+              "pm.environment.set('s5_publication_version_id', j.data.publication_version_id);",
+              "pm.environment.set('s5_publication_revision', j.data.revision);",
+              "console.log('✅ E8 PublicationVersion 创建 publication_id=' + j.data.publication_id);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"visibility\": \"public\",\n  \"media_items\": {{e_media_ids_json}},\n  \"reason\": \"scenario E - multi-asset upload consistency\"\n}" },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/publications", "host": ["{{admin_base_url}}"], "path": ["ops","v1","publications"] }
+          }
+        },
+        {
+          "name": "E9 · 发布命令 publish",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('idempotency_key', 'e9_publish_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Publish returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('state is published', () => pm.expect(j.data.state).to.eql('published'));",
+              "console.log('✅ E9 发布命令成功 state=published');"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Idempotency-Key", "value": "{{idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"command\": \"publish\",\n  \"expected_revision\": {{s5_publication_revision}},\n  \"reason\": \"scenario E - publish multi-asset\"\n}" },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/publications/{{s5_publication_version_id}}:command", "host": ["{{admin_base_url}}"], "path": ["ops","v1","publications","{{s5_publication_version_id}}:command"] }
+          }
+        },
+        {
+          "name": "E10 · 设备 CMS resolve · 断言 6 个 target 可见",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_e10_cms_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_e10_cms_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Device CMS returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('sections is array', () => pm.expect(j.data.sections).to.be.an('array'));",
+              "pm.test('sections length >= 1', () => pm.expect(j.data.sections.length).to.be.at.least(1));",
+              "const items = (j.data.sections || []).flatMap(s => s.items || []);",
+              "pm.test('CMS items count >= 6', () => pm.expect(items.length).to.be.at.least(6));",
+              "if (items.length > 0) {",
+              "  pm.environment.set('s5_catalog_target_type', items[0].target.target_type);",
+              "  pm.environment.set('s5_catalog_target_id', items[0].target.target_id);",
+              "}",
+              "console.log('✅ E10 设备 CMS 可见 items count=' + items.length);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"known_projection_revision\": null,\n  \"cursor\": null,\n  \"limit\": {\"sections\": 6, \"items_per_section\": 20},\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]},\n  \"entry_context\": {\"entry_point\": \"home\", \"time_bucket\": \"daytime\", \"network\": \"wifi\", \"battery\": 80, \"app_version\": \"1.0.0\"}\n}" },
+            "url": { "raw": "{{base_url}}/v1/device/cms/pages/{{s5_cms_page_key}}:resolve", "host": ["{{base_url}}"], "path": ["v1","device","cms","pages","{{s5_cms_page_key}}:resolve"] }
+          }
+        },
+        {
+          "name": "E11 · 设备 Catalog 展开 · 断言 6 个 media_id 全部出现",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_e11_cat_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_e11_cat_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Device Catalog returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('has items[]', () => pm.expect(j.data.items).to.be.an('array'));",
+              "",
+              "// 收集 Catalog 中所有可见的 media_id",
+              "const catalogMediaIds = (j.data.items || []).map(i => i.media_id).filter(Boolean);",
+              "pm.environment.set('e_catalog_media_ids', JSON.stringify(catalogMediaIds));",
+              "",
+              "// 断言 6 个上传的 media_id 全部出现",
+              "const expectedMediaIds = [",
+              "  pm.environment.get('e_story_media_id'),",
+              "  pm.environment.get('e_song_media_id'),",
+              "  pm.environment.get('e_animal_media_id'),",
+              "  pm.environment.get('e_call_media_id'),",
+              "  pm.environment.get('e_poem_media_id'),",
+              "  pm.environment.get('e_english_media_id')",
+              "].filter(Boolean);",
+              "",
+              "pm.test('All 6 uploaded media_ids appear in Catalog', () => {",
+              "  expectedMediaIds.forEach(mid => {",
+              "    pm.expect(catalogMediaIds, 'missing media_id in Catalog: ' + mid).to.include(mid);",
+              "  });",
+              "});",
+              "pm.test('Catalog media_id count >= 6', () => pm.expect(catalogMediaIds.length).to.be.at.least(6));",
+              "console.log('✅ E11 设备 Catalog 展开 catalog count=' + catalogMediaIds.length + ' expected=' + expectedMediaIds.length);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"known_projection_revision\": null,\n  \"cursor\": null,\n  \"limit\": {\"sections\": 6, \"items_per_section\": 20},\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": true, \"supported_audio_codecs\": [\"audio/mp4\", \"audio/mpeg\", \"audio/wav\"]},\n  \"entry_context\": {\"entry_point\": \"home\", \"time_bucket\": \"daytime\", \"network\": \"wifi\", \"battery\": 80, \"app_version\": \"1.0.0\"}\n}" },
+            "url": { "raw": "{{base_url}}/v1/device/catalog:resolve", "host": ["{{base_url}}"], "path": ["v1","device","catalog:resolve"] }
+          }
+        },
+        {
+          "name": "E12 · PlayResource + CDN sha256 比对资产 1/6 讲故事",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_e12_play_story_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_e12_play_story_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('PlayResource returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('success', () => pm.expect(j.success).to.eql(true));",
+              "pm.test('media_id matches uploaded', () => pm.expect(j.data.media_id).to.eql(pm.environment.get('e_story_media_id')));",
+              "const playUrl = (j.data.play_manifest && j.data.play_manifest.items && j.data.play_manifest.items[0] && j.data.play_manifest.items[0].url) || (j.data.play_resource && j.data.play_resource.url);",
+              "pm.test('has CDN URL', () => pm.expect(playUrl).to.be.a('string'));",
+              "pm.environment.set('e_story_cdn_url', playUrl);",
+              "console.log('✅ E12 讲故事 PlayResource CDN URL extracted');"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"media_id\": \"{{e_story_media_id}}\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": false, \"supported_audio_codecs\": [\"audio/mpeg\", \"audio/wav\"]}\n}" },
+            "url": { "raw": "{{base_url}}/v1/device/play/resources", "host": ["{{base_url}}"], "path": ["v1","device","play","resources"] }
+          }
+        },
+        {
+          "name": "E13 · CDN 下载资产 1/6 讲故事 · sha256 比对",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_e13_cdn_story_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('CDN download returns 200 or 206', () => pm.expect([200,206]).to.include(pm.response.code));",
+              "const buf = pm.response.stream();",
+              "const crypto = require('crypto-js');",
+              "const hash = crypto.SHA256(crypto.lib.WordArray.create(buf)).toString();",
+              "const expected = pm.environment.get('e_story_sha256');",
+              "const byteSize = buf.length;",
+              "pm.test('CDN 真实访问并下载字节（试听可用）', () => pm.expect(byteSize).to.be.at.least(1000));",
+              "if (hash === expected) {",
+              "  console.log('✅ E13 讲故事 sha256 字节级一致 hash=' + hash.substring(0,16) + '... size=' + byteSize);",
+              "} else {",
+              "  console.warn('⚠️ E13 讲故事 sha256 不一致（CDN 可能重编码）实际=' + hash.substring(0,16) + '... 期望=' + expected.substring(0,16) + '... size=' + byteSize);",
+              "  pm.environment.set('e_story_cdn_sha256_mismatch', 'true');",
+              "}",
+              "pm.environment.set('e_story_cdn_sha256', hash);"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{e_story_cdn_url}}", "host": ["{{e_story_cdn_url}}"] }
+          }
+        },
+        {
+          "name": "E14 · PlayResource + CDN sha256 比对资产 2/6 儿歌",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_e14_play_song_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_e14_play_song_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('PlayResource returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('media_id matches uploaded', () => pm.expect(j.data.media_id).to.eql(pm.environment.get('e_song_media_id')));",
+              "const playUrl = (j.data.play_manifest && j.data.play_manifest.items && j.data.play_manifest.items[0] && j.data.play_manifest.items[0].url) || (j.data.play_resource && j.data.play_resource.url);",
+              "pm.environment.set('e_song_cdn_url', playUrl);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"media_id\": \"{{e_song_media_id}}\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": false, \"supported_audio_codecs\": [\"audio/mpeg\", \"audio/wav\"]}\n}" },
+            "url": { "raw": "{{base_url}}/v1/device/play/resources", "host": ["{{base_url}}"], "path": ["v1","device","play","resources"] }
+          }
+        },
+        {
+          "name": "E15 · CDN 下载资产 2/6 儿歌 · sha256 比对",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('CDN download returns 200 or 206', () => pm.expect([200,206]).to.include(pm.response.code));",
+              "const buf = pm.response.stream();",
+              "const crypto = require('crypto-js');",
+              "const hash = crypto.SHA256(crypto.lib.WordArray.create(buf)).toString();",
+              "const expected = pm.environment.get('e_song_sha256');",
+              "const byteSize = buf.length;",
+              "pm.test('CDN 真实访问并下载字节（试听可用）', () => pm.expect(byteSize).to.be.at.least(1000));",
+              "if (hash === expected) {",
+              "  console.log('✅ E15 儿歌 sha256 字节级一致 hash=' + hash.substring(0,16) + '... size=' + byteSize);",
+              "} else {",
+              "  console.warn('⚠️ E15 儿歌 sha256 不一致（CDN 可能重编码）实际=' + hash.substring(0,16) + '... 期望=' + expected.substring(0,16) + '... size=' + byteSize);",
+              "  pm.environment.set('e_song_cdn_sha256_mismatch', 'true');",
+              "}",
+              "pm.environment.set('e_song_cdn_sha256', hash);"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{e_song_cdn_url}}", "host": ["{{e_song_cdn_url}}"] }
+          }
+        },
+        {
+          "name": "E16 · PlayResource + CDN sha256 比对资产 3/6 动物声音",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_e16_play_animal_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_e16_play_animal_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('PlayResource returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('media_id matches uploaded', () => pm.expect(j.data.media_id).to.eql(pm.environment.get('e_animal_media_id')));",
+              "const playUrl = (j.data.play_manifest && j.data.play_manifest.items && j.data.play_manifest.items[0] && j.data.play_manifest.items[0].url) || (j.data.play_resource && j.data.play_resource.url);",
+              "pm.environment.set('e_animal_cdn_url', playUrl);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"media_id\": \"{{e_animal_media_id}}\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": false, \"supported_audio_codecs\": [\"audio/mpeg\", \"audio/wav\"]}\n}" },
+            "url": { "raw": "{{base_url}}/v1/device/play/resources", "host": ["{{base_url}}"], "path": ["v1","device","play","resources"] }
+          }
+        },
+        {
+          "name": "E17 · CDN 下载资产 3/6 动物声音 · sha256 比对",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('CDN download returns 200 or 206', () => pm.expect([200,206]).to.include(pm.response.code));",
+              "const buf = pm.response.stream();",
+              "const crypto = require('crypto-js');",
+              "const hash = crypto.SHA256(crypto.lib.WordArray.create(buf)).toString();",
+              "const expected = pm.environment.get('e_animal_sha256');",
+              "const byteSize = buf.length;",
+              "pm.test('CDN 真实访问并下载字节（试听可用）', () => pm.expect(byteSize).to.be.at.least(1000));",
+              "if (hash === expected) {",
+              "  console.log('✅ E17 动物声音 sha256 字节级一致 hash=' + hash.substring(0,16) + '... size=' + byteSize);",
+              "} else {",
+              "  console.warn('⚠️ E17 动物声音 sha256 不一致（CDN 可能重编码）实际=' + hash.substring(0,16) + '... 期望=' + expected.substring(0,16) + '... size=' + byteSize);",
+              "  pm.environment.set('e_animal_cdn_sha256_mismatch', 'true');",
+              "}",
+              "pm.environment.set('e_animal_cdn_sha256', hash);"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{e_animal_cdn_url}}", "host": ["{{e_animal_cdn_url}}"] }
+          }
+        },
+        {
+          "name": "E18 · PlayResource + CDN sha256 比对资产 4/6 通话故事",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_e18_play_call_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_e18_play_call_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('PlayResource returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('media_id matches uploaded', () => pm.expect(j.data.media_id).to.eql(pm.environment.get('e_call_media_id')));",
+              "const playUrl = (j.data.play_manifest && j.data.play_manifest.items && j.data.play_manifest.items[0] && j.data.play_manifest.items[0].url) || (j.data.play_resource && j.data.play_resource.url);",
+              "pm.environment.set('e_call_cdn_url', playUrl);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"media_id\": \"{{e_call_media_id}}\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": false, \"supported_audio_codecs\": [\"audio/mpeg\", \"audio/wav\"]}\n}" },
+            "url": { "raw": "{{base_url}}/v1/device/play/resources", "host": ["{{base_url}}"], "path": ["v1","device","play","resources"] }
+          }
+        },
+        {
+          "name": "E19 · CDN 下载资产 4/6 通话故事 · sha256 比对",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('CDN download returns 200 or 206', () => pm.expect([200,206]).to.include(pm.response.code));",
+              "const buf = pm.response.stream();",
+              "const crypto = require('crypto-js');",
+              "const hash = crypto.SHA256(crypto.lib.WordArray.create(buf)).toString();",
+              "const expected = pm.environment.get('e_call_sha256');",
+              "const byteSize = buf.length;",
+              "pm.test('CDN 真实访问并下载字节（试听可用）', () => pm.expect(byteSize).to.be.at.least(1000));",
+              "if (hash === expected) {",
+              "  console.log('✅ E19 通话故事 sha256 字节级一致 hash=' + hash.substring(0,16) + '... size=' + byteSize);",
+              "} else {",
+              "  console.warn('⚠️ E19 通话故事 sha256 不一致（CDN 可能重编码）实际=' + hash.substring(0,16) + '... 期望=' + expected.substring(0,16) + '... size=' + byteSize);",
+              "  pm.environment.set('e_call_cdn_sha256_mismatch', 'true');",
+              "}",
+              "pm.environment.set('e_call_cdn_sha256', hash);"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{e_call_cdn_url}}", "host": ["{{e_call_cdn_url}}"] }
+          }
+        },
+        {
+          "name": "E20 · PlayResource + CDN sha256 比对资产 5/6 古诗词",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_e20_play_poem_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_e20_play_poem_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('PlayResource returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('media_id matches uploaded', () => pm.expect(j.data.media_id).to.eql(pm.environment.get('e_poem_media_id')));",
+              "const playUrl = (j.data.play_manifest && j.data.play_manifest.items && j.data.play_manifest.items[0] && j.data.play_manifest.items[0].url) || (j.data.play_resource && j.data.play_resource.url);",
+              "pm.environment.set('e_poem_cdn_url', playUrl);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"media_id\": \"{{e_poem_media_id}}\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": false, \"supported_audio_codecs\": [\"audio/mpeg\", \"audio/wav\"]}\n}" },
+            "url": { "raw": "{{base_url}}/v1/device/play/resources", "host": ["{{base_url}}"], "path": ["v1","device","play","resources"] }
+          }
+        },
+        {
+          "name": "E21 · CDN 下载资产 5/6 古诗词 · sha256 比对",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('CDN download returns 200 or 206', () => pm.expect([200,206]).to.include(pm.response.code));",
+              "const buf = pm.response.stream();",
+              "const crypto = require('crypto-js');",
+              "const hash = crypto.SHA256(crypto.lib.WordArray.create(buf)).toString();",
+              "const expected = pm.environment.get('e_poem_sha256');",
+              "const byteSize = buf.length;",
+              "pm.test('CDN 真实访问并下载字节（试听可用）', () => pm.expect(byteSize).to.be.at.least(1000));",
+              "if (hash === expected) {",
+              "  console.log('✅ E21 古诗词 sha256 字节级一致 hash=' + hash.substring(0,16) + '... size=' + byteSize);",
+              "} else {",
+              "  console.warn('⚠️ E21 古诗词 sha256 不一致（CDN 可能重编码）实际=' + hash.substring(0,16) + '... 期望=' + expected.substring(0,16) + '... size=' + byteSize);",
+              "  pm.environment.set('e_poem_cdn_sha256_mismatch', 'true');",
+              "}",
+              "pm.environment.set('e_poem_cdn_sha256', hash);"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{e_poem_cdn_url}}", "host": ["{{e_poem_cdn_url}}"] }
+          }
+        },
+        {
+          "name": "E22 · PlayResource + CDN sha256 比对资产 6/6 英语启蒙",
+          "event": [{
+            "listen": "prerequest",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.variables.set('trace_id', 'trace_e22_play_english_' + Math.random().toString(36).slice(2,14));",
+              "pm.variables.set('request_id', 'req_e22_play_english_' + Math.random().toString(36).slice(2,14));"
+            ]}
+          }, {
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('PlayResource returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('media_id matches uploaded', () => pm.expect(j.data.media_id).to.eql(pm.environment.get('e_english_media_id')));",
+              "const playUrl = (j.data.play_manifest && j.data.play_manifest.items && j.data.play_manifest.items[0] && j.data.play_manifest.items[0].url) || (j.data.play_resource && j.data.play_resource.url);",
+              "pm.environment.set('e_english_cdn_url', playUrl);"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{device_access_token}}" },
+              { "key": "X-Lumi-Device-ID", "value": "{{device_sn}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"trace_id\": \"{{trace_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"media_id\": \"{{e_english_media_id}}\",\n  \"client_capabilities\": {\"audio\": true, \"video\": false, \"image\": false, \"supported_audio_codecs\": [\"audio/mpeg\", \"audio/wav\"]}\n}" },
+            "url": { "raw": "{{base_url}}/v1/device/play/resources", "host": ["{{base_url}}"], "path": ["v1","device","play","resources"] }
+          }
+        },
+        {
+          "name": "E23 · CDN 下载资产 6/6 英语启蒙 · sha256 比对",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('CDN download returns 200 or 206', () => pm.expect([200,206]).to.include(pm.response.code));",
+              "const buf = pm.response.stream();",
+              "const crypto = require('crypto-js');",
+              "const hash = crypto.SHA256(crypto.lib.WordArray.create(buf)).toString();",
+              "const expected = pm.environment.get('e_english_sha256');",
+              "const byteSize = buf.length;",
+              "pm.test('CDN 真实访问并下载字节（试听可用）', () => pm.expect(byteSize).to.be.at.least(1000));",
+              "if (hash === expected) {",
+              "  console.log('✅ E23 英语启蒙 sha256 字节级一致 hash=' + hash.substring(0,16) + '... size=' + byteSize);",
+              "} else {",
+              "  console.warn('⚠️ E23 英语启蒙 sha256 不一致（CDN 可能重编码）实际=' + hash.substring(0,16) + '... 期望=' + expected.substring(0,16) + '... size=' + byteSize);",
+              "  pm.environment.set('e_english_cdn_sha256_mismatch', 'true');",
+              "}",
+              "pm.environment.set('e_english_cdn_sha256', hash);"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{e_english_cdn_url}}", "host": ["{{e_english_cdn_url}}"] }
+          }
+        },
+        {
+          "name": "E24 · 一致性总结报告",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('status 200', () => pm.response.to.have.status(200));",
+              "const assets = ['story','song','animal','call','poem','english'];",
+              "const labels = { story:'讲故事', song:'儿歌', animal:'动物声音', call:'通话故事', poem:'古诗词', english:'英语启蒙' };",
+              "console.log('========== 场景E 多资产内容一致性报告 ==========');",
+              "console.log('音频包: k1_audio_model_test_pack_3_8_v0_1');",
+              "console.log('选取资产: 6 个（6 类内容各 1 个，3-4 年龄段）');",
+              "console.log('');",
+              "let passCount = 0; let failCount = 0;",
+              "assets.forEach(k => {",
+              "  const mediaId = pm.environment.get('e_' + k + '_media_id');",
+              "  const uploadId = pm.environment.get('e_' + k + '_upload_id');",
+              "  const expectedSha = pm.environment.get('e_' + k + '_sha256');",
+              "  const actualSha = pm.environment.get('e_' + k + '_cdn_sha256');",
+              "  const match = mediaId && uploadId && expectedSha && actualSha && expectedSha === actualSha;",
+              "  if (match) { passCount++; } else { failCount++; }",
+              "  console.log('[' + (match ? 'PASS' : 'FAIL') + '] ' + labels[k] + ' (' + k + ')');",
+              "  console.log('  media_id:    ' + (mediaId || 'MISSING'));",
+              "  console.log('  upload_id:   ' + (uploadId || 'MISSING'));",
+              "  console.log('  sha256期望:  ' + (expectedSha ? expectedSha.substring(0,16) + '...' : 'MISSING'));",
+              "  console.log('  sha256实际:  ' + (actualSha ? actualSha.substring(0,16) + '...' : 'MISSING'));",
+              "  console.log('  一致性:      ' + (match ? '✅ 字节级一致' : '❌ 不一致或缺失'));",
+              "});",
+              "console.log('');",
+              "console.log('========== 总结: ' + passCount + '/6 PASS, ' + failCount + '/6 FAIL ==========');",
+              "pm.test('All 6 assets match (字节级一致)', () => {",
+              "  pm.expect(passCount, '资产 sha256 一致数量').to.eql(6);",
+              "  pm.expect(failCount, '资产 sha256 不一致数量').to.eql(0);",
+              "});",
+              "pm.test('Catalog 包含全部 6 个 media_id', () => {",
+              "  const catalogIds = JSON.parse(pm.environment.get('e_catalog_media_ids') || '[]');",
+              "  assets.forEach(k => {",
+              "    const mid = pm.environment.get('e_' + k + '_media_id');",
+              "    pm.expect(catalogIds, 'Catalog 缺少 ' + k + ' 的 media_id').to.include(mid);",
+              "  });",
+              "});"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{origin_url}}/healthz", "host": ["{{origin_url}}"], "path": ["healthz"] }
           }
         }
       ]

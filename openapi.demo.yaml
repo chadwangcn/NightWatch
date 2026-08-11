@@ -3,7 +3,7 @@ info:
   title: Lumi Demo (Schemathesis 可视化演示)
   version: 0.1.0
 servers:
-  - url: https://api-lumi.cinmoore.cn/lumi-mind
+  - url: http://api-lumi.cinmoore.cn/lumi-mind
 paths:
   /v1/user-sessions:
     post:

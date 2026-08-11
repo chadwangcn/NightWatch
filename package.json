@@ -3,16 +3,36 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "description": "Lumi API 黑盒测试：Postman 集合（开发调试）+ Newman（CI 自动化）+ Vitest（代码单元测试）",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "newman:install": "npm install -g newman newman-reporter-htmlextra",
+    "newman:device-platform": "newman run postman/lumi-device-platform.postman_collection.json -e postman/lumi-device-platform.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/device-platform-$(date +%Y%m%d-%H%M%S).html --env-var \"device_secret_b64url=$DEVICE_SECRET_B64URL\" --env-var \"user_account=$USER_ACCOUNT\" --env-var \"user_password=$USER_PASSWORD\" --env-var \"operator_account=$OPERATOR_ACCOUNT\" --env-var \"operator_password=$OPERATOR_PASSWORD\"",
+    "newman:s4": "newman run postman/lumi-s4-interaction.postman_collection.json -e postman/lumi-device-platform.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/s4-$(date +%Y%m%d-%H%M%S).html --env-var \"device_secret_b64url=$DEVICE_SECRET_B64URL\"",
+    "newman:s5": "newman run postman/lumi-s5-content-media.postman_collection.json -e postman/lumi-device-platform.postman_environment.json --reporters cli,htmlextra --reporter-htmlextra-export reports/s5-$(date +%Y%m%d-%H%M%S).html --env-var \"s5_test_audio_path=$S5_TEST_AUDIO_PATH\" --env-var \"s5_test_family_id=$S5_TEST_FAMILY_ID\" --env-var \"s5_test_child_id=$S5_TEST_CHILD_ID\"",
+    "newman:s5:smoke": "newman run postman/lumi-s5-content-media.postman_collection.json -e postman/lumi-device-platform.postman_environment.json --folder \"00 · 健康检查\" --folder \"10 · 场景A · 端到端最小验收\" --folder \"12 · 场景C · 鉴权与参数负向\" --reporters cli,htmlextra --reporter-htmlextra-export reports/s5-smoke-$(date +%Y%m%d-%H%M%S).html",
+    "newman:s5:device": "newman run postman/lumi-s5-content-media.postman_collection.json -e postman/lumi-device-platform.postman_environment.json --folder \"01 · 设备 API · CMS Catalog PlayResource Categories Library Recommendations\" --reporters cli,htmlextra --reporter-htmlextra-export reports/s5-device-$(date +%Y%m%d-%H%M%S).html",
+    "newman:s5:guardian": "newman run postman/lumi-s5-content-media.postman_collection.json -e postman/lumi-device-platform.postman_environment.json --folder \"03 · 家长 API · CMS Catalog Categories Library Recommendations PublicationCommand Uploads\" --reporters cli,htmlextra --reporter-htmlextra-export reports/s5-guardian-$(date +%Y%m%d-%H%M%S).html",
+    "newman:s5:ops": "newman run postman/lumi-s5-content-media.postman_collection.json -e postman/lumi-device-platform.postman_environment.json --folder \"02 · 运营 API · Categories Uploads Publications\" --folder \"04 · 运营 API · CMS Pages\" --reporters cli,htmlextra --reporter-htmlextra-export reports/s5-ops-$(date +%Y%m%d-%H%M%S).html",
+    "newman:all": "npm run newman:device-platform && npm run newman:s4 && npm run newman:s5",
+    "newman:ci": "bash scripts/run-newman.sh",
+    "console": "node server.js",
+    "console:dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.22.2"
   },
   "devDependencies": {
-    "vitest": "^2.1.8",
+    "jsdom": "^25.0.1",
     "vite": "^5.4.10",
-    "jsdom": "^25.0.1"
+    "vitest": "^2.1.8"
+  },
+  "optionalDependencies": {
+    "newman": "^6.2.2",
+    "newman-reporter-htmlextra": "^1.23.1"
   }
 }

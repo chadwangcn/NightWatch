@@ -18,7 +18,7 @@ describe('LumiBrowserApiClient — 代理路径拼接', () => {
 
     // baseUrl 含路径前缀 /lumi-mind
     const client = new LumiBrowserApiClient({
-      baseUrl: 'https://api-lumi.cinmoore.cn/lumi-mind',
+      baseUrl: 'http://api-lumi.cinmoore.cn/lumi-mind',
     });
 
     await client.login({ account: 'a', password: 'b' });
@@ -53,12 +53,12 @@ describe('LumiBrowserApiClient — 代理路径拼接', () => {
     };
 
     const client = new LumiBrowserApiClient({
-      baseUrl: 'https://api-lumi.cinmoore.cn/lumi-mind',
+      baseUrl: 'http://api-lumi.cinmoore.cn/lumi-mind',
     });
     await client.login({ account: 'a', password: 'b' });
 
     // X-Target-Base 必须包含路径前缀，让代理知道完整目标
-    expect(capturedHeaders.get('x-target-base')).toBe('https://api-lumi.cinmoore.cn/lumi-mind');
+    expect(capturedHeaders.get('x-target-base')).toBe('http://api-lumi.cinmoore.cn/lumi-mind');
   });
 
   test('GET 请求带 query 参数时路径正确', async () => {
@@ -69,7 +69,7 @@ describe('LumiBrowserApiClient — 代理路径拼接', () => {
     };
 
     const client = new LumiBrowserApiClient({
-      baseUrl: 'https://api-lumi.cinmoore.cn/lumi-mind',
+      baseUrl: 'http://api-lumi.cinmoore.cn/lumi-mind',
       userAccessToken: 't',
     });
     await client.getBinding({ deviceSn: 'SN-X' });
@@ -86,19 +86,19 @@ describe('LumiBrowserApiClient — 代理路径拼接', () => {
         headers: new Map(),
       };
       Object.defineProperty(resp, '_actualUrl', { value: url, enumerable: false });
-      Object.defineProperty(resp, '_targetUrl', { value: 'https://api-lumi.cinmoore.cn/lumi-mind/v1/user-sessions', enumerable: false });
+      Object.defineProperty(resp, '_targetUrl', { value: 'http://api-lumi.cinmoore.cn/lumi-mind/v1/user-sessions', enumerable: false });
       return resp;
     };
 
     const client = new LumiBrowserApiClient({
-      baseUrl: 'https://api-lumi.cinmoore.cn/lumi-mind',
+      baseUrl: 'http://api-lumi.cinmoore.cn/lumi-mind',
     });
     const err = await client.login({ account: 'a', password: 'b' }).catch((e) => e);
     const debug = err.toDebugJSON();
 
     expect(debug.request.actualUrl).toBe('/proxy/v1/user-sessions');
-    expect(debug.request.targetUrl).toBe('https://api-lumi.cinmoore.cn/lumi-mind/v1/user-sessions');
+    expect(debug.request.targetUrl).toBe('http://api-lumi.cinmoore.cn/lumi-mind/v1/user-sessions');
     // url 是逻辑 URL（baseUrl + path）
-    expect(debug.request.url).toBe('https://api-lumi.cinmoore.cn/lumi-mind/v1/user-sessions');
+    expect(debug.request.url).toBe('http://api-lumi.cinmoore.cn/lumi-mind/v1/user-sessions');
   });
 });

@@ -49,9 +49,9 @@ device-platform（签发 token）
 | 文件 | 用途 | 规模 |
 |---|---|---|
 | `lumi-device-platform.postman_collection.json` | 设备平台集合（健康检查/设备/用户/配对/解绑） | 6 分组 17 请求 |
-| `lumi-s4-interaction.postman_collection.json` | S4 交互集合（语音/实时语音/拍搜/媒体/内部/场景/负面） | 8 分组 38 请求 |
-| `lumi-s5-content-media.postman_collection.json` | S5 内容媒体集合（设备/家长/运营/场景/负面） | 7 分组 46 请求 |
-| `lumi-device-platform.postman_environment.json` | **唯一共享环境文件**（三个集合共用） | 59 变量 |
+| `lumi-s4-interaction.postman_collection.json` | S4 交互集合（黑盒测试，仅设备面：语音/实时语音/拍搜/媒体/场景/负面） | 7 分组 26 请求 |
+| `lumi-s5-content-media.postman_collection.json` | S5 内容媒体集合（黑盒测试，设备+家长+运营：CMS/Catalog/PlayResource/Categories/Library/Recommendations/Uploads/Publications/Source-intakes/CMS Pages/场景/负面） | 8 分组 59 请求 |
+| `lumi-device-platform.postman_environment.json` | **唯一共享环境文件**（三个集合共用） | 56 变量 |
 
 ### 2.2 集合结构
 
@@ -83,7 +83,7 @@ device-platform（签发 token）
 - **WebSocket 一次性 token**：`GET /v1/ai/realtime-voice/media/{oneTimeToken}` 首次使用即消费
 - **降级模式**：S2/S5 不可用时返回 degraded=true，不是错误
 
-### 2.3 环境变量设计（53 变量，带分类标记）
+### 2.3 环境变量设计（56 变量，带分类标记）
 
 环境文件 `lumi-device-platform.postman_environment.json` 的每个变量 description 字段都有来源标记：
 
@@ -404,6 +404,9 @@ OpenAPI 真源：`https://github.com/chadwangcn/lumi-s4-interaction/blob/main/do
 12. S5 page_key 约定值为 `k1_content_validation`（external-api-test-guide.v1.md 约定，不是 `k1_story_time`）
 13. **S5 API 设计缺口**：`owner_binding.family_id` / `child_id` 是 S5 内部 opaque ref，与 device-platform 的 `child_profile_id` 不是同一体系。当前 S5 设备 API 响应不返回身份字段，device-platform binding 查询响应也未见 family_id/child_id。运营创建 private_child publication 时这两个 ID 只能从 S5 运营后台手动获取，无法通过 API 自动串联
 14. `other_device_access_token` / `other_device_sn` 已从环境文件移除（当前只有一台设备）。如需恢复 private_child 跨设备验证，需重新添加这两个变量
+15. **S5 三面 API 覆盖**：设备面 7 端点（CMS/Catalog/PlayResource/SignedResource/Categories/Library/Recommendations）+ 家长面 10 端点（Guardian CMS/Catalog/Categories/Library/Recommendations/PublicationCommand/Uploads）+ 运营面 17 端点（Categories/Uploads/Publications/Source-intakes/CMS Pages）。机器真源 `src/lumi_s5/openapi_spec.py`
+16. **家长面 command 用 hide_from_child/show_to_child**，不是 publish/pause/revoke
+17. **/ops/v1/* 标记 `x-lumi-access: internal` 是 S5 的话术**：相对于用户面而言"运营是内部"，但运营 API 仍是公开发布的对外 API（需 operator_access_token），不是 service-to-service 的真·内部 API（/internal/v1/*）。当前测试覆盖 /ops/v1/*，不测 /internal/v1/*
 
 ---
 

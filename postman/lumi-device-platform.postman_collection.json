@@ -7,7 +7,7 @@
   },
   "auth": null,
   "variable": [
-    { "key": "base_url", "value": "https://api-lumi.cinmoore.cn/lumi-mind" },
+    { "key": "base_url", "value": "http://api-lumi.cinmoore.cn/lumi-mind" },
     { "key": "origin_url", "value": "https://api-lumi.cinmoore.cn" },
     { "key": "device_access_token", "value": "" },
     { "key": "device_refresh_token", "value": "" },
@@ -46,16 +46,17 @@
           }]
         },
         {
-          "name": "GET /readyz (internal)",
+          "name": "GET /readyz (internal, 404 externally)",
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{base_url}}/readyz", "host": ["{{base_url}}"], "path": ["readyz"] }
+            "url": { "raw": "{{origin_url}}/readyz", "host": ["{{origin_url}}"], "path": ["readyz"] }
           },
           "event": [{
             "listen": "test",
             "script": { "type": "text/javascript", "exec": [
-              "pm.test('readyz returns 200', () => pm.response.to.have.status(200));"
+              "// /readyz 是内部接口，外部访问应返回 404",
+              "pm.test('readyz is internal-only (404 externally)', () => pm.response.to.have.status(404));"
             ]}
           }]
         },
@@ -153,7 +154,190 @@
       ]
     },
     {
-      "name": "02 · 场景A · 设备首次激活",
+      "name": "02 · 运营账号 · 登录与管理",
+      "description": "运营（Operator）账号登录与管理。\n\n覆盖端点：\n- POST /v1/operator-sessions（账号密码登录，返回 operator_access_token，TTL 600s）\n- DELETE /v1/operator-sessions/current（注销当前会话）\n- GET /v1/operators/me（获取当前运营账号信息）\n- POST /v1/operators/me/password（修改自己的密码，改后所有会话失效）\n- POST /v1/operators（创建新运营账号，需 admin 角色）\n- PATCH /v1/operators/{operator_id}（更新运营账号角色/状态，需 admin 角色）\n\n认证：OperatorAccessBearer（Authorization: Bearer {{operator_access_token}}）\n错误码：AUTH_REQUEST_INVALID(400) / AUTH_CREDENTIAL_INVALID(401) / AUTH_SCOPE_DENIED(403) / AUTH_RATE_LIMITED(429)",
+      "item": [
+        {
+          "name": "O1 · POST /v1/operator-sessions (login)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"account\": \"{{operator_account}}\",\n  \"password\": \"{{operator_password}}\"\n}" },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/operator-sessions", "host": ["{{admin_base_url}}"], "path": ["ops","v1","operator-sessions"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('operator-sessions returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "if (j.operator_access_token) pm.environment.set('operator_access_token', j.operator_access_token);",
+              "pm.test('expires_in is 600', () => pm.expect(j.expires_in).to.eql(600));",
+              "console.log('✅ 运营登录成功，operator_access_token 已写入环境变量');"
+            ]}
+          }]
+        },
+        {
+          "name": "O2 · GET /v1/operators/me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{operator_access_token}}" }],
+            "url": { "raw": "{{base_url}}/v1/operators/me", "host": ["{{base_url}}"], "path": ["v1","operators","me"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('operators/me returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('has operator_id', () => pm.expect(j.operator_id).to.be.a('string'));",
+              "pm.test('has account', () => pm.expect(j.account).to.be.a('string'));",
+              "pm.test('has roles array', () => pm.expect(j.roles).to.be.an('array'));",
+              "pm.test('status is active', () => pm.expect(j.status).to.eql('active'));",
+              "if (j.operator_id) pm.environment.set('operator_id_admin', j.operator_id);",
+              "console.log('✅ 当前运营账号信息: ' + JSON.stringify(j));"
+            ]}
+          }]
+        },
+        {
+          "name": "O3 · POST /v1/operators/me/password (改密)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"current_password\": \"{{operator_password}}\",\n  \"new_password\": \"{{operator_new_password}}\"\n}" },
+            "url": { "raw": "{{base_url}}/v1/operators/me/password", "host": ["{{base_url}}"], "path": ["v1","operators","me","password"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('password change returns 204', () => pm.response.to.have.status(204));",
+              "console.log('⚠️ 密码已修改，所有会话将失效。环境变量 operator_password 需手动更新为 operator_new_password');"
+            ]}
+          }]
+        },
+        {
+          "name": "O4 · 改密后旧 token 失效验证 (GET /v1/operators/me → 401)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{operator_access_token}}" }],
+            "url": { "raw": "{{base_url}}/v1/operators/me", "host": ["{{base_url}}"], "path": ["v1","operators","me"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('old token invalidated after password change → 401', () => pm.response.to.have.status(401));",
+              "const j = pm.response.json();",
+              "pm.test('error code is AUTH_CREDENTIAL_INVALID', () => pm.expect(j.code).to.eql('AUTH_CREDENTIAL_INVALID'));",
+              "console.log('✅ 改密后旧 token 已失效');"
+            ]}
+          }]
+        },
+        {
+          "name": "O5 · 用新密码重新登录 (POST /v1/operator-sessions)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"account\": \"{{operator_account}}\",\n  \"password\": \"{{operator_new_password}}\"\n}" },
+            "url": { "raw": "{{admin_base_url}}/ops/v1/operator-sessions", "host": ["{{admin_base_url}}"], "path": ["ops","v1","operator-sessions"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('re-login with new password returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "if (j.operator_access_token) pm.environment.set('operator_access_token', j.operator_access_token);",
+              "pm.test('expires_in is 600', () => pm.expect(j.expires_in).to.eql(600));",
+              "console.log('✅ 新密码登录成功');"
+            ]}
+          }]
+        },
+        {
+          "name": "O6 · POST /v1/operators (创建新账号，admin only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"account\": \"qa.operator.{{$timestamp}}\",\n  \"password\": \"{{operator_password}}\",\n  \"roles\": [\"operator\"]\n}" },
+            "url": { "raw": "{{base_url}}/v1/operators", "host": ["{{base_url}}"], "path": ["v1","operators"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('create operator returns 201', () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.test('has operator_id', () => pm.expect(j.operator_id).to.be.a('string'));",
+              "pm.test('has account', () => pm.expect(j.account).to.be.a('string'));",
+              "pm.test('roles contains operator', () => pm.expect(j.roles).to.include('operator'));",
+              "if (j.operator_id) pm.environment.set('operator_id_created', j.operator_id);",
+              "console.log('✅ 新运营账号已创建: ' + j.operator_id);"
+            ]}
+          }]
+        },
+        {
+          "name": "O7 · PATCH /v1/operators/{operator_id} (升级为 admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"roles\": [\"operator\", \"admin\"]\n}" },
+            "url": { "raw": "{{base_url}}/v1/operators/{{operator_id_created}}", "host": ["{{base_url}}"], "path": ["v1","operators","{{operator_id_created}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('update operator returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('roles contains admin', () => pm.expect(j.roles).to.include('admin'));",
+              "console.log('✅ 运营账号已升级为 admin');"
+            ]}
+          }]
+        },
+        {
+          "name": "O8 · PATCH /v1/operators/{operator_id} (暂停账号)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{operator_access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"suspended\"\n}" },
+            "url": { "raw": "{{base_url}}/v1/operators/{{operator_id_created}}", "host": ["{{base_url}}"], "path": ["v1","operators","{{operator_id_created}}"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('suspend operator returns 200', () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test('status is suspended', () => pm.expect(j.status).to.eql('suspended'));",
+              "if (j.operator_id) pm.environment.set('operator_id_suspended', j.operator_id);",
+              "console.log('✅ 运营账号已暂停');"
+            ]}
+          }]
+        },
+        {
+          "name": "O9 · DELETE /v1/operator-sessions/current (注销)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{operator_access_token}}" }],
+            "url": { "raw": "{{admin_base_url}}/ops/v1/operator-sessions/current", "host": ["{{admin_base_url}}"], "path": ["ops","v1","operator-sessions","current"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('logout returns 204', () => pm.response.to.have.status(204));",
+              "console.log('✅ 当前运营会话已注销');"
+            ]}
+          }]
+        }
+      ]
+    },
+    {
+      "name": "03 · 场景A · 设备首次激活",
       "description": "场景A：设备单边激活流程。\n\n前置：设备已产线导入（lifecycle_state=provisioned 或 active），持有出厂 device_secret。\n\n异常码：\n- proof 错 → 401 AUTH_CREDENTIAL_INVALID\n- 设备非 active/provisioned → 401 AUTH_CREDENTIAL_REVOKED\n- nonce 重放 → 409 AUTH_REPLAY_DETECTED\n- timestamp 超窗 (±300s) → 400 AUTH_REQUEST_INVALID",
       "item": [
         {
@@ -163,7 +347,7 @@
               "listen": "prerequest",
               "script": { "type": "text/javascript", "exec": [
                 "// ===== 设备证明计算（规范见 docs/auth/device-proof.md） =====",
-                "const CryptoJS = require('crypto-js');",
+                "var CryptoJS = CryptoJS || require('crypto-js');  // Newman sandbox 兼容",
                 "const productId = pm.environment.get('product_id');",
                 "const deviceSn = pm.environment.get('device_sn');",
                 "const credVer = String(pm.environment.get('credential_version'));",
@@ -253,7 +437,7 @@
       ]
     },
     {
-      "name": "03 · 场景B · QR配对绑定",
+      "name": "04 · 场景B · QR配对绑定",
       "description": "场景B：设备 ↔ APP 协同配对（核心互动场景）。\n\n执行顺序：\n  B1 → B2 → B3（重复直到 bv≥1）→ B4 → B5\n\n最新 API 变更（已对齐）：\n- B1: POST /v1/device-bindings:start-pairing（原 GET /v1/device-pairing-challenges 已废弃）\n- B5: GET /v1/device-bindings/{device_sn}（原 /current?device_sn= 已废弃）\n\n关键规则：\n- nonce 必须由服务端签发（B1）\n- timestamp 用 challenge 返回值，不用本地时钟\n- 绑定成功后设备旧 token 立即失效（bv 0→1）\n- B3 每次执行都重新计算 Device Proof（新 nonce）\n- 同一 pairing nonce 第二次使用 → 409 AUTH_REPLAY_DETECTED\n\n【单接口测试】\n- B1 依赖：device_access_token（来自 A1）\n- B2 依赖：user_access_token（来自 01.login）+ pairing_nonce/timestamp（来自 B1）\n- B3 依赖：device_secret_b64url（无 token 依赖，可独立 Send）\n- B4 依赖：device_access_token（来自 B3，bv≥1）\n- B5 依赖：user_access_token（来自 01.login）",
       "item": [
         {
@@ -288,7 +472,7 @@
               "listen": "prerequest",
               "script": { "type": "text/javascript", "exec": [
                 "// ===== 配对证明计算（规范见 docs/auth/pairing-proof.md） =====",
-                "const CryptoJS = require('crypto-js');",
+                "var CryptoJS = CryptoJS || require('crypto-js');  // Newman sandbox 兼容",
                 "const deviceSn = pm.environment.get('device_sn');",
                 "const ts = pm.environment.get('pairing_timestamp');",
                 "const nonce = pm.environment.get('pairing_nonce');",
@@ -335,7 +519,7 @@
               "script": { "type": "text/javascript", "exec": [
                 "// ===== 设备重新认证（绑定后旧 token 失效，必须重新执行 Device Proof） =====",
                 "// 本请求可重复 Send，每次自动生成新 nonce 并重新计算 proof",
-                "const CryptoJS = require('crypto-js');",
+                "var CryptoJS = CryptoJS || require('crypto-js');  // Newman sandbox 兼容",
                 "const productId = pm.environment.get('product_id');",
                 "const deviceSn = pm.environment.get('device_sn');",
                 "const credVer = String(pm.environment.get('credential_version'));",
@@ -450,7 +634,7 @@
       ]
     },
     {
-      "name": "04 · 场景C · APP解绑",
+      "name": "05 · 场景C · APP解绑",
       "description": "场景C：APP 用户解绑设备。\n\n执行顺序：C1 → C2 → C3\n\n最新 API 变更（已对齐）：\n- C1: DELETE /v1/device-bindings/{device_sn}（原 /current?device_sn= 已废弃，无需 body）\n- C3: GET /v1/device-bindings/{device_sn} → 404 RESOURCE_ACCESS_DENIED（原无明确 code）\n\n副作用：\n- C1 后 binding_version 递增, binding 标记 detached\n- 设备现有 device_access_token 立即失效\n- 设备下次调用任何 /v1/device/* → 401 AUTH_CREDENTIAL_INVALID\n\n【单接口测试】\n- C1 依赖：user_access_token（来自 01.login）\n- C2 依赖：device_access_token（来自 A1 或 B3）\n- C3 依赖：user_access_token（来自 01.login）",
       "item": [
         {
