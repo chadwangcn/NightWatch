@@ -13,7 +13,33 @@ import { createServer } from 'node:http';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
-const NEWMAN_BIN = '/opt/homebrew/bin/newman';
+
+// ============ 外部依赖路径解析（可配置化,不硬编码绝对路径） ============
+// 优先级: 环境变量 > PATH 查找 > 默认值
+// 环境变量:
+//   NEWMAN_BIN   — newman 可执行文件路径(默认从 PATH 查找)
+//   TRAE_CLI_BIN — traecli 可执行文件路径(默认从 PATH 查找)
+//   TRAE_KEYCHAIN_SERVICE / TRAE_KEYCHAIN_ACCOUNT — macOS keychain 凭证存储
+import { execSync } from 'node:child_process';
+
+function findBin(name, fallback) {
+  // 1. 环境变量
+  if (process.env[`${name.toUpperCase().replace(/-/g, '_')}_BIN`]) {
+    return process.env[`${name.toUpperCase().replace(/-/g, '_')}_BIN`];
+  }
+  // 2. PATH 查找
+  try {
+    const p = execSync(`command -v ${name}`, { encoding: 'utf-8' }).trim();
+    if (p) return p;
+  } catch {}
+  // 3. fallback
+  return fallback;
+}
+
+const NEWMAN_BIN = findBin('newman', '/opt/homebrew/bin/newman');
+const TRAE_CLI_BIN = findBin('traecli', '/Users/hydramr/.local/bin/traecli');
+const KEYCHAIN_SERVICE = process.env.TRAE_KEYCHAIN_SERVICE || 'trae-cli-token';
+const KEYCHAIN_ACCOUNT = process.env.TRAE_KEYCHAIN_ACCOUNT || 'traecli-personal-access-token';
 const PORT = process.env.PORT || 8088;
 
 const app = express();
@@ -1070,9 +1096,7 @@ function extractHtmlextraText(html, name) {
 
 // ============ Trae CLI Agent 集成 ============
 
-const TRAE_CLI_BIN = '/Users/hydramr/.local/bin/traecli';
-const KEYCHAIN_SERVICE = 'trae-cli-token';
-const KEYCHAIN_ACCOUNT = 'traecli-personal-access-token';
+// TRAE_CLI_BIN / KEYCHAIN_SERVICE / KEYCHAIN_ACCOUNT 已在文件顶部可配置化声明
 // Agent 沙箱工作区：只允许在此目录及显式授权的目录内操作
 const WORKSPACE_DIR = path.join(ROOT, '.workspace');
 
@@ -1422,11 +1446,13 @@ app.post('/api/ai/trae', async (req, res) => {
 // ============ 启动 ============
 
 app.listen(PORT, () => {
-  console.log(`\n  SuperMan Console`);
+  console.log(`\n  SuperMan Console (NightWatch)`);
   console.log(`  ─────────────────────────────`);
-  console.log(`  访问:  http://localhost:${PORT}`);
-  console.log(`  Newman: ${NEWMAN_BIN}`);
-  console.log(`  集合:   ${path.join(ROOT, 'postman')}`);
-  console.log(`  报告:   ${path.join(ROOT, 'reports')}`);
+  console.log(`  访问:      http://localhost:${PORT}`);
+  console.log(`  Newman:    ${NEWMAN_BIN}${existsSync(NEWMAN_BIN) ? '' : ' (⚠️ 不存在,请运行 scripts/install-deps.sh)'}`);
+  console.log(`  Trae CLI:  ${TRAE_CLI_BIN}${existsSync(TRAE_CLI_BIN) ? '' : ' (⚠️ 不存在,Agent 功能将不可用)'}`);
+  console.log(`  Workspace: ${WORKSPACE_DIR}`);
+  console.log(`  集合:      ${path.join(ROOT, 'postman')}`);
+  console.log(`  报告:      ${path.join(ROOT, 'reports')}`);
   console.log(`\n`);
 });

@@ -29,12 +29,73 @@ NightWatch 是一个面向 Agent 的 API 测试平台,围绕 Postman + Newman �
 
 ### 1. 安装依赖
 
+**一键安装**(推荐):
+
 ```bash
-npm install
-npm run newman:install   # 全局安装 newman + newman-reporter-htmlextra
+bash scripts/install-deps.sh
 ```
 
-### 2. 配置环境变量
+该脚本会自动检查并安装:Node.js ≥ 20、项目 npm 依赖、Newman + newman-reporter-htmlextra,并提示 Trae CLI(可选)和本地环境变量配置。
+
+**手动安装**:
+
+```bash
+# Node.js >= 20 (https://nodejs.org/)
+npm install
+npm install -g newman newman-reporter-htmlextra
+```
+
+**依赖检查**:
+
+```bash
+bash scripts/check-deps.sh
+```
+
+检查 Node.js / npm / Newman / Trae CLI / keychain 凭证 / node_modules / 环境变量文件是否就绪。
+
+### 2. 外部依赖
+
+#### Newman(必需)
+
+Postman CLI,运行测试集合的核心依赖。
+
+```bash
+npm install -g newman newman-reporter-htmlextra
+```
+
+- 官方文档:https://learning.postman.com/docs/collections/using-newman-cli/command-line-integration-with-newman/
+- 最低版本:6.0.0
+
+#### Trae CLI(可选,Agent 集成功能用)
+
+供 `POST /api/ai/trae` 端点调用,接入资深 QA Agent。不安装不影响核心测试运行。
+
+- 官方文档:https://docs.trae.cn/cli/get-started-with-trae-cli
+- 系统要求:macOS 14.7.8+ / Ubuntu 20.04+ / Windows 10+
+
+```bash
+# macOS & Linux
+sh -c "$(curl -L https://trae.cn/trae-cli/install.sh)" && export PATH=~/.local/bin:$PATH
+
+# Windows (PowerShell)
+irm https://trae.cn/trae-cli/install.ps1 | iex
+```
+
+安装后,首次运行 `traecli` 会唤起企业账号登录授权。
+
+**macOS keychain 凭证**(供 server.js 自动读取 token):
+
+```bash
+security add-generic-password -s trae-cli-token -a traecli-personal-access-token -w <YOUR_TRAE_CLI_TOKEN>
+```
+
+**路径覆盖**(如 traecli 不在默认 PATH):
+
+```bash
+TRAE_CLI_BIN=/path/to/traecli node server.js
+```
+
+### 3. 配置环境变量
 
 复制模板并填入真实凭证:
 
@@ -46,14 +107,14 @@ cp postman/lumi-device-platform.postman_environment.json \
 
 或通过 Web Console 的「环境变量」页编辑(自动保存到 `.local.json`,不入 Git)。
 
-### 3. 启动 Web Console
+### 4. 启动 Web Console
 
 ```bash
 npm run console
 # 访问 http://localhost:8088
 ```
 
-### 4. 运行测试
+### 5. 运行测试
 
 ```bash
 # 通过 Web Console:左侧 Runner 页选择 folder → 运行
