@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/events/findingClassified/v1.json",
+  "title": "Event: findingClassified",
+  "description": "Notification that a finding was classified by C12 (confirmed/flaky/environmental/spec-ambiguity/inconclusive/duplicate, §5.8).",
+  "x-nightwatch-object": "event_findingClassified",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-event": "findingClassified",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "object_id", "object_type", "occurred_at", "sequence", "payload"],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "object_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_find"},
+    "object_type": {"const": "finding"},
+    "occurred_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "reproduction"],
+      "properties": {
+        "classification": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/finding_classification"},
+        "reproduction": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/reproducibility"},
+        "fingerprint_digest": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Digest of the §15 fingerprint for dedup lookups."
+        }
+      }
+    }
+  }
+}

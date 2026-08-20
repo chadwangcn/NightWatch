@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/commands/cancelRun/v1.json",
+  "title": "Command: cancelRun",
+  "description": "C02→C03 command cancelling a running run. Cancellation semantics (§22.5.4): stop new steps first, then terminate workers, then run bounded cleanup; cleanup timeout is preserved as an independent result.",
+  "x-nightwatch-object": "command_cancelRun",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-command": "cancelRun",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["command_id", "issued_at", "deadline", "payload"],
+  "properties": {
+    "command_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/idempotency_key"},
+    "issued_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "deadline": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id"],
+      "properties": {
+        "run_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_run"},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/events/observationRecorded/v1.json",
+  "title": "Event: observationRecorded",
+  "description": "Notification that an anomalous observation was recorded inside a run (Execution Failure → Observation, §5.8).",
+  "x-nightwatch-object": "event_observationRecorded",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-event": "observationRecorded",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "object_id", "object_type", "occurred_at", "sequence", "payload"],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "object_id": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_obs"}],
+      "description": "The recorded observation."
+    },
+    "object_type": {"const": "observation"},
+    "occurred_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "summary"],
+      "properties": {
+        "run_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_run"},
+        "summary": {"type": "string", "minLength": 1},
+        "execution_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_exec"},
+        "case_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_case"}
+      }
+    }
+  }
+}

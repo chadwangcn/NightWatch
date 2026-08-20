@@ -1,0 +1,48 @@
+{
+  "object": "event_observationRecorded",
+  "schema": "https://nightwatch.local/schemas/events/observationRecorded/v1.json",
+  "positive": [
+    {
+      "event_id": "synthetic-evt-obs-001",
+      "object_id": "obs_01J8HBK5Z8Q9W3DRT4N2M6PVXG",
+      "object_type": "observation",
+      "occurred_at": "2026-08-20T03:31:12Z",
+      "sequence": 4,
+      "payload": {
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "summary": "POST /orders returned 500 during concurrent idempotent submit",
+        "execution_id": "exec_01J8HBK5Z8Q9W3DRT4N2M6PVXC",
+        "case_id": "case_01J8HBK5Z8Q9W3DRT4N2M6PVXF"
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "object_id violates the obs_<ULID> ID rule (a run id used as observation object_id)",
+      "instance": {
+        "event_id": "synthetic-evt-obs-e001",
+        "object_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "object_type": "observation",
+        "occurred_at": "2026-08-20T03:31:12Z",
+        "sequence": 4,
+        "payload": {
+          "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+          "summary": "synthetic observation"
+        }
+      }
+    },
+    {
+      "violated_rule": "payload missing required field 'summary'",
+      "instance": {
+        "event_id": "synthetic-evt-obs-e002",
+        "object_id": "obs_01J8HBK5Z8Q9W3DRT4N2M6PVXG",
+        "object_type": "observation",
+        "occurred_at": "2026-08-20T03:31:12Z",
+        "sequence": 4,
+        "payload": {
+          "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB"
+        }
+      }
+    }
+  ]
+}

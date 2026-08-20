@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/commands/resumeSession/v1.json",
+  "title": "Command: resumeSession",
+  "description": "C02→C03 command resuming an interrupted session from a checkpoint. A session interrupted mid-run resumes from checkpoint without re-publishing issues (§7.3).",
+  "x-nightwatch-object": "command_resumeSession",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-command": "resumeSession",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["command_id", "issued_at", "deadline", "payload"],
+  "properties": {
+    "command_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/idempotency_key"},
+    "issued_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "deadline": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["session_id"],
+      "properties": {
+        "session_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_session"},
+        "from_checkpoint_sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Checkpoint sequence to resume from; defaults to the latest valid checkpoint when omitted."
+        }
+      }
+    }
+  }
+}

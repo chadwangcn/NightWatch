@@ -1,0 +1,36 @@
+{
+  "object": "injection_lease",
+  "schema": "https://nightwatch.local/schemas/injection_lease/v1.json",
+  "positive": [
+    {
+      "lease_id": "lease_01J8HBK5Z8Q9W3DRT4N2M6PVXN",
+      "credential_reference_name": "SYNTHETIC_ORDER_API_TOKEN",
+      "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+      "scope": "worker-subprocess-env",
+      "issued_at": "2026-08-20T03:29:30Z",
+      "expires_at": "2026-08-20T03:40:00Z"
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "SECURITY: injection leases must not contain value fields — additional property 'injected_value' is rejected by additionalProperties:false (§13.1)",
+      "instance": {
+        "lease_id": "lease_01J8HBK5Z8Q9W3DRT4N2M6PVXN",
+        "credential_reference_name": "SYNTHETIC_ORDER_API_TOKEN",
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "issued_at": "2026-08-20T03:29:30Z",
+        "expires_at": "2026-08-20T03:40:00Z",
+        "injected_value": "synthetic-not-a-real-secret-111"
+      }
+    },
+    {
+      "violated_rule": "missing required field 'expires_at' (§22.5.4: credential leases must carry an expiry; expired leases are rejected)",
+      "instance": {
+        "lease_id": "lease_01J8HBK5Z8Q9W3DRT4N2M6PVXN",
+        "credential_reference_name": "SYNTHETIC_ORDER_API_TOKEN",
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "issued_at": "2026-08-20T03:29:30Z"
+      }
+    }
+  ]
+}

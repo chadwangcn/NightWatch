@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/credential_reference/v1.json",
+  "title": "NightWatch Credential Reference",
+  "description": "Reference-only credential descriptor (§13.1, §13.1.1). Contains ONLY: reference name, provider type, whether configured, optional scope, optional expiry. NO VALUE FIELDS — any value-bearing property is rejected by additionalProperties:false. The model context sees variable names and configured-ness only, never values.",
+  "x-nightwatch-object": "credential_reference",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-security": "No value fields allowed under any circumstances (§13.1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reference_name", "provider_type", "configured"],
+  "properties": {
+    "reference_name": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/credential_reference_name"}],
+      "description": "Credential variable name, e.g. 'SYNTHETIC_ORDER_API_TOKEN'."
+    },
+    "provider_type": {
+      "enum": ["process_env", "ci_secret_store", "keychain"],
+      "description": "Secret provider type (§13.1.1)."
+    },
+    "configured": {
+      "type": "boolean",
+      "description": "Whether the credential is currently configured in the provider."
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional scope descriptor, e.g. 'run-injection-only'."
+    },
+    "expires_at": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"}],
+      "description": "Optional expiry for the configured state."
+    }
+  }
+}

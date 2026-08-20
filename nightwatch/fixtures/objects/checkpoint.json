@@ -1,0 +1,85 @@
+{
+  "object": "checkpoint",
+  "schema": "https://nightwatch.local/schemas/checkpoint/v1.json",
+  "positive": [
+    {
+      "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "sequence": 5,
+      "goal": "Verify order idempotency on synthetic staging",
+      "authorization_boundary": "synthetic staging only; no production writes",
+      "confirmed": {
+        "apis": ["synthetic-order-api"],
+        "environments": ["synthetic-staging"],
+        "scenarios": ["scenarios/order/idempotency.yaml"],
+        "executors": ["newman"]
+      },
+      "completed_steps": [
+        {"step": "import-spec", "output_checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"},
+        {"step": "generate-cases", "output_checksum": "b1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f91"}
+      ],
+      "pending_tasks": [
+        {"task": "run regression suite", "blocking_reason": "waiting for credential lease"},
+        {"task": "review findings", "blocking_reason": ""}
+      ],
+      "credential_variables_used": ["SYNTHETIC_ORDER_API_TOKEN", "SYNTHETIC_STAGING_BASE_URL"],
+      "next_allowed_actions": ["startRun", "cancelRun"],
+      "key_decisions": [
+        {"decision": "Use newman as executor", "rationale": "P0 executor for Postman-compatible collections"}
+      ],
+      "idempotency_key": "synthetic-checkpoint-key-005",
+      "created_at": "2026-08-20T03:00:00Z"
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "credential_variables_used must contain reference NAMES only (uppercase env-style), value 'order_api_token' violates the reference-name pattern",
+      "instance": {
+        "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "sequence": 5,
+        "goal": "Verify order idempotency on synthetic staging",
+        "authorization_boundary": "synthetic staging only",
+        "confirmed": {"apis": [], "environments": [], "scenarios": [], "executors": []},
+        "completed_steps": [],
+        "pending_tasks": [],
+        "credential_variables_used": ["order_api_token"],
+        "next_allowed_actions": [],
+        "key_decisions": [],
+        "idempotency_key": "synthetic-checkpoint-key-005",
+        "created_at": "2026-08-20T03:00:00Z"
+      }
+    },
+    {
+      "violated_rule": "completed_steps entry missing the mandatory output_checksum (§7.2 step checksum requirement)",
+      "instance": {
+        "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "sequence": 5,
+        "goal": "Verify order idempotency on synthetic staging",
+        "authorization_boundary": "synthetic staging only",
+        "confirmed": {"apis": [], "environments": [], "scenarios": [], "executors": []},
+        "completed_steps": [{"step": "import-spec"}],
+        "pending_tasks": [],
+        "credential_variables_used": [],
+        "next_allowed_actions": [],
+        "key_decisions": [],
+        "idempotency_key": "synthetic-checkpoint-key-005",
+        "created_at": "2026-08-20T03:00:00Z"
+      }
+    },
+    {
+      "violated_rule": "missing required field 'idempotency_key' (WorkRequest §8 recovery acceptance)",
+      "instance": {
+        "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "sequence": 5,
+        "goal": "Verify order idempotency on synthetic staging",
+        "authorization_boundary": "synthetic staging only",
+        "confirmed": {"apis": [], "environments": [], "scenarios": [], "executors": []},
+        "completed_steps": [],
+        "pending_tasks": [],
+        "credential_variables_used": [],
+        "next_allowed_actions": [],
+        "key_decisions": [],
+        "created_at": "2026-08-20T03:00:00Z"
+      }
+    }
+  ]
+}

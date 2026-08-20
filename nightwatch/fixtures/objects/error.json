@@ -1,0 +1,102 @@
+{
+  "object": "error",
+  "schema": "https://nightwatch.local/schemas/error/v1.json",
+  "positive": [
+    {
+      "_semantic_category": "idempotency-conflict",
+      "code": "CTL_IDEMPOTENCY_CONFLICT",
+      "message": "Command with idempotency key 'synthetic-key-001' was already accepted with a different payload",
+      "details": {"command_id": "synthetic-key-001"},
+      "retryable": false,
+      "idempotent_replay": false
+    },
+    {
+      "_semantic_category": "idempotency-replay",
+      "code": "CTL_IDEMPOTENCY_CONFLICT",
+      "message": "Replaying recorded result for idempotency key 'synthetic-key-001'",
+      "retryable": false,
+      "idempotent_replay": true
+    },
+    {
+      "_semantic_category": "timeout",
+      "code": "EXE_TIMEOUT",
+      "message": "Execution exceeded its timeout budget of 300 seconds",
+      "details": {"execution_id": "exec_01J8HBK5Z8Q9W3DRT4N2M6PVXC", "timeout_seconds": 300},
+      "retryable": true,
+      "idempotent_replay": false
+    },
+    {
+      "_semantic_category": "cancellation",
+      "code": "EXE_CANCELLED",
+      "message": "Execution cancelled: new steps stopped, workers terminated, bounded cleanup executed",
+      "retryable": false,
+      "idempotent_replay": false
+    },
+    {
+      "_semantic_category": "lock-expired",
+      "code": "CTL_LOCK_EXPIRED",
+      "message": "Lock expired at 2026-08-20T03:45:00Z; expired locks are rejected, not auto-extended",
+      "details": {"lock_id": "lock_01J8HBK5Z8Q9W3DRT4N2M6PVXP"},
+      "retryable": false,
+      "idempotent_replay": false
+    },
+    {
+      "_semantic_category": "policy-denied",
+      "code": "POL_DENIED",
+      "message": "Destructive test denied for environment class production",
+      "details": {"requested_action": "run.execute:environment=synthetic-production"},
+      "retryable": false,
+      "idempotent_replay": false
+    },
+    {
+      "_semantic_category": "credential-missing",
+      "code": "CRED_MISSING",
+      "message": "Credential reference SYNTHETIC_ORDER_API_TOKEN is not configured in the provider",
+      "details": {"reference_name": "SYNTHETIC_ORDER_API_TOKEN"},
+      "retryable": true,
+      "idempotent_replay": false
+    },
+    {
+      "_semantic_category": "validation-failed",
+      "code": "CTL_VALIDATION_FAILED",
+      "message": "Payload failed schema validation",
+      "details": {"path": "/payload/environment"},
+      "retryable": false,
+      "idempotent_replay": false
+    },
+    {
+      "_semantic_category": "unauthorized",
+      "code": "CTL_UNAUTHORIZED",
+      "message": "Session capability token is missing or expired",
+      "retryable": false,
+      "idempotent_replay": false
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "code uses a value outside the registered error-code enum (registry: nightwatch/schemas/errors.json)",
+      "instance": {
+        "code": "BADCODE",
+        "message": "synthetic invalid error",
+        "retryable": false,
+        "idempotent_replay": false
+      }
+    },
+    {
+      "violated_rule": "missing required field 'retryable' (§5.4 error envelope)",
+      "instance": {
+        "code": "CTL_VALIDATION_FAILED",
+        "message": "synthetic invalid error",
+        "idempotent_replay": false
+      }
+    },
+    {
+      "violated_rule": "missing required field 'idempotent_replay' (§5.4 error envelope)",
+      "instance": {
+        "code": "CTL_VALIDATION_FAILED",
+        "message": "synthetic invalid error",
+        "retryable": false
+      }
+    }
+  ]
+}

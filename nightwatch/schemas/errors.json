@@ -1,0 +1,284 @@
+{
+  "x-nightwatch-object": "error-registry",
+  "x-nightwatch-version": "1.0.0",
+  "title": "NightWatch Error Code Registry",
+  "description": "Unified error code registry, namespaced per logical component (§5.10 C01–C14). Semantics source: NightWatch Architecture v1.4 §5.4 error model, §5.10, §22.5.4. Each code carries: semantics, HTTP mapping (reference for C02), default retryable. Required semantic categories (WorkRequest §5.4): idempotency-conflict, timeout, cancellation, lock-expired, policy-denied, credential-missing, validation-failed, unauthorized.",
+  "required_semantic_categories": [
+    "idempotency-conflict",
+    "timeout",
+    "cancellation",
+    "lock-expired",
+    "policy-denied",
+    "credential-missing",
+    "validation-failed",
+    "unauthorized"
+  ],
+  "namespaces": {
+    "CTL_": {"component": "C02 Control API and Agent Host Adapter"},
+    "REG_": {"component": "C05 Contract Intake and API Registry"},
+    "LIB_": {"component": "C06 Test Library and Coverage"},
+    "CMP_": {"component": "C07 Library Compiler"},
+    "POL_": {"component": "C04 Policy and Approval Gate"},
+    "CRED_": {"component": "C08 Credential Broker"},
+    "EXE_": {"component": "C09 Executor Gateway and Workers"},
+    "FIX_": {"component": "C10 Fixture Coordinator"},
+    "EVD_": {"component": "C11 Evidence Pipeline and Immutable Run Store"},
+    "FND_": {"component": "C12 Finding Service"},
+    "ISS_": {"component": "C13 Issue Gateway"},
+    "AUD_": {"component": "C14 Audit, Checkpoint and Catalog Index"}
+  },
+  "codes": {
+    "CTL_IDEMPOTENCY_CONFLICT": {
+      "namespace": "CTL_",
+      "semantics": "Idempotency conflict: a command with the same idempotency key was already accepted with a different payload.",
+      "http_status": 409,
+      "retryable": false,
+      "category": "idempotency-conflict"
+    },
+    "CTL_VALIDATION_FAILED": {
+      "namespace": "CTL_",
+      "semantics": "Request payload failed schema or contract validation.",
+      "http_status": 400,
+      "retryable": false,
+      "category": "validation-failed"
+    },
+    "CTL_UNAUTHORIZED": {
+      "namespace": "CTL_",
+      "semantics": "Caller is not authorized for the requested operation (missing/invalid/expired capability or session token).",
+      "http_status": 401,
+      "retryable": false,
+      "category": "unauthorized"
+    },
+    "CTL_COMMAND_TIMEOUT": {
+      "namespace": "CTL_",
+      "semantics": "Command deadline exceeded before the operation started or completed.",
+      "http_status": 504,
+      "retryable": true,
+      "category": "timeout"
+    },
+    "CTL_COMMAND_CANCELLED": {
+      "namespace": "CTL_",
+      "semantics": "Command or operation was cancelled before completion (user- or system-initiated).",
+      "http_status": 409,
+      "retryable": false,
+      "category": "cancellation"
+    },
+    "CTL_LOCK_EXPIRED": {
+      "namespace": "CTL_",
+      "semantics": "Requested lock has expired; expired locks are rejected by default, never auto-extended.",
+      "http_status": 423,
+      "retryable": false,
+      "category": "lock-expired"
+    },
+    "REG_SPEC_INVALID": {
+      "namespace": "REG_",
+      "semantics": "Imported spec failed parse/normalize/validate; the last valid registry version is NOT overwritten.",
+      "http_status": 422,
+      "retryable": false,
+      "category": "validation-failed"
+    },
+    "REG_SOURCE_UNAVAILABLE": {
+      "namespace": "REG_",
+      "semantics": "Contract source (file/git/http/D0) could not be fetched.",
+      "http_status": 502,
+      "retryable": true,
+      "category": "source-unavailable"
+    },
+    "REG_CHECKSUM_MISMATCH": {
+      "namespace": "REG_",
+      "semantics": "Fetched contract checksum does not match the pinned checksum.",
+      "http_status": 409,
+      "retryable": false,
+      "category": "integrity-failed"
+    },
+    "LIB_CASE_INVALID": {
+      "namespace": "LIB_",
+      "semantics": "Test case violates the case model constraints (e.g. requires reading the database as a mandatory assertion).",
+      "http_status": 422,
+      "retryable": false,
+      "category": "validation-failed"
+    },
+    "LIB_CASE_NOT_FOUND": {
+      "namespace": "LIB_",
+      "semantics": "Referenced test case does not exist in the library.",
+      "http_status": 404,
+      "retryable": false,
+      "category": "not-found"
+    },
+    "LIB_DUPLICATE_CASE": {
+      "namespace": "LIB_",
+      "semantics": "A case with the same identity already exists in the library.",
+      "http_status": 409,
+      "retryable": false,
+      "category": "duplicate"
+    },
+    "CMP_COMPILE_FAILED": {
+      "namespace": "CMP_",
+      "semantics": "Deterministic compilation of validated cases into executor assets failed.",
+      "http_status": 500,
+      "retryable": false,
+      "category": "compile-failed"
+    },
+    "CMP_STATIC_CHECK_FAILED": {
+      "namespace": "CMP_",
+      "semantics": "Compiled asset failed static validation before execution.",
+      "http_status": 422,
+      "retryable": false,
+      "category": "validation-failed"
+    },
+    "POL_DENIED": {
+      "namespace": "POL_",
+      "semantics": "Policy decision denied the action (environment class, destructive/load limit, request budget, publish gate).",
+      "http_status": 403,
+      "retryable": false,
+      "category": "policy-denied"
+    },
+    "POL_APPROVAL_EXPIRED": {
+      "namespace": "POL_",
+      "semantics": "Required approval record has expired; expired approvals are rejected by default, never auto-extended.",
+      "http_status": 403,
+      "retryable": false,
+      "category": "policy-denied"
+    },
+    "POL_BUDGET_EXCEEDED": {
+      "namespace": "POL_",
+      "semantics": "Request budget for the scope has been exhausted.",
+      "http_status": 429,
+      "retryable": true,
+      "category": "policy-denied"
+    },
+    "CRED_MISSING": {
+      "namespace": "CRED_",
+      "semantics": "Referenced credential is not configured in the provider; only the reference name is ever reported, never a value.",
+      "http_status": 424,
+      "retryable": true,
+      "category": "credential-missing"
+    },
+    "CRED_LEASE_EXPIRED": {
+      "namespace": "CRED_",
+      "semantics": "Credential injection lease has expired; expired leases are rejected by default, never auto-extended.",
+      "http_status": 403,
+      "retryable": false,
+      "category": "credential-lease-expired"
+    },
+    "EXE_TIMEOUT": {
+      "namespace": "EXE_",
+      "semantics": "Execution exceeded its timeout budget; partial results are preserved as an independent outcome.",
+      "http_status": 504,
+      "retryable": true,
+      "category": "timeout"
+    },
+    "EXE_CANCELLED": {
+      "namespace": "EXE_",
+      "semantics": "Execution was cancelled: new steps stopped first, then workers terminated, then bounded cleanup executed.",
+      "http_status": 409,
+      "retryable": false,
+      "category": "cancellation"
+    },
+    "EXE_TOOL_VERSION_MISMATCH": {
+      "namespace": "EXE_",
+      "semantics": "Pinned executor/tool version does not match the version requested or found.",
+      "http_status": 409,
+      "retryable": false,
+      "category": "tool-version-mismatch"
+    },
+    "EXE_WORKER_FAILED": {
+      "namespace": "EXE_",
+      "semantics": "Executor worker failed abnormally (non-zero exit, crash, signal).",
+      "http_status": 500,
+      "retryable": true,
+      "category": "execution-failed"
+    },
+    "FIX_SETUP_FAILED": {
+      "namespace": "FIX_",
+      "semantics": "Fixture setup through public APIs failed; resource ledger records partial state.",
+      "http_status": 500,
+      "retryable": true,
+      "category": "fixture-failed"
+    },
+    "FIX_CLEANUP_FAILED": {
+      "namespace": "FIX_",
+      "semantics": "Fixture cleanup failed or timed out; residual resources are recorded as an independent result.",
+      "http_status": 500,
+      "retryable": false,
+      "category": "fixture-failed"
+    },
+    "FIX_RESOURCE_LOCKED": {
+      "namespace": "FIX_",
+      "semantics": "Shared resource is held by another owner under an explicit lock.",
+      "http_status": 423,
+      "retryable": true,
+      "category": "lock-conflict"
+    },
+    "EVD_NOT_SEALED": {
+      "namespace": "EVD_",
+      "semantics": "Run bundle is not sealed yet; downstream consumers may only reference sealed evidence.",
+      "http_status": 409,
+      "retryable": false,
+      "category": "evidence-state"
+    },
+    "EVD_SECRET_DETECTED": {
+      "namespace": "EVD_",
+      "semantics": "Secret scan detected credential-shaped material in evidence; publish is blocked.",
+      "http_status": 422,
+      "retryable": false,
+      "category": "secret-detected"
+    },
+    "EVD_MANIFEST_INVALID": {
+      "namespace": "EVD_",
+      "semantics": "Run manifest failed integrity or completeness validation.",
+      "http_status": 422,
+      "retryable": false,
+      "category": "validation-failed"
+    },
+    "FND_INSUFFICIENT_EVIDENCE": {
+      "namespace": "FND_",
+      "semantics": "Evidence is insufficient to classify or publish; the observation stays local instead of becoming an issue.",
+      "http_status": 422,
+      "retryable": false,
+      "category": "evidence-insufficient"
+    },
+    "FND_CLASSIFICATION_INVALID": {
+      "namespace": "FND_",
+      "semantics": "Proposed finding classification is not legal for the collected evidence.",
+      "http_status": 422,
+      "retryable": false,
+      "category": "validation-failed"
+    },
+    "ISS_GATE_FAILED": {
+      "namespace": "ISS_",
+      "semantics": "Issue publish gate rejected the draft (evidence completeness, secret scan, fingerprint dedup, minimal reproduction, environment scope, or reviewer gate).",
+      "http_status": 403,
+      "retryable": false,
+      "category": "policy-denied"
+    },
+    "ISS_DUPLICATE": {
+      "namespace": "ISS_",
+      "semantics": "Fingerprint matches an existing issue; new reproduction info must be appended instead of creating a new issue.",
+      "http_status": 409,
+      "retryable": false,
+      "category": "duplicate"
+    },
+    "ISS_IDEMPOTENCY_CONFLICT": {
+      "namespace": "ISS_",
+      "semantics": "Issue publish was already executed with the same idempotency key and a different payload.",
+      "http_status": 409,
+      "retryable": false,
+      "category": "idempotency-conflict"
+    },
+    "AUD_CHECKPOINT_INVALID": {
+      "namespace": "AUD_",
+      "semantics": "Checkpoint is corrupt or fails validation; session recovery refuses to resume from it.",
+      "http_status": 422,
+      "retryable": false,
+      "category": "validation-failed"
+    },
+    "AUD_REPLAY_MISMATCH": {
+      "namespace": "AUD_",
+      "semantics": "Audit idempotency replay detected a mismatched record for the same key.",
+      "http_status": 409,
+      "retryable": false,
+      "category": "idempotency-conflict"
+    }
+  }
+}

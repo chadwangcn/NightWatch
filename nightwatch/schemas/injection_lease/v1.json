@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/injection_lease/v1.json",
+  "title": "NightWatch Credential Injection Lease",
+  "description": "Short-lived, run-scoped credential injection lease (C08, §5.10). Values never persist; only the lease metadata exists here. RUNTIME SEMANTIC: expired leases are REJECTED by default, never auto-extended (§22.5.4).",
+  "x-nightwatch-object": "injection_lease",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-security": "No value fields allowed under any circumstances (§13.1).",
+  "x-nightwatch-runtime-semantics": "Expired leases are rejected, not auto-extended.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lease_id", "credential_reference_name", "run_id", "issued_at", "expires_at"],
+  "properties": {
+    "lease_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_lease"},
+    "credential_reference_name": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/credential_reference_name"}],
+      "description": "Credential variable NAME being injected (never the value)."
+    },
+    "run_id": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_run"}],
+      "description": "Run the lease is scoped to."
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional scope descriptor, e.g. 'worker-subprocess-env'."
+    },
+    "issued_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "expires_at": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"}],
+      "description": "Mandatory expiry (§22.5.4)."
+    }
+  }
+}

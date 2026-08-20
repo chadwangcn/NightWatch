@@ -1,0 +1,37 @@
+{
+  "object": "command_publishIssue",
+  "schema": "https://nightwatch.local/schemas/commands/publishIssue/v1.json",
+  "positive": [
+    {
+      "command_id": "synthetic-cmd-publish-001",
+      "issued_at": "2026-08-20T04:55:00Z",
+      "deadline": "2026-08-20T05:00:00Z",
+      "payload": {
+        "draft_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ"
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "missing required field 'deadline' (§22.5.4: issue publish must carry a deadline)",
+      "instance": {
+        "command_id": "synthetic-cmd-publish-001",
+        "issued_at": "2026-08-20T04:55:00Z",
+        "payload": {
+          "draft_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ"
+        }
+      }
+    },
+    {
+      "violated_rule": "draft_id violates the draft_<ULID> ID rule",
+      "instance": {
+        "command_id": "synthetic-cmd-publish-001",
+        "issued_at": "2026-08-20T04:55:00Z",
+        "deadline": "2026-08-20T05:00:00Z",
+        "payload": {
+          "draft_id": "draft_42"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/commands/retestIssue/v1.json",
+  "title": "Command: retestIssue",
+  "description": "C02→C03 command scheduling a black-box retest for a published external issue (§17.4 Issue 复测). Creates a retest session (session state retest_pending is reachable after published/inconclusive).",
+  "x-nightwatch-object": "command_retestIssue",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-command": "retestIssue",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["command_id", "issued_at", "deadline", "payload"],
+  "properties": {
+    "command_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/idempotency_key"},
+    "issued_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "deadline": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issue_ref"],
+      "properties": {
+        "issue_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "External issue reference to retest."
+        },
+        "session_id": {
+          "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_session"}],
+          "description": "Optional existing session under which the retest runs."
+        }
+      }
+    }
+  }
+}

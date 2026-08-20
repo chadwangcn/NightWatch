@@ -1,0 +1,79 @@
+{
+  "x-nightwatch-object": "fixture-manifest",
+  "x-nightwatch-version": "1.0.0",
+  "title": "NightWatch Fixture Manifest",
+  "description": "Index of all fixture files. Each fixture file has: object, schema ($id), positive[] (must validate) and negative[] (must be REJECTED; each entry carries 'violated_rule' stating the violated contract rule). Fields starting with '_' inside positive instances (e.g. '_transition', '_semantic_category') are fixture annotations stripped by the verifier before validation. ALL DATA IS SYNTHETIC: no real credentials, real IPs or real token-shaped values; synthetic markers use 'synthetic-' prefixes and obviously-fake ULIDs.",
+  "annotation_convention": "Underscore-prefixed keys inside positive instances are metadata for the verifier and are stripped before schema validation; negative instances live under {violated_rule, instance} pairs and are validated as-is (expected to fail).",
+  "data_policy": "All values are synthetic. ULIDs are hand-crafted valid Crockford-Base32 strings; checksums are fake 64-hex strings; timestamps are fixed ISO-8601 UTC values for deterministic verification.",
+  "files": {
+    "objects": [
+      "objects/session.json",
+      "objects/checkpoint.json",
+      "objects/run.json",
+      "objects/execution_request.json",
+      "objects/execution_result.json",
+      "objects/test_plan.json",
+      "objects/scenario.json",
+      "objects/test_case.json",
+      "objects/observation.json",
+      "objects/finding.json",
+      "objects/issue_draft.json",
+      "objects/publish_receipt.json",
+      "objects/audit_event.json",
+      "objects/lock.json",
+      "objects/policy_decision.json",
+      "objects/approval_record.json",
+      "objects/credential_reference.json",
+      "objects/injection_lease.json",
+      "objects/registry_entry.json",
+      "objects/import_history.json",
+      "objects/error.json"
+    ],
+    "commands": [
+      "commands/createSession.json",
+      "commands/resumeSession.json",
+      "commands/startRun.json",
+      "commands/cancelRun.json",
+      "commands/retryRun.json",
+      "commands/publishIssue.json",
+      "commands/retestIssue.json"
+    ],
+    "events": [
+      "events/sessionStateChanged.json",
+      "events/runStarted.json",
+      "events/runStepRecorded.json",
+      "events/runCompleted.json",
+      "events/observationRecorded.json",
+      "events/findingClassified.json",
+      "events/issueDrafted.json",
+      "events/issuePublished.json"
+    ]
+  },
+  "state_machine_fixtures": {
+    "location": "events/sessionStateChanged.json",
+    "legal_transitions_covered": 13,
+    "illegal_transition_negatives": 5,
+    "notes": "All 13 legal transitions of the §7.2 machine (including blocked recovery and the WorkRequest §5.2 inconclusive→retest_pending edge) have positive fixtures; 5 illegal transitions are covered as negatives (>= 3 required)."
+  },
+  "error_semantic_fixtures": {
+    "location": "objects/error.json",
+    "required_categories": [
+      "idempotency-conflict",
+      "timeout",
+      "cancellation",
+      "lock-expired",
+      "policy-denied",
+      "credential-missing",
+      "validation-failed",
+      "unauthorized"
+    ],
+    "extra_categories": ["idempotency-replay"],
+    "notes": "Each required semantic category has >= 1 positive envelope fixture; '_semantic_category' annotations drive the verifier's category-coverage check."
+  },
+  "security_negatives": [
+    "objects/credential_reference.json negative[0]: value field rejected (additionalProperties:false)",
+    "objects/injection_lease.json negative[0]: injected_value field rejected (additionalProperties:false)",
+    "objects/execution_request.json negative[0]: lowercase credential name in allowlist rejected",
+    "objects/registry_entry.json negative[1]: URL value in base_url_env rejected (must be reference name)"
+  ]
+}

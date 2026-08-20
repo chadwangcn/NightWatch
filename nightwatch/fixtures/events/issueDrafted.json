@@ -1,0 +1,45 @@
+{
+  "object": "event_issueDrafted",
+  "schema": "https://nightwatch.local/schemas/events/issueDrafted/v1.json",
+  "positive": [
+    {
+      "event_id": "synthetic-evt-draft-001",
+      "object_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+      "object_type": "issue_draft",
+      "occurred_at": "2026-08-20T04:20:00Z",
+      "sequence": 6,
+      "payload": {
+        "finding_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXH",
+        "summary": "Intermittent HTTP 500 on concurrent duplicate order submission"
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "payload missing required field 'finding_id' (drafts originate from findings)",
+      "instance": {
+        "event_id": "synthetic-evt-draft-e001",
+        "object_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+        "object_type": "issue_draft",
+        "occurred_at": "2026-08-20T04:20:00Z",
+        "sequence": 6,
+        "payload": {
+          "summary": "Intermittent HTTP 500 on concurrent duplicate order submission"
+        }
+      }
+    },
+    {
+      "violated_rule": "object_type must be 'issue_draft' for issueDrafted events",
+      "instance": {
+        "event_id": "synthetic-evt-draft-e002",
+        "object_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+        "object_type": "finding",
+        "occurred_at": "2026-08-20T04:20:00Z",
+        "sequence": 6,
+        "payload": {
+          "finding_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXH"
+        }
+      }
+    }
+  ]
+}

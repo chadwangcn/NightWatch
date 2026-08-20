@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/import_history/v1.json",
+  "title": "NightWatch Import History Entry",
+  "description": "Per-import history record (§9.1): source revision, checksum, time and import status. Records each import attempt including FAILED ones ('invalid'); the last valid registry version is preserved regardless (§9.1-2/4). Addressed by api_id + sequence (no dedicated ULID prefix assigned by the §5.5 prefix table).",
+  "x-nightwatch-object": "import_history",
+  "x-nightwatch-version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["api_id", "sequence", "source_revision", "checksum", "imported_at", "status"],
+  "properties": {
+    "api_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Import sequence number within the API."
+    },
+    "source_revision": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Source revision of the imported spec."
+    },
+    "checksum": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/checksum"},
+    "imported_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "status": {
+      "enum": ["valid", "invalid"],
+      "description": "valid = parse/normalize/validate succeeded; invalid = failed and did NOT overwrite the last valid version."
+    },
+    "error": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Failure reason when status=invalid."
+    }
+  }
+}

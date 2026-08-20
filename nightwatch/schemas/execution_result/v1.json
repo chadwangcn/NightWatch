@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/execution_result/v1.json",
+  "title": "NightWatch Execution Result",
+  "description": "Unified executor result (C09 → C11). Content source: §5.7 unified result — start/end times, monotonic duration, tool + version, sanitized command summary, exit code / timeout / cancel / signal, per-case Pass/Fail/Error/Skipped, request/response summaries and artifact paths, seed and repetitions, cleanup result and residual resources.",
+  "x-nightwatch-object": "execution_result",
+  "x-nightwatch-version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "execution_id",
+    "run_id",
+    "executor",
+    "executor_version",
+    "started_at",
+    "finished_at",
+    "duration_ms",
+    "sanitized_command",
+    "exit_code",
+    "timed_out",
+    "cancelled",
+    "case_results",
+    "seed",
+    "repetitions",
+    "failures",
+    "cleanup"
+  ],
+  "properties": {
+    "execution_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_exec"},
+    "run_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_run"},
+    "executor": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/executor_name"},
+    "executor_version": {"type": "string", "minLength": 1},
+    "started_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "finished_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "duration_ms": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/duration_ms"}],
+      "description": "Duration measured with a monotonic clock (§22.5.4)."
+    },
+    "sanitized_command": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 0},
+      "description": "Sanitized command and arguments as a structured argv (never shell-concatenated, §13.2)."
+    },
+    "exit_code": {"type": "integer"},
+    "timed_out": {"type": "boolean"},
+    "cancelled": {"type": "boolean"},
+    "signal": {
+      "type": ["string", "null"],
+      "description": "Termination signal if the worker was killed (e.g. 'SIGTERM'), else null."
+    },
+    "case_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["case_id", "status"],
+        "properties": {
+          "case_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_case"},
+          "status": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/per_case_result"},
+          "request_summary": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["method", "path"],
+            "properties": {
+              "method": {"type": "string", "minLength": 1},
+              "path": {"type": "string", "minLength": 1}
+            }
+          },
+          "response_summary": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status_code"],
+            "properties": {
+              "status_code": {"type": "integer", "minimum": 100, "maximum": 599}
+            }
+          },
+          "artifact_path": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "seed": {"type": "integer", "minimum": 0},
+    "repetitions": {"type": "integer", "minimum": 1},
+    "failures": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of failed case executions across repetitions."
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "residual_resources"],
+      "properties": {
+        "status": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/cleanup_status"},
+        "residual_resources": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "description": "Residual resources left after cleanup (recorded even when cleanup failed or timed out)."
+        }
+      }
+    }
+  }
+}

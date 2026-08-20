@@ -24,6 +24,7 @@
     "console:dev": "node --watch server.js"
   },
   "dependencies": {
+    "ajv": "8.17.1",
     "express": "^4.22.2"
   },
   "devDependencies": {

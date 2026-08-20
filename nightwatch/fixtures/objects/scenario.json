@@ -1,0 +1,49 @@
+{
+  "object": "scenario",
+  "schema": "https://nightwatch.local/schemas/scenario/v1.json",
+  "positive": [
+    {
+      "scenario_id": "scen_01J8HBK5Z8Q9W3DRT4N2M6PVXE",
+      "name": "Order idempotency under concurrent duplicate submits",
+      "description": "Ten parallel order submissions sharing one idempotency key must yield exactly one order",
+      "endpoints": [
+        {"api_id": "synthetic-order-api", "method": "POST", "path": "/orders"},
+        {"api_id": "synthetic-order-api", "method": "GET", "path": "/orders"}
+      ],
+      "case_ids": ["case_01J8HBK5Z8Q9W3DRT4N2M6PVXF"],
+      "revision": "synthetic-scenario-rev-3",
+      "assumptions": [
+        {
+          "assumption_id": "synthetic-assumption-01",
+          "statement": "409 is returned for duplicate idempotency keys",
+          "status": "confirmed"
+        }
+      ]
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "endpoints must contain at least one endpoint (a scenario crosses one or more endpoints, §5.6)",
+      "instance": {
+        "scenario_id": "scen_01J8HBK5Z8Q9W3DRT4N2M6PVXE",
+        "name": "Empty scenario",
+        "description": "Synthetic invalid scenario",
+        "endpoints": [],
+        "revision": "synthetic-scenario-rev-3"
+      }
+    },
+    {
+      "violated_rule": "assumption status uses a value outside the confirmed/unconfirmed enum",
+      "instance": {
+        "scenario_id": "scen_01J8HBK5Z8Q9W3DRT4N2M6PVXE",
+        "name": "Order idempotency scenario",
+        "description": "Synthetic scenario",
+        "endpoints": [{"api_id": "synthetic-order-api", "method": "POST", "path": "/orders"}],
+        "revision": "synthetic-scenario-rev-3",
+        "assumptions": [
+          {"assumption_id": "synthetic-assumption-01", "statement": "guess", "status": "maybe"}
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "object": "policy_decision",
+  "schema": "https://nightwatch.local/schemas/policy_decision/v1.json",
+  "positive": [
+    {
+      "decision": "approved",
+      "reason": "synthetic staging environment, non-destructive run within request budget",
+      "requested_action": "run.execute:environment=synthetic-staging",
+      "decided_by": "synthetic-policy-engine-01",
+      "decided_at": "2026-08-20T03:28:00Z",
+      "expires_at": "2026-08-20T03:40:00Z",
+      "conditions": ["max 500 requests"]
+    },
+    {
+      "decision": "denied",
+      "reason": "destructive test not allowed for environment class production",
+      "requested_action": "run.execute:environment=synthetic-production",
+      "decided_by": "synthetic-policy-engine-01",
+      "decided_at": "2026-08-20T03:28:00Z",
+      "expires_at": "2026-08-20T03:40:00Z"
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "decision uses a value outside the approved/denied enum",
+      "instance": {
+        "decision": "pending",
+        "reason": "synthetic reason",
+        "requested_action": "run.execute:environment=synthetic-staging",
+        "decided_by": "synthetic-policy-engine-01",
+        "decided_at": "2026-08-20T03:28:00Z",
+        "expires_at": "2026-08-20T03:40:00Z"
+      }
+    },
+    {
+      "violated_rule": "missing required field 'expires_at' (§22.5.4: policy decisions must carry an expiry)",
+      "instance": {
+        "decision": "approved",
+        "reason": "synthetic reason",
+        "requested_action": "run.execute:environment=synthetic-staging",
+        "decided_by": "synthetic-policy-engine-01",
+        "decided_at": "2026-08-20T03:28:00Z"
+      }
+    }
+  ]
+}

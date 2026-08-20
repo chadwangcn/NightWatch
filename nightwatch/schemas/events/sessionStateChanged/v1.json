@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/events/sessionStateChanged/v1.json",
+  "title": "Event: sessionStateChanged",
+  "description": "Component-to-component state transition notification. The payload's from_state/to_state pair is constrained by an if/then matrix that mirrors the §7.2 state machine EXACTLY, so an illegal transition is REJECTED at the schema layer (WorkRequest §5.3). Transition set: discovery→library_draft; library_draft→library_review; library_review→environment_ready; environment_ready→running; running→{analyzing,blocked}; blocked→running; analyzing→issue_review; issue_review→{published,inconclusive}; published→retest_pending; inconclusive→retest_pending (WorkRequest §5.2 literal); retest_pending→closed; closed is terminal (no outgoing transitions).",
+  "x-nightwatch-object": "event_sessionStateChanged",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-event": "sessionStateChanged",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "object_id", "object_type", "occurred_at", "sequence", "payload"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "object_id": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_session"}],
+      "description": "The session the transition applies to."
+    },
+    "object_type": {
+      "const": "session"
+    },
+    "occurred_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Per-object monotonic sequence."
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from_state", "to_state"],
+      "properties": {
+        "from_state": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/session_state"},
+        "to_state": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/session_state"},
+        "reason": {"type": "string"}
+      },
+      "allOf": [
+        {"if": {"properties": {"from_state": {"const": "discovery"}}}, "then": {"properties": {"to_state": {"enum": ["library_draft"]}}}},
+        {"if": {"properties": {"from_state": {"const": "library_draft"}}}, "then": {"properties": {"to_state": {"enum": ["library_review"]}}}},
+        {"if": {"properties": {"from_state": {"const": "library_review"}}}, "then": {"properties": {"to_state": {"enum": ["environment_ready"]}}}},
+        {"if": {"properties": {"from_state": {"const": "environment_ready"}}}, "then": {"properties": {"to_state": {"enum": ["running"]}}}},
+        {"if": {"properties": {"from_state": {"const": "running"}}}, "then": {"properties": {"to_state": {"enum": ["analyzing", "blocked"]}}}},
+        {"if": {"properties": {"from_state": {"const": "blocked"}}}, "then": {"properties": {"to_state": {"enum": ["running"]}}}},
+        {"if": {"properties": {"from_state": {"const": "analyzing"}}}, "then": {"properties": {"to_state": {"enum": ["issue_review"]}}}},
+        {"if": {"properties": {"from_state": {"const": "issue_review"}}}, "then": {"properties": {"to_state": {"enum": ["published", "inconclusive"]}}}},
+        {"if": {"properties": {"from_state": {"const": "published"}}}, "then": {"properties": {"to_state": {"enum": ["retest_pending"]}}}},
+        {"if": {"properties": {"from_state": {"const": "inconclusive"}}}, "then": {"properties": {"to_state": {"enum": ["retest_pending"]}}}},
+        {"if": {"properties": {"from_state": {"const": "retest_pending"}}}, "then": {"properties": {"to_state": {"enum": ["closed"]}}}},
+        {"if": {"properties": {"from_state": {"const": "closed"}}}, "then": false}
+      ]
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/error/v1.json",
+  "title": "NightWatch Error Envelope",
+  "description": "Unified error envelope (WorkRequest §5.4): {code, message, details, retryable, idempotent_replay}. The 'code' enum mirrors the registry in nightwatch/schemas/errors.json; the verifier enforces bidirectional equality between this enum and the registry keys. idempotent_replay=true marks a response that replays a previously recorded result for the same idempotency key.",
+  "x-nightwatch-object": "error",
+  "x-nightwatch-version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["code", "message", "retryable", "idempotent_replay"],
+  "properties": {
+    "code": {
+      "enum": [
+        "CTL_IDEMPOTENCY_CONFLICT",
+        "CTL_VALIDATION_FAILED",
+        "CTL_UNAUTHORIZED",
+        "CTL_COMMAND_TIMEOUT",
+        "CTL_COMMAND_CANCELLED",
+        "CTL_LOCK_EXPIRED",
+        "REG_SPEC_INVALID",
+        "REG_SOURCE_UNAVAILABLE",
+        "REG_CHECKSUM_MISMATCH",
+        "LIB_CASE_INVALID",
+        "LIB_CASE_NOT_FOUND",
+        "LIB_DUPLICATE_CASE",
+        "CMP_COMPILE_FAILED",
+        "CMP_STATIC_CHECK_FAILED",
+        "POL_DENIED",
+        "POL_APPROVAL_EXPIRED",
+        "POL_BUDGET_EXCEEDED",
+        "CRED_MISSING",
+        "CRED_LEASE_EXPIRED",
+        "EXE_TIMEOUT",
+        "EXE_CANCELLED",
+        "EXE_TOOL_VERSION_MISMATCH",
+        "EXE_WORKER_FAILED",
+        "FIX_SETUP_FAILED",
+        "FIX_CLEANUP_FAILED",
+        "FIX_RESOURCE_LOCKED",
+        "EVD_NOT_SEALED",
+        "EVD_SECRET_DETECTED",
+        "EVD_MANIFEST_INVALID",
+        "FND_INSUFFICIENT_EVIDENCE",
+        "FND_CLASSIFICATION_INVALID",
+        "ISS_GATE_FAILED",
+        "ISS_DUPLICATE",
+        "ISS_IDEMPOTENCY_CONFLICT",
+        "AUD_CHECKPOINT_INVALID",
+        "AUD_REPLAY_MISMATCH"
+      ],
+      "description": "Registry code; full semantics/HTTP mapping/default retryable live in errors.json."
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable message; must not contain secret material."
+    },
+    "details": {
+      "type": "object",
+      "description": "Optional structured details (e.g. schema path, conflicting idempotency key)."
+    },
+    "retryable": {
+      "type": "boolean",
+      "description": "Whether the caller may retry (should match the registry default unless overridden by policy)."
+    },
+    "idempotent_replay": {
+      "type": "boolean",
+      "description": "True when this response replays a previously recorded result for the same idempotency key."
+    }
+  }
+}

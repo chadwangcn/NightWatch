@@ -1,0 +1,49 @@
+{
+  "object": "event_issuePublished",
+  "schema": "https://nightwatch.local/schemas/events/issuePublished/v1.json",
+  "positive": [
+    {
+      "event_id": "synthetic-evt-pub-001",
+      "object_id": "issue_01J8HBK5Z8Q9W3DRT4N2M6PVXK",
+      "object_type": "publish_receipt",
+      "occurred_at": "2026-08-20T05:00:00Z",
+      "sequence": 7,
+      "payload": {
+        "draft_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+        "issue_ref": "synthetic-org/synthetic-repo#42",
+        "gates_passed": true
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "payload missing required field 'gates_passed' (publish events must state whether all gates passed)",
+      "instance": {
+        "event_id": "synthetic-evt-pub-e001",
+        "object_id": "issue_01J8HBK5Z8Q9W3DRT4N2M6PVXK",
+        "object_type": "publish_receipt",
+        "occurred_at": "2026-08-20T05:00:00Z",
+        "sequence": 7,
+        "payload": {
+          "draft_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+          "issue_ref": "synthetic-org/synthetic-repo#42"
+        }
+      }
+    },
+    {
+      "violated_rule": "object_id violates the issue_<ULID> ID rule (must reference a publish receipt)",
+      "instance": {
+        "event_id": "synthetic-evt-pub-e002",
+        "object_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+        "object_type": "publish_receipt",
+        "occurred_at": "2026-08-20T05:00:00Z",
+        "sequence": 7,
+        "payload": {
+          "draft_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+          "issue_ref": "synthetic-org/synthetic-repo#42",
+          "gates_passed": true
+        }
+      }
+    }
+  ]
+}

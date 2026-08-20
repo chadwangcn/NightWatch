@@ -1,0 +1,43 @@
+{
+  "object": "test_plan",
+  "schema": "https://nightwatch.local/schemas/test_plan/v1.json",
+  "positive": [
+    {
+      "plan_id": "plan_01J8HBK5Z8Q9W3DRT4N2M6PVXD",
+      "objective": "Verify order idempotency and error model of synthetic-order-api",
+      "scope": "Order creation endpoints under /orders on synthetic staging",
+      "risks": ["duplicate order creation under concurrency", "status code drift from spec"],
+      "api_ids": ["synthetic-order-api"],
+      "executors": ["newman"],
+      "environments": ["synthetic-staging"],
+      "coverage_matrix": [
+        {"api_id": "synthetic-order-api", "case_ids": ["case_01J8HBK5Z8Q9W3DRT4N2M6PVXF"]}
+      ],
+      "exit_criteria": ["all active cases pass", "no confirmed findings remain unpublished"]
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "exit_criteria must be a non-empty array (§5.6 exit criteria are mandatory plan content)",
+      "instance": {
+        "plan_id": "plan_01J8HBK5Z8Q9W3DRT4N2M6PVXD",
+        "objective": "Verify order idempotency",
+        "scope": "Order creation endpoints",
+        "executors": ["newman"],
+        "environments": ["synthetic-staging"],
+        "exit_criteria": []
+      }
+    },
+    {
+      "violated_rule": "plan_id violates the plan_<ULID> ID rule (ULID part contains illegal character 'I' for Crockford Base32)",
+      "instance": {
+        "plan_id": "plan_01J8HBK5Z8Q9W3DRT4N2M6PVXIL",
+        "objective": "Verify order idempotency",
+        "scope": "Order creation endpoints",
+        "executors": ["newman"],
+        "environments": ["synthetic-staging"],
+        "exit_criteria": ["all active cases pass"]
+      }
+    }
+  ]
+}

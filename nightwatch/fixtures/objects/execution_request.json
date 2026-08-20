@@ -1,0 +1,76 @@
+{
+  "object": "execution_request",
+  "schema": "https://nightwatch.local/schemas/execution_request/v1.json",
+  "positive": [
+    {
+      "execution_id": "exec_01J8HBK5Z8Q9W3DRT4N2M6PVXC",
+      "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+      "executor": "newman",
+      "executor_version": "6.2.2",
+      "scenario_ref": "scenarios/order/idempotency.yaml",
+      "environment": "synthetic-staging",
+      "timeout_seconds": 300,
+      "repetitions": 3,
+      "seed": 483920,
+      "credential_env_allowlist": ["SYNTHETIC_ORDER_API_TOKEN", "SYNTHETIC_STAGING_BASE_URL"],
+      "artifact_policy": "full-on-failure",
+      "idempotency_key": "synthetic-exec-key-001",
+      "deadline": "2026-08-20T03:40:00Z"
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "credential_env_allowlist must be an array of reference NAMES (uppercase env-style); lowercase value violates the reference-name pattern (security: allowlist never carries values)",
+      "instance": {
+        "execution_id": "exec_01J8HBK5Z8Q9W3DRT4N2M6PVXC",
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "scenario_ref": "scenarios/order/idempotency.yaml",
+        "environment": "synthetic-staging",
+        "timeout_seconds": 300,
+        "repetitions": 3,
+        "seed": 483920,
+        "credential_env_allowlist": ["synthetic_order_api_token"],
+        "artifact_policy": "full-on-failure",
+        "idempotency_key": "synthetic-exec-key-001",
+        "deadline": "2026-08-20T03:40:00Z"
+      }
+    },
+    {
+      "violated_rule": "missing required field 'deadline' (§22.5.4: Execution must carry a deadline)",
+      "instance": {
+        "execution_id": "exec_01J8HBK5Z8Q9W3DRT4N2M6PVXC",
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "scenario_ref": "scenarios/order/idempotency.yaml",
+        "environment": "synthetic-staging",
+        "timeout_seconds": 300,
+        "repetitions": 3,
+        "seed": 483920,
+        "credential_env_allowlist": ["SYNTHETIC_ORDER_API_TOKEN"],
+        "artifact_policy": "full-on-failure",
+        "idempotency_key": "synthetic-exec-key-001"
+      }
+    },
+    {
+      "violated_rule": "execution_id violates the exec_<ULID> ID rule (uses 'execution_' prefix)",
+      "instance": {
+        "execution_id": "execution_01J8HBK5Z8Q9W3DRT4N2M6PVXC",
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "scenario_ref": "scenarios/order/idempotency.yaml",
+        "environment": "synthetic-staging",
+        "timeout_seconds": 300,
+        "repetitions": 3,
+        "seed": 483920,
+        "credential_env_allowlist": ["SYNTHETIC_ORDER_API_TOKEN"],
+        "artifact_policy": "full-on-failure",
+        "idempotency_key": "synthetic-exec-key-001",
+        "deadline": "2026-08-20T03:40:00Z"
+      }
+    }
+  ]
+}

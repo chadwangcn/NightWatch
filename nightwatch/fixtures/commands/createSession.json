@@ -1,0 +1,40 @@
+{
+  "object": "command_createSession",
+  "schema": "https://nightwatch.local/schemas/commands/createSession/v1.json",
+  "positive": [
+    {
+      "command_id": "synthetic-cmd-create-001",
+      "issued_at": "2026-08-20T02:00:00Z",
+      "deadline": "2026-08-20T02:05:00Z",
+      "payload": {
+        "workspace_id": "synthetic-workspace-01",
+        "goal": "Verify synthetic order API on synthetic staging",
+        "authorization_boundary": "synthetic staging only; no production writes"
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "missing required field 'command_id' (command_id is the idempotency key, WorkRequest §5.3)",
+      "instance": {
+        "issued_at": "2026-08-20T02:00:00Z",
+        "deadline": "2026-08-20T02:05:00Z",
+        "payload": {
+          "workspace_id": "synthetic-workspace-01",
+          "goal": "Verify synthetic order API"
+        }
+      }
+    },
+    {
+      "violated_rule": "missing required field 'deadline' (§22.5.4: commands must carry a deadline)",
+      "instance": {
+        "command_id": "synthetic-cmd-create-001",
+        "issued_at": "2026-08-20T02:00:00Z",
+        "payload": {
+          "workspace_id": "synthetic-workspace-01",
+          "goal": "Verify synthetic order API"
+        }
+      }
+    }
+  ]
+}

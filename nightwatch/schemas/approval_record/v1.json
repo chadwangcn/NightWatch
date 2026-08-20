@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/approval_record/v1.json",
+  "title": "NightWatch Approval Record",
+  "description": "C04 human approval record accompanying a policy decision (WorkRequest §5.2: decision, reason, approval record, expiry). Identified by approver + scope + time (no dedicated ULID prefix is assigned by the §5.5 prefix table). RUNTIME SEMANTIC: expired approvals are rejected by default, never auto-extended (§22.5.4).",
+  "x-nightwatch-object": "approval_record",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-runtime-semantics": "Expired approvals are rejected, not auto-extended.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["approver", "decision", "scope", "approved_at", "expires_at"],
+  "properties": {
+    "approver": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human approver identity."
+    },
+    "decision": {
+      "enum": ["approved", "denied"],
+      "description": "Approval outcome."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Optional approver-provided reason."
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the approval covers, e.g. 'issue.publish:finding=find_...' or 'run.execute:environment=production'."
+    },
+    "policy_decision_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Reference to the associated policy decision (e.g. its idempotency key)."
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "description": "References to material the approver reviewed."
+    },
+    "approved_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "expires_at": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"}],
+      "description": "Mandatory expiry (§22.5.4)."
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "object": "command_retestIssue",
+  "schema": "https://nightwatch.local/schemas/commands/retestIssue/v1.json",
+  "positive": [
+    {
+      "command_id": "synthetic-cmd-retest-001",
+      "issued_at": "2026-08-21T02:00:00Z",
+      "deadline": "2026-08-21T02:10:00Z",
+      "payload": {
+        "issue_ref": "synthetic-org/synthetic-repo#42",
+        "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA"
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "payload missing required field 'issue_ref'",
+      "instance": {
+        "command_id": "synthetic-cmd-retest-001",
+        "issued_at": "2026-08-21T02:00:00Z",
+        "deadline": "2026-08-21T02:10:00Z",
+        "payload": {
+          "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA"
+        }
+      }
+    },
+    {
+      "violated_rule": "session_id violates the session_<ULID> ID rule (ULID part contains illegal characters 'I'/'L' for Crockford Base32)",
+      "instance": {
+        "command_id": "synthetic-cmd-retest-001",
+        "issued_at": "2026-08-21T02:00:00Z",
+        "deadline": "2026-08-21T02:10:00Z",
+        "payload": {
+          "issue_ref": "synthetic-org/synthetic-repo#42",
+          "session_id": "session_01J8ILLEGALULID1234567890IL"
+        }
+      }
+    }
+  ]
+}

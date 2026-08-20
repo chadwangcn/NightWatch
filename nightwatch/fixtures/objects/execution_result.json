@@ -1,0 +1,102 @@
+{
+  "object": "execution_result",
+  "schema": "https://nightwatch.local/schemas/execution_result/v1.json",
+  "positive": [
+    {
+      "execution_id": "exec_01J8HBK5Z8Q9W3DRT4N2M6PVXC",
+      "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+      "executor": "newman",
+      "executor_version": "6.2.2",
+      "started_at": "2026-08-20T03:30:00Z",
+      "finished_at": "2026-08-20T03:35:00Z",
+      "duration_ms": 300000,
+      "sanitized_command": ["newman", "run", "synthetic-collection.json", "-e", "synthetic-env.json"],
+      "exit_code": 1,
+      "timed_out": false,
+      "cancelled": false,
+      "signal": null,
+      "case_results": [
+        {
+          "case_id": "case_01J8HBK5Z8Q9W3DRT4N2M6PVXF",
+          "status": "failed",
+          "request_summary": {"method": "POST", "path": "/orders"},
+          "response_summary": {"status_code": 500},
+          "artifact_path": "responses/case-001.json"
+        },
+        {
+          "case_id": "case_01J8HBK5Z8Q9W3DRT4N2M6PVXQ",
+          "status": "passed"
+        }
+      ],
+      "seed": 483920,
+      "repetitions": 3,
+      "failures": 1,
+      "cleanup": {"status": "completed", "residual_resources": []}
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "per-case status uses a value outside the Pass/Fail/Error/Skipped enum",
+      "instance": {
+        "execution_id": "exec_01J8HBK5Z8Q9W3DRT4N2M6PVXC",
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "started_at": "2026-08-20T03:30:00Z",
+        "finished_at": "2026-08-20T03:35:00Z",
+        "duration_ms": 300000,
+        "sanitized_command": ["newman"],
+        "exit_code": 1,
+        "timed_out": false,
+        "cancelled": false,
+        "case_results": [{"case_id": "case_01J8HBK5Z8Q9W3DRT4N2M6PVXF", "status": "skip"}],
+        "seed": 483920,
+        "repetitions": 3,
+        "failures": 1,
+        "cleanup": {"status": "completed", "residual_resources": []}
+      }
+    },
+    {
+      "violated_rule": "duration_ms must be an integer (monotonic-clock milliseconds), not a string",
+      "instance": {
+        "execution_id": "exec_01J8HBK5Z8Q9W3DRT4N2M6PVXC",
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "started_at": "2026-08-20T03:30:00Z",
+        "finished_at": "2026-08-20T03:35:00Z",
+        "duration_ms": "300000",
+        "sanitized_command": ["newman"],
+        "exit_code": 1,
+        "timed_out": false,
+        "cancelled": false,
+        "case_results": [],
+        "seed": 483920,
+        "repetitions": 3,
+        "failures": 0,
+        "cleanup": {"status": "completed", "residual_resources": []}
+      }
+    },
+    {
+      "violated_rule": "cleanup missing the mandatory residual_resources list (§5.7)",
+      "instance": {
+        "execution_id": "exec_01J8HBK5Z8Q9W3DRT4N2M6PVXC",
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "started_at": "2026-08-20T03:30:00Z",
+        "finished_at": "2026-08-20T03:35:00Z",
+        "duration_ms": 300000,
+        "sanitized_command": ["newman"],
+        "exit_code": 1,
+        "timed_out": false,
+        "cancelled": false,
+        "case_results": [],
+        "seed": 483920,
+        "repetitions": 3,
+        "failures": 0,
+        "cleanup": {"status": "completed"}
+      }
+    }
+  ]
+}

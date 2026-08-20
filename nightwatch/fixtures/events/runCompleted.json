@@ -1,0 +1,54 @@
+{
+  "object": "event_runCompleted",
+  "schema": "https://nightwatch.local/schemas/events/runCompleted/v1.json",
+  "positive": [
+    {
+      "event_id": "synthetic-evt-runc-001",
+      "object_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+      "object_type": "run",
+      "occurred_at": "2026-08-20T03:35:00Z",
+      "sequence": 3,
+      "payload": {
+        "outcome": "completed",
+        "case_summary": {"total": 20, "passed": 18, "failed": 1, "error": 1, "skipped": 0},
+        "finished_at": "2026-08-20T03:35:00Z",
+        "duration_ms": 300000,
+        "cleanup_status": "completed"
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "terminal outcome uses a value outside the completed/failed/cancelled/timed_out enum",
+      "instance": {
+        "event_id": "synthetic-evt-runc-e001",
+        "object_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "object_type": "run",
+        "occurred_at": "2026-08-20T03:35:00Z",
+        "sequence": 3,
+        "payload": {
+          "outcome": "succeeded",
+          "case_summary": {"total": 1, "passed": 1, "failed": 0, "error": 0, "skipped": 0},
+          "finished_at": "2026-08-20T03:35:00Z",
+          "duration_ms": 300000
+        }
+      }
+    },
+    {
+      "violated_rule": "case_summary missing the mandatory 'skipped' counter",
+      "instance": {
+        "event_id": "synthetic-evt-runc-e002",
+        "object_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "object_type": "run",
+        "occurred_at": "2026-08-20T03:35:00Z",
+        "sequence": 3,
+        "payload": {
+          "outcome": "failed",
+          "case_summary": {"total": 1, "passed": 0, "failed": 1, "error": 0},
+          "finished_at": "2026-08-20T03:35:00Z",
+          "duration_ms": 300000
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/common.json",
+  "title": "NightWatch Common Definitions",
+  "description": "Shared definitions for all NightWatch contracts. Semantics source: NightWatch Architecture v1.4 §5.5 (ID rules, time semantics), §22.5.4 (runtime time semantics).",
+  "x-nightwatch-object": "common",
+  "x-nightwatch-version": "1.0.0",
+  "$defs": {
+    "ulid": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "ULID: 26 chars, Crockford Base32 (excludes I, L, O, U), lexicographically sortable (monotonic). Source: WorkRequest §5.5."
+    },
+    "iso8601_utc": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$",
+      "description": "UTC ISO-8601 timestamp, always Z-suffixed. All wall-clock timestamps use this. Source: §5.5 / §22.5.4."
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Duration in milliseconds (monotonic-clock measured). Source: §5.5 duration rule."
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Idempotency key. Duplicate keys with differing payloads must yield an idempotency-conflict error (CTL_IDEMPOTENCY_CONFLICT / ISS_IDEMPOTENCY_CONFLICT / AUD_REPLAY_MISMATCH). Source: §22.5.4."
+    },
+    "checksum": {
+      "type": "string",
+      "pattern": "^(sha256:)?[0-9a-f]{64}$",
+      "description": "SHA-256 checksum, optionally sha256:-prefixed, lowercase hex."
+    },
+    "credential_reference_name": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "maxLength": 128,
+      "description": "Credential variable REFERENCE NAME only (e.g. ORDER_API_TOKEN). Never a value. Source: §13.1."
+    },
+    "id_session": {
+      "type": "string",
+      "pattern": "^session_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Session object ID. Source: §5.5 prefix table."
+    },
+    "id_run": {
+      "type": "string",
+      "pattern": "^run_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Run object ID. Source: §5.5 prefix table."
+    },
+    "id_exec": {
+      "type": "string",
+      "pattern": "^exec_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Execution request ID. Source: §5.5 prefix table."
+    },
+    "id_plan": {
+      "type": "string",
+      "pattern": "^plan_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Test plan ID. Source: §5.5 prefix table."
+    },
+    "id_scen": {
+      "type": "string",
+      "pattern": "^scen_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Scenario ID. Source: §5.5 prefix table."
+    },
+    "id_case": {
+      "type": "string",
+      "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Test case ID. Source: §5.5 prefix table."
+    },
+    "id_obs": {
+      "type": "string",
+      "pattern": "^obs_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Observation ID. Source: §5.5 prefix table."
+    },
+    "id_find": {
+      "type": "string",
+      "pattern": "^find_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Finding ID. Source: §5.5 prefix table."
+    },
+    "id_draft": {
+      "type": "string",
+      "pattern": "^draft_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Issue draft ID. Source: §5.5 prefix table."
+    },
+    "id_issue": {
+      "type": "string",
+      "pattern": "^issue_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Publish receipt ID (issue-domain internal object). Source: §5.5 prefix table."
+    },
+    "id_audit": {
+      "type": "string",
+      "pattern": "^audit_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Audit event ID. Source: §5.5 prefix table."
+    },
+    "id_lease": {
+      "type": "string",
+      "pattern": "^lease_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Injection lease ID. Source: §5.5 prefix table."
+    },
+    "id_lock": {
+      "type": "string",
+      "pattern": "^lock_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Lock ID. Source: §5.5 prefix table."
+    },
+    "executor_name": {
+      "enum": ["newman", "portman", "schemathesis", "restler", "k6", "toxiproxy", "curl", "httpie"],
+      "description": "Executor identifiers. Source: §5.7 executor table."
+    },
+    "session_state": {
+      "enum": [
+        "discovery",
+        "library_draft",
+        "library_review",
+        "environment_ready",
+        "running",
+        "analyzing",
+        "issue_review",
+        "published",
+        "inconclusive",
+        "retest_pending",
+        "closed",
+        "blocked"
+      ],
+      "description": "Session state machine states. Source: §7.2. 'blocked' is a recoverable state entered from running."
+    },
+    "case_status": {
+      "enum": ["draft", "reviewed", "validated", "active", "deprecated"],
+      "description": "Test case lifecycle. Source: §5.5 / WorkRequest §5.2."
+    },
+    "finding_classification": {
+      "enum": ["confirmed", "flaky", "environmental", "spec-ambiguity", "inconclusive", "duplicate"],
+      "description": "Finding classification. Source: §5.8."
+    },
+    "per_case_result": {
+      "enum": ["passed", "failed", "error", "skipped"],
+      "description": "Per-case execution outcome. Source: §5.7 (Pass/Fail/Error/Skipped)."
+    },
+    "cleanup_status": {
+      "enum": ["completed", "failed", "timed_out", "skipped"],
+      "description": "Cleanup outcome; cleanup timeout is preserved as an independent result. Source: §22.5.4 / §14."
+    },
+    "run_outcome": {
+      "enum": ["completed", "failed", "cancelled", "timed_out"],
+      "description": "Run terminal outcome. Source: §5.7 (exit code / timeout / cancel)."
+    },
+    "reproducibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempts", "failures", "rate"],
+      "properties": {
+        "attempts": {"type": "integer", "minimum": 0},
+        "failures": {"type": "integer", "minimum": 0},
+        "rate": {"type": "number", "minimum": 0, "maximum": 1}
+      },
+      "description": "Reproduction history: attempts, failures, rate = failures/attempts in [0,1]. Source: §14.1 item 9 / §16."
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/events/issueDrafted/v1.json",
+  "title": "Event: issueDrafted",
+  "description": "Notification that an issue draft was produced from a finding (C12 → C13).",
+  "x-nightwatch-object": "event_issueDrafted",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-event": "issueDrafted",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "object_id", "object_type", "occurred_at", "sequence", "payload"],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "object_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_draft"},
+    "object_type": {"const": "issue_draft"},
+    "occurred_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finding_id"],
+      "properties": {
+        "finding_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_find"},
+        "summary": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

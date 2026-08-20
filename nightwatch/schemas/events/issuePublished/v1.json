@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/events/issuePublished/v1.json",
+  "title": "Event: issuePublished",
+  "description": "Notification that an issue was published through C13 and a publish receipt was produced (§5.9 gates all passed).",
+  "x-nightwatch-object": "event_issuePublished",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-event": "issuePublished",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "object_id", "object_type", "occurred_at", "sequence", "payload"],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "object_id": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_issue"}],
+      "description": "The publish receipt id (issue_ prefix)."
+    },
+    "object_type": {"const": "publish_receipt"},
+    "occurred_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["draft_id", "issue_ref", "gates_passed"],
+      "properties": {
+        "draft_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_draft"},
+        "issue_ref": {"type": "string", "minLength": 1},
+        "gates_passed": {
+          "type": "boolean",
+          "description": "True only when all six §5.9 gates passed."
+        }
+      }
+    }
+  }
+}

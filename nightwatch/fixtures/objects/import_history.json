@@ -1,0 +1,46 @@
+{
+  "object": "import_history",
+  "schema": "https://nightwatch.local/schemas/import_history/v1.json",
+  "positive": [
+    {
+      "api_id": "synthetic-order-api",
+      "sequence": 1,
+      "source_revision": "synthetic-rev-8d9f2c1",
+      "checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
+      "imported_at": "2026-08-20T02:10:00Z",
+      "status": "valid"
+    },
+    {
+      "api_id": "synthetic-order-api",
+      "sequence": 2,
+      "source_revision": "synthetic-rev-9e0a3d2",
+      "checksum": "e1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f94",
+      "imported_at": "2026-08-20T02:40:00Z",
+      "status": "invalid",
+      "error": "openapi parse failed at path /orders: invalid schema (last valid version NOT overwritten)"
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "status uses a value outside the valid/invalid enum (a failed import is recorded as invalid, never silently dropped, §9.1-4)",
+      "instance": {
+        "api_id": "synthetic-order-api",
+        "sequence": 3,
+        "source_revision": "synthetic-rev-abc1234",
+        "checksum": "e1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f94",
+        "imported_at": "2026-08-20T03:00:00Z",
+        "status": "unknown"
+      }
+    },
+    {
+      "violated_rule": "missing required field 'sequence' (import history is addressed by api_id + sequence)",
+      "instance": {
+        "api_id": "synthetic-order-api",
+        "source_revision": "synthetic-rev-abc1234",
+        "checksum": "e1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f94",
+        "imported_at": "2026-08-20T03:00:00Z",
+        "status": "valid"
+      }
+    }
+  ]
+}

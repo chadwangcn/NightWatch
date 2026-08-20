@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/events/runStarted/v1.json",
+  "title": "Event: runStarted",
+  "description": "Notification that a run started executing.",
+  "x-nightwatch-object": "event_runStarted",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-event": "runStarted",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "object_id", "object_type", "occurred_at", "sequence", "payload"],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "object_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_run"},
+    "object_type": {"const": "run"},
+    "occurred_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["started_at", "environment"],
+      "properties": {
+        "started_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+        "environment": {"type": "string", "minLength": 1},
+        "execution_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_exec"},
+        "scenario_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_scen"}
+      }
+    }
+  }
+}

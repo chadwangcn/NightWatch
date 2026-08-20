@@ -1,0 +1,50 @@
+{
+  "object": "event_runStepRecorded",
+  "schema": "https://nightwatch.local/schemas/events/runStepRecorded/v1.json",
+  "positive": [
+    {
+      "event_id": "synthetic-evt-step-001",
+      "object_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+      "object_type": "run",
+      "occurred_at": "2026-08-20T03:31:12Z",
+      "sequence": 2,
+      "payload": {
+        "step": "execute-case-order-idempotency-001",
+        "step_index": 0,
+        "status": "failed",
+        "output_checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "step status uses a value outside the passed/failed/error/skipped enum",
+      "instance": {
+        "event_id": "synthetic-evt-step-e001",
+        "object_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "object_type": "run",
+        "occurred_at": "2026-08-20T03:31:12Z",
+        "sequence": 2,
+        "payload": {
+          "step": "execute-case-order-idempotency-001",
+          "step_index": 0,
+          "status": "skippd"
+        }
+      }
+    },
+    {
+      "violated_rule": "missing required field 'sequence' (events carry a per-object monotonic sequence)",
+      "instance": {
+        "event_id": "synthetic-evt-step-e002",
+        "object_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "object_type": "run",
+        "occurred_at": "2026-08-20T03:31:12Z",
+        "payload": {
+          "step": "execute-case-order-idempotency-001",
+          "step_index": 0,
+          "status": "passed"
+        }
+      }
+    }
+  ]
+}

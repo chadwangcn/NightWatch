@@ -1,0 +1,40 @@
+{
+  "object": "command_cancelRun",
+  "schema": "https://nightwatch.local/schemas/commands/cancelRun/v1.json",
+  "positive": [
+    {
+      "command_id": "synthetic-cmd-cancel-001",
+      "issued_at": "2026-08-20T03:33:00Z",
+      "deadline": "2026-08-20T03:34:00Z",
+      "payload": {
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "reason": "synthetic cancel for contract testing"
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "payload missing required field 'run_id'",
+      "instance": {
+        "command_id": "synthetic-cmd-cancel-001",
+        "issued_at": "2026-08-20T03:33:00Z",
+        "deadline": "2026-08-20T03:34:00Z",
+        "payload": {
+          "reason": "synthetic cancel without run"
+        }
+      }
+    },
+    {
+      "violated_rule": "run_id violates the run_<ULID> ID rule",
+      "instance": {
+        "command_id": "synthetic-cmd-cancel-001",
+        "issued_at": "2026-08-20T03:33:00Z",
+        "deadline": "2026-08-20T03:34:00Z",
+        "payload": {
+          "run_id": "run_123",
+          "reason": "synthetic cancel with malformed run id"
+        }
+      }
+    }
+  ]
+}

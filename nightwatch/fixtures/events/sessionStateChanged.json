@@ -1,0 +1,180 @@
+{
+  "object": "event_sessionStateChanged",
+  "schema": "https://nightwatch.local/schemas/events/sessionStateChanged/v1.json",
+  "positive": [
+    {
+      "_transition": "discovery→library_draft",
+      "event_id": "synthetic-evt-ss-001",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "object_type": "session",
+      "occurred_at": "2026-08-20T02:10:00Z",
+      "sequence": 1,
+      "payload": {"from_state": "discovery", "to_state": "library_draft", "reason": "initial library draft started"}
+    },
+    {
+      "_transition": "library_draft→library_review",
+      "event_id": "synthetic-evt-ss-002",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "object_type": "session",
+      "occurred_at": "2026-08-20T02:30:00Z",
+      "sequence": 2,
+      "payload": {"from_state": "library_draft", "to_state": "library_review"}
+    },
+    {
+      "_transition": "library_review→environment_ready",
+      "event_id": "synthetic-evt-ss-003",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "object_type": "session",
+      "occurred_at": "2026-08-20T02:50:00Z",
+      "sequence": 3,
+      "payload": {"from_state": "library_review", "to_state": "environment_ready"}
+    },
+    {
+      "_transition": "environment_ready→running",
+      "event_id": "synthetic-evt-ss-004",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "object_type": "session",
+      "occurred_at": "2026-08-20T03:00:00Z",
+      "sequence": 4,
+      "payload": {"from_state": "environment_ready", "to_state": "running"}
+    },
+    {
+      "_transition": "running→analyzing",
+      "event_id": "synthetic-evt-ss-005",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "object_type": "session",
+      "occurred_at": "2026-08-20T03:40:00Z",
+      "sequence": 5,
+      "payload": {"from_state": "running", "to_state": "analyzing"}
+    },
+    {
+      "_transition": "running→blocked",
+      "event_id": "synthetic-evt-ss-006",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "object_type": "session",
+      "occurred_at": "2026-08-20T03:42:00Z",
+      "sequence": 6,
+      "payload": {"from_state": "running", "to_state": "blocked", "reason": "credential lease expired mid-run"}
+    },
+    {
+      "_transition": "blocked→running",
+      "event_id": "synthetic-evt-ss-007",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "object_type": "session",
+      "occurred_at": "2026-08-20T03:44:00Z",
+      "sequence": 7,
+      "payload": {"from_state": "blocked", "to_state": "running", "reason": "credential reconfigured, session recovered"}
+    },
+    {
+      "_transition": "analyzing→issue_review",
+      "event_id": "synthetic-evt-ss-008",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "object_type": "session",
+      "occurred_at": "2026-08-20T03:50:00Z",
+      "sequence": 8,
+      "payload": {"from_state": "analyzing", "to_state": "issue_review"}
+    },
+    {
+      "_transition": "issue_review→published",
+      "event_id": "synthetic-evt-ss-009",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "object_type": "session",
+      "occurred_at": "2026-08-20T05:00:00Z",
+      "sequence": 9,
+      "payload": {"from_state": "issue_review", "to_state": "published"}
+    },
+    {
+      "_transition": "issue_review→inconclusive",
+      "event_id": "synthetic-evt-ss-010",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXV",
+      "object_type": "session",
+      "occurred_at": "2026-08-20T04:30:00Z",
+      "sequence": 9,
+      "payload": {"from_state": "issue_review", "to_state": "inconclusive", "reason": "insufficient evidence to publish"}
+    },
+    {
+      "_transition": "published→retest_pending",
+      "event_id": "synthetic-evt-ss-011",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "object_type": "session",
+      "occurred_at": "2026-08-21T02:00:00Z",
+      "sequence": 10,
+      "payload": {"from_state": "published", "to_state": "retest_pending", "reason": "external fix claimed, black-box retest scheduled"}
+    },
+    {
+      "_transition": "inconclusive→retest_pending",
+      "event_id": "synthetic-evt-ss-012",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXV",
+      "object_type": "session",
+      "occurred_at": "2026-08-21T03:00:00Z",
+      "sequence": 10,
+      "payload": {"from_state": "inconclusive", "to_state": "retest_pending", "reason": "environment access granted, retest scheduled"}
+    },
+    {
+      "_transition": "retest_pending→closed",
+      "event_id": "synthetic-evt-ss-013",
+      "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "object_type": "session",
+      "occurred_at": "2026-08-21T06:00:00Z",
+      "sequence": 11,
+      "payload": {"from_state": "retest_pending", "to_state": "closed"}
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "ILLEGAL TRANSITION: discovery→running skips library_draft/library_review/environment_ready (not in the §7.2 transition matrix)",
+      "instance": {
+        "event_id": "synthetic-evt-ss-e001",
+        "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "object_type": "session",
+        "occurred_at": "2026-08-20T02:10:00Z",
+        "sequence": 1,
+        "payload": {"from_state": "discovery", "to_state": "running"}
+      }
+    },
+    {
+      "violated_rule": "ILLEGAL TRANSITION: closed is a terminal state with no outgoing transitions",
+      "instance": {
+        "event_id": "synthetic-evt-ss-e002",
+        "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "object_type": "session",
+        "occurred_at": "2026-08-21T07:00:00Z",
+        "sequence": 12,
+        "payload": {"from_state": "closed", "to_state": "discovery"}
+      }
+    },
+    {
+      "violated_rule": "ILLEGAL TRANSITION: blocked may only return to running (blocked→analyzing is not in the §7.2 matrix)",
+      "instance": {
+        "event_id": "synthetic-evt-ss-e003",
+        "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "object_type": "session",
+        "occurred_at": "2026-08-20T03:44:00Z",
+        "sequence": 7,
+        "payload": {"from_state": "blocked", "to_state": "analyzing"}
+      }
+    },
+    {
+      "violated_rule": "ILLEGAL TRANSITION: issue_review cannot go back to running (backward transitions are not expressible)",
+      "instance": {
+        "event_id": "synthetic-evt-ss-e004",
+        "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "object_type": "session",
+        "occurred_at": "2026-08-20T03:51:00Z",
+        "sequence": 9,
+        "payload": {"from_state": "issue_review", "to_state": "running"}
+      }
+    },
+    {
+      "violated_rule": "ILLEGAL TRANSITION: running cannot jump directly to issue_review (must pass through analyzing)",
+      "instance": {
+        "event_id": "synthetic-evt-ss-e005",
+        "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "object_type": "session",
+        "occurred_at": "2026-08-20T03:41:00Z",
+        "sequence": 5,
+        "payload": {"from_state": "running", "to_state": "issue_review"}
+      }
+    }
+  ]
+}

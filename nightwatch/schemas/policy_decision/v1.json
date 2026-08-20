@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/policy_decision/v1.json",
+  "title": "NightWatch Policy Decision",
+  "description": "C04 product: policy decision with expiry (approved/denied + reason + record + expiry). Source: WorkRequest §5.2, §5.10 C04. RUNTIME SEMANTIC: expired decisions are rejected by default, never auto-extended (§22.5.4).",
+  "x-nightwatch-object": "policy_decision",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-runtime-semantics": "Expired decisions are rejected, not auto-extended.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decision", "reason", "requested_action", "decided_by", "decided_at", "expires_at"],
+  "properties": {
+    "decision": {
+      "enum": ["approved", "denied"],
+      "description": "Policy outcome."
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why the decision was reached (environment class, budget, destructive/load limits...)."
+    },
+    "requested_action": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The action the decision applies to, e.g. 'run.execute:environment=production'."
+    },
+    "decided_by": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Policy actor: automated policy engine id or human approver id."
+    },
+    "decided_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "expires_at": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"}],
+      "description": "Mandatory expiry; approvals/decisions must carry an expiry time (§22.5.4)."
+    },
+    "conditions": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "description": "Conditions attached to an approval (e.g. max request budget)."
+    }
+  }
+}

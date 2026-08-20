@@ -1,0 +1,48 @@
+{
+  "object": "event_findingClassified",
+  "schema": "https://nightwatch.local/schemas/events/findingClassified/v1.json",
+  "positive": [
+    {
+      "event_id": "synthetic-evt-find-001",
+      "object_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXH",
+      "object_type": "finding",
+      "occurred_at": "2026-08-20T04:00:00Z",
+      "sequence": 5,
+      "payload": {
+        "classification": "flaky",
+        "reproduction": {"attempts": 20, "failures": 7, "rate": 0.35},
+        "fingerprint_digest": "synthetic-fp-digest-001"
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "classification uses a value outside the §5.8 enum",
+      "instance": {
+        "event_id": "synthetic-evt-find-e001",
+        "object_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXH",
+        "object_type": "finding",
+        "occurred_at": "2026-08-20T04:00:00Z",
+        "sequence": 5,
+        "payload": {
+          "classification": "suspected",
+          "reproduction": {"attempts": 20, "failures": 7, "rate": 0.35}
+        }
+      }
+    },
+    {
+      "violated_rule": "reproduction missing the mandatory 'rate' field",
+      "instance": {
+        "event_id": "synthetic-evt-find-e002",
+        "object_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXH",
+        "object_type": "finding",
+        "occurred_at": "2026-08-20T04:00:00Z",
+        "sequence": 5,
+        "payload": {
+          "classification": "confirmed",
+          "reproduction": {"attempts": 20, "failures": 7}
+        }
+      }
+    }
+  ]
+}

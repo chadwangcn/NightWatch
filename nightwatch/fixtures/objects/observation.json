@@ -1,0 +1,58 @@
+{
+  "object": "observation",
+  "schema": "https://nightwatch.local/schemas/observation/v1.json",
+  "positive": [
+    {
+      "observation_id": "obs_01J8HBK5Z8Q9W3DRT4N2M6PVXG",
+      "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+      "execution_id": "exec_01J8HBK5Z8Q9W3DRT4N2M6PVXC",
+      "case_id": "case_01J8HBK5Z8Q9W3DRT4N2M6PVXF",
+      "occurred_at": "2026-08-20T03:31:12Z",
+      "fact": {
+        "api_id": "synthetic-order-api",
+        "method": "POST",
+        "path": "/orders",
+        "status_or_error": "500",
+        "response_signature": "synthetic-sig-500-null-body"
+      },
+      "context": {
+        "scenario_id": "scen_01J8HBK5Z8Q9W3DRT4N2M6PVXE",
+        "scenario_state": "concurrent-submit-barrier-1",
+        "seed": 483920,
+        "repetition": 7
+      },
+      "evidence_ref": "responses/case-001.json"
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "fact missing the mandatory status_or_error (failure fact must state the observed status or error)",
+      "instance": {
+        "observation_id": "obs_01J8HBK5Z8Q9W3DRT4N2M6PVXG",
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "occurred_at": "2026-08-20T03:31:12Z",
+        "fact": {
+          "api_id": "synthetic-order-api",
+          "method": "POST",
+          "path": "/orders"
+        },
+        "context": {}
+      }
+    },
+    {
+      "violated_rule": "observation_id violates the obs_<ULID> ID rule",
+      "instance": {
+        "observation_id": "observation_01J8HBK5Z8Q9W3DRT4N2M6PVXG",
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "occurred_at": "2026-08-20T03:31:12Z",
+        "fact": {
+          "api_id": "synthetic-order-api",
+          "method": "POST",
+          "path": "/orders",
+          "status_or_error": "500"
+        },
+        "context": {}
+      }
+    }
+  ]
+}

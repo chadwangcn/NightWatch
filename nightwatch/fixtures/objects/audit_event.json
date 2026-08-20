@@ -1,0 +1,43 @@
+{
+  "object": "audit_event",
+  "schema": "https://nightwatch.local/schemas/audit_event/v1.json",
+  "positive": [
+    {
+      "audit_id": "audit_01J8HBK5Z8Q9W3DRT4N2M6PVXM",
+      "actor": "C13-issue-gateway",
+      "action": "issue.publish",
+      "target": {
+        "object_type": "publish_receipt",
+        "object_id": "issue_01J8HBK5Z8Q9W3DRT4N2M6PVXK"
+      },
+      "timestamp": "2026-08-20T05:00:00Z",
+      "idempotency_key": "synthetic-audit-key-001"
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "missing required field 'idempotency_key' (§5.10 C14: audit events carry idempotency keys)",
+      "instance": {
+        "audit_id": "audit_01J8HBK5Z8Q9W3DRT4N2M6PVXM",
+        "actor": "C13-issue-gateway",
+        "action": "issue.publish",
+        "target": {
+          "object_type": "publish_receipt",
+          "object_id": "issue_01J8HBK5Z8Q9W3DRT4N2M6PVXK"
+        },
+        "timestamp": "2026-08-20T05:00:00Z"
+      }
+    },
+    {
+      "violated_rule": "target missing the mandatory object_id",
+      "instance": {
+        "audit_id": "audit_01J8HBK5Z8Q9W3DRT4N2M6PVXM",
+        "actor": "C04-policy-gate",
+        "action": "policy.decide",
+        "target": {"object_type": "run"},
+        "timestamp": "2026-08-20T05:00:00Z",
+        "idempotency_key": "synthetic-audit-key-002"
+      }
+    }
+  ]
+}

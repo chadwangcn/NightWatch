@@ -1,0 +1,88 @@
+{
+  "object": "issue_draft",
+  "schema": "https://nightwatch.local/schemas/issue_draft/v1.json",
+  "positive": [
+    {
+      "draft_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+      "finding_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXH",
+      "summary": "Intermittent HTTP 500 on concurrent duplicate order submission impacts order creation reliability",
+      "environment": {
+        "api_id": "synthetic-order-api",
+        "environment_name": "synthetic-staging",
+        "spec_revision": "synthetic-rev-8d9f2c1",
+        "first_observed_at": "2026-08-20T03:31:12Z"
+      },
+      "preconditions": [
+        "synthetic test account is active",
+        "Idempotency-Key header generator configured"
+      ],
+      "minimal_reproduction": [
+        "Run scenario scenarios/order/idempotency.yaml with seed 483920",
+        "Observe POST /orders responses during the same-start barrier"
+      ],
+      "expected": "All responses are 200/201/409 and exactly one order exists (verified via public listing)",
+      "actual": "7 of 20 repetitions return 500 with null body",
+      "hypothesis": "",
+      "reproducibility": {"attempts": 20, "failures": 7, "rate": 0.35},
+      "timing": "Failures occur within 20ms after the same-start barrier releases",
+      "sanitized_evidence": [
+        "sanitized request/response pair stored at responses/case-001.json"
+      ],
+      "artifacts": [
+        {"kind": "run", "ref": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB"},
+        {"kind": "manifest", "ref": "manifests/run-001.json"},
+        {"kind": "timeline", "ref": "timeline.jsonl"},
+        {"kind": "report", "ref": "reports/synthetic-report.html"}
+      ],
+      "scope_boundary": "NightWatch did not modify business code; root cause is unknown and marked as such",
+      "labels": ["nightwatch", "api", "severity:high", "finding:flaky", "needs-fix"]
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "reproducibility.rate must be within [0, 1] (§16 Reproducibility)",
+      "instance": {
+        "draft_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+        "finding_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXH",
+        "summary": "Synthetic draft summary",
+        "environment": {
+          "api_id": "synthetic-order-api",
+          "environment_name": "synthetic-staging",
+          "spec_revision": "synthetic-rev-8d9f2c1",
+          "first_observed_at": "2026-08-20T03:31:12Z"
+        },
+        "preconditions": ["synthetic precondition"],
+        "minimal_reproduction": ["synthetic step 1"],
+        "expected": "synthetic expected",
+        "actual": "synthetic actual",
+        "reproducibility": {"attempts": 20, "failures": 7, "rate": 35},
+        "timing": "synthetic timing",
+        "sanitized_evidence": ["synthetic evidence"],
+        "artifacts": [{"kind": "run", "ref": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB"}],
+        "scope_boundary": "synthetic scope boundary"
+      }
+    },
+    {
+      "violated_rule": "missing required field 'scope_boundary' (§16 template section)",
+      "instance": {
+        "draft_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+        "finding_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXH",
+        "summary": "Synthetic draft summary",
+        "environment": {
+          "api_id": "synthetic-order-api",
+          "environment_name": "synthetic-staging",
+          "spec_revision": "synthetic-rev-8d9f2c1",
+          "first_observed_at": "2026-08-20T03:31:12Z"
+        },
+        "preconditions": ["synthetic precondition"],
+        "minimal_reproduction": ["synthetic step 1"],
+        "expected": "synthetic expected",
+        "actual": "synthetic actual",
+        "reproducibility": {"attempts": 20, "failures": 7, "rate": 0.35},
+        "timing": "synthetic timing",
+        "sanitized_evidence": ["synthetic evidence"],
+        "artifacts": [{"kind": "run", "ref": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB"}]
+      }
+    }
+  ]
+}

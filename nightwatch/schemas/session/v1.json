@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/session/v1.json",
+  "title": "NightWatch Session",
+  "description": "A QA session: one testing goal, investigation or retest engagement (hours to days). State machine source: §7.2. 'blocked' is a recoverable state entered from running. Session revisions create a new object with a parent reference (never mutate history).",
+  "x-nightwatch-object": "session",
+  "x-nightwatch-version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session_id", "workspace_id", "goal", "state", "created_at", "updated_at"],
+  "properties": {
+    "session_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_session"},
+    "workspace_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Owning workspace identifier."
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Current session goal (what the user authorized this session to achieve)."
+    },
+    "state": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/session_state"},
+    "authorization_boundary": {
+      "type": "string",
+      "description": "User-authorized boundary for this session (what is allowed, what is explicitly out of scope)."
+    },
+    "environment": {
+      "type": "string",
+      "description": "Confirmed target environment name (set once reaching environment_ready)."
+    },
+    "blocked_reason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Mandatory when state=blocked: why the session is blocked (missing credential, external wait, etc.)."
+    },
+    "supersedes_session_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_session"},
+    "created_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "updated_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"state": {"const": "blocked"}}},
+      "then": {"required": ["blocked_reason"]}
+    }
+  ]
+}

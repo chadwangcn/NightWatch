@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/run/v1.json",
+  "title": "NightWatch Run Manifest",
+  "description": "Immutable run manifest (Evidence Bundle manifest.json), written once the run reaches a terminal outcome. Content source: §14 (workspace/session/run/plan/scenario ids, contract pin, environment name + sanitized base URL, deployment ref, executor + version, start/end/duration, case summary, artifact list with checksums, redaction policy version, cleanup status, agent host type). Revisions create a NEW object with a parent reference; sealed bundles are never edited in place (§5.11-6).",
+  "x-nightwatch-object": "run",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-immutable": true,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "workspace_id",
+    "session_id",
+    "status",
+    "contract_pin",
+    "environment_name",
+    "sanitized_base_url",
+    "executor",
+    "executor_version",
+    "started_at",
+    "finished_at",
+    "duration_ms",
+    "case_summary",
+    "artifacts",
+    "redaction_policy_version",
+    "cleanup_status"
+  ],
+  "properties": {
+    "run_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_run"},
+    "workspace_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "session_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_session"},
+    "plan_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_plan"},
+    "scenario_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_scen"},
+    "supersedes_run_id": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_run"}],
+      "description": "Parent run reference when this object is a revision of an earlier run object."
+    },
+    "status": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/run_outcome"}],
+      "description": "Terminal outcome of the run."
+    },
+    "contract_pin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_revision", "checksum"],
+      "properties": {
+        "source_revision": {"type": "string", "minLength": 1},
+        "checksum": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/checksum"}
+      },
+      "description": "D0/official contract pin: source revision and checksum."
+    },
+    "scenario_revision": {
+      "type": "string",
+      "description": "User scenario revision executed by this run."
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assumption_id", "status"],
+        "properties": {
+          "assumption_id": {"type": "string", "minLength": 1},
+          "status": {"enum": ["confirmed", "unconfirmed"]}
+        }
+      },
+      "description": "Assumption ids and their confirmation status."
+    },
+    "environment_name": {"type": "string", "minLength": 1},
+    "sanitized_base_url": {
+      "type": "string",
+      "pattern": "^https?://[A-Za-z0-9._~:/-]+$",
+      "description": "Redacted/sanitized base URL of the target environment (synthetic or sanitized value only)."
+    },
+    "deployment_ref": {
+      "type": "string",
+      "description": "Target deployment/route identifier and, when obtainable, immutable artifact digest."
+    },
+    "executor": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/executor_name"},
+    "executor_version": {"type": "string", "minLength": 1},
+    "agent_host_type": {
+      "type": "string",
+      "description": "Agent host type identifier. Full model conversations are never stored."
+    },
+    "started_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "finished_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "duration_ms": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/duration_ms"},
+    "case_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "passed", "failed", "error", "skipped"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "passed": {"type": "integer", "minimum": 0},
+        "failed": {"type": "integer", "minimum": 0},
+        "error": {"type": "integer", "minimum": 0},
+        "skipped": {"type": "integer", "minimum": 0}
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "checksum"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "checksum": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/checksum"}
+        }
+      }
+    },
+    "redaction_policy_version": {"type": "string", "minLength": 1},
+    "cleanup_status": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/cleanup_status"}],
+      "description": "Cleanup state recorded before evidence seal (§22.5.4)."
+    }
+  }
+}

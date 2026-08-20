@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/audit_event/v1.json",
+  "title": "NightWatch Audit Event",
+  "description": "JSONL audit event (§5.10 C14): actor, action, target, timestamp, idempotency key. All publishes, production writes and destructive actions must be audited (§13.2).",
+  "x-nightwatch-object": "audit_event",
+  "x-nightwatch-version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["audit_id", "actor", "action", "target", "timestamp", "idempotency_key"],
+  "properties": {
+    "audit_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_audit"},
+    "actor": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Acting principal: user, component (e.g. C13) or agent host."
+    },
+    "action": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Action name, e.g. 'issue.publish', 'policy.decide', 'run.cancel'."
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_type", "object_id"],
+      "properties": {
+        "object_type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Target object type, e.g. session / run / finding / issue_draft / publish_receipt."
+        },
+        "object_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Target object ID (prefixed ULID for internal objects) or external reference."
+        }
+      }
+    },
+    "timestamp": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "idempotency_key": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/idempotency_key"}
+  }
+}

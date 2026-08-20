@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/checkpoint/v1.json",
+  "title": "NightWatch Session Checkpoint",
+  "description": "Checkpoint written at each session phase. Mandatory content source: §7.2 (goal + authorization boundary, confirmed APIs/environments/scenarios/executors, completed steps with output checksums, pending tasks and blocking reasons, credential variable NAMES ONLY, next allowed actions, key decisions with rationale) plus idempotency key (WorkRequest §8 recovery acceptance).",
+  "x-nightwatch-object": "checkpoint",
+  "x-nightwatch-version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "session_id",
+    "sequence",
+    "goal",
+    "authorization_boundary",
+    "confirmed",
+    "completed_steps",
+    "pending_tasks",
+    "credential_variables_used",
+    "next_allowed_actions",
+    "key_decisions",
+    "idempotency_key",
+    "created_at"
+  ],
+  "properties": {
+    "session_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_session"},
+    "sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Monotonic checkpoint sequence within the session (checkpoints are addressed by session_id + sequence)."
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Current goal and user authorization boundary snapshot."
+    },
+    "authorization_boundary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "User-authorized boundary at checkpoint time."
+    },
+    "confirmed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["apis", "environments", "scenarios", "executors"],
+      "properties": {
+        "apis": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "environments": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "scenarios": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "executors": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      },
+      "description": "Confirmed API ids, environment names, scenarios and executors."
+    },
+    "completed_steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["step", "output_checksum"],
+        "properties": {
+          "step": {"type": "string", "minLength": 1},
+          "output_checksum": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/checksum"}
+        }
+      },
+      "description": "Completed steps and their output checksums."
+    },
+    "pending_tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task", "blocking_reason"],
+        "properties": {
+          "task": {"type": "string", "minLength": 1},
+          "blocking_reason": {
+            "type": "string",
+            "description": "Blocking reason; empty string when the task is merely pending, non-empty when blocked."
+          }
+        }
+      },
+      "description": "Unfinished tasks and blocking reasons."
+    },
+    "credential_variables_used": {
+      "type": "array",
+      "items": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/credential_reference_name"},
+      "description": "Credential variable NAMES used so far. Values are never stored (§7.2, §13.1)."
+    },
+    "next_allowed_actions": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "description": "Next allowed actions from this checkpoint."
+    },
+    "key_decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["decision", "rationale"],
+        "properties": {
+          "decision": {"type": "string", "minLength": 1},
+          "rationale": {"type": "string", "minLength": 1}
+        }
+      },
+      "description": "Key decisions and their rationale."
+    },
+    "idempotency_key": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/idempotency_key"},
+    "created_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"}
+  }
+}

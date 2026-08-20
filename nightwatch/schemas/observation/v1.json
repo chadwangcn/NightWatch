@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/observation/v1.json",
+  "title": "NightWatch Observation",
+  "description": "A single anomalous observation within one run: run context + failure fact (WorkRequest §5.2, §5.8 'Execution Failure → Observation → Reproduction → Finding → Issue'). An execution failure is NOT yet a defect; classification happens later in C12.",
+  "x-nightwatch-object": "observation",
+  "x-nightwatch-version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["observation_id", "run_id", "occurred_at", "fact", "context"],
+  "properties": {
+    "observation_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_obs"},
+    "run_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_run"},
+    "execution_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_exec"},
+    "case_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_case"},
+    "occurred_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["api_id", "method", "path", "status_or_error"],
+      "properties": {
+        "api_id": {"type": "string", "minLength": 1},
+        "method": {"type": "string", "minLength": 1},
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Normalized request path."
+        },
+        "status_or_error": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Observed HTTP status or error signature, e.g. '500' or 'ETIMEDOUT'."
+        },
+        "response_signature": {
+          "type": "string",
+          "description": "Normalized response signature used in fingerprinting (§15)."
+        }
+      },
+      "description": "The failure fact as observed from outside the system."
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scenario_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_scen"},
+        "scenario_state": {
+          "type": "string",
+          "description": "Scenario state at observation time (fingerprint component, §15)."
+        },
+        "seed": {"type": "integer", "minimum": 0},
+        "repetition": {"type": "integer", "minimum": 1}
+      },
+      "description": "Run-internal context of the observation."
+    },
+    "evidence_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Reference into the sealed evidence bundle (requests/responses/timeline path)."
+    }
+  }
+}

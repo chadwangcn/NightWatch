@@ -1,0 +1,406 @@
+{
+  "x-nightwatch-object": "contract-registry",
+  "x-nightwatch-version": "1.0.0",
+  "title": "NightWatch Contract Registry",
+  "description": "Single registry of all NightWatch public contracts (WP-00). Every schema is JSON Schema draft 2020-12, carries $id/title/x-nightwatch-object/x-nightwatch-version, and lives under nightwatch/schemas/. Semantics source: NightWatch Architecture v1.4 (§5.3/§5.5/§5.7/§5.8/§5.10/§5.11/§7/§9/§10/§13.1/§14/§15/§16/§22.5) frozen by WorkRequest NW-WP-00.",
+  "schema_format": "https://json-schema.org/draft/2020-12/schema",
+  "$id_base": "https://nightwatch.local/schemas",
+  "architecture_pin": {
+    "document": "NightWatch_BlackBox_API_QA_Agent_Architecture_v1.0.md",
+    "version": "v1.4",
+    "sha256": "1381f834ad7e32ae74099472d53897e61f83a491873f0ddf9efb30f0a6622b3b"
+  },
+  "id_prefix_table": {
+    "session": {
+      "pattern": "^session_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["session.session_id", "checkpoint.session_id"],
+      "definition": "common.json#/$defs/id_session"
+    },
+    "run": {
+      "pattern": "^run_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["run.run_id", "execution_request.run_id", "execution_result.run_id", "observation.run_id", "injection_lease.run_id"],
+      "definition": "common.json#/$defs/id_run"
+    },
+    "exec": {
+      "pattern": "^exec_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["execution_request.execution_id", "execution_result.execution_id", "observation.execution_id"],
+      "definition": "common.json#/$defs/id_exec"
+    },
+    "plan": {
+      "pattern": "^plan_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["test_plan.plan_id", "run.plan_id"],
+      "definition": "common.json#/$defs/id_plan"
+    },
+    "scen": {
+      "pattern": "^scen_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["scenario.scenario_id", "run.scenario_id", "observation.context.scenario_id"],
+      "definition": "common.json#/$defs/id_scen"
+    },
+    "case": {
+      "pattern": "^case_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["test_case.case_id", "execution_result.case_results[].case_id", "test_plan.coverage_matrix[].case_ids"],
+      "definition": "common.json#/$defs/id_case"
+    },
+    "obs": {
+      "pattern": "^obs_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["observation.observation_id", "finding.observation_ids"],
+      "definition": "common.json#/$defs/id_obs"
+    },
+    "find": {
+      "pattern": "^find_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["finding.finding_id", "issue_draft.finding_id"],
+      "definition": "common.json#/$defs/id_find"
+    },
+    "draft": {
+      "pattern": "^draft_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["issue_draft.draft_id", "publish_receipt.draft_id"],
+      "definition": "common.json#/$defs/id_draft"
+    },
+    "issue": {
+      "pattern": "^issue_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["publish_receipt.receipt_id"],
+      "definition": "common.json#/$defs/id_issue",
+      "note": "issue-domain internal object (publish receipt); external GitHub issues are referenced by issue_ref strings, not by this prefix."
+    },
+    "audit": {
+      "pattern": "^audit_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["audit_event.audit_id"],
+      "definition": "common.json#/$defs/id_audit"
+    },
+    "lease": {
+      "pattern": "^lease_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["injection_lease.lease_id"],
+      "definition": "common.json#/$defs/id_lease"
+    },
+    "lock": {
+      "pattern": "^lock_[0-9A-HJKMNP-TV-Z]{26}$",
+      "used_by": ["lock.lock_id"],
+      "definition": "common.json#/$defs/id_lock"
+    }
+  },
+  "objects": {
+    "session": {
+      "file": "schemas/session/v1.json",
+      "$id": "https://nightwatch.local/schemas/session/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "§7.2 session state machine; blocked is recoverable from running; revisions = new object + parent reference."
+    },
+    "checkpoint": {
+      "file": "schemas/checkpoint/v1.json",
+      "$id": "https://nightwatch.local/schemas/checkpoint/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "§7.2 checkpoint content + idempotency key + per-step checksums; credential variable names only."
+    },
+    "run": {
+      "file": "schemas/run/v1.json",
+      "$id": "https://nightwatch.local/schemas/run/v1.json",
+      "version": "1.0.0",
+      "immutable": true,
+      "semantics": "§14 evidence bundle manifest; sealed bundles never edited in place."
+    },
+    "execution_request": {
+      "file": "schemas/execution_request/v1.json",
+      "$id": "https://nightwatch.local/schemas/execution_request/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "§5.7 unified executor request + §22.5.4 idempotency key and deadline."
+    },
+    "execution_result": {
+      "file": "schemas/execution_result/v1.json",
+      "$id": "https://nightwatch.local/schemas/execution_result/v1.json",
+      "version": "1.0.0",
+      "immutable": true,
+      "semantics": "§5.7 unified executor result; monotonic duration; per-case outcomes; cleanup + residual resources."
+    },
+    "test_plan": {
+      "file": "schemas/test_plan/v1.json",
+      "$id": "https://nightwatch.local/schemas/test_plan/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "§5.6 plan: objective/scope/risks/executors/environments/coverage/exit criteria."
+    },
+    "scenario": {
+      "file": "schemas/scenario/v1.json",
+      "$id": "https://nightwatch.local/schemas/scenario/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "§5.6 scenario: business or fault path across endpoints, with revision and assumptions."
+    },
+    "test_case": {
+      "file": "schemas/test_case/v1.json",
+      "$id": "https://nightwatch.local/schemas/test_case/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "§10 case model; status lifecycle draft→reviewed→validated→active→deprecated; DB-read assertions forbidden."
+    },
+    "observation": {
+      "file": "schemas/observation/v1.json",
+      "$id": "https://nightwatch.local/schemas/observation/v1.json",
+      "version": "1.0.0",
+      "immutable": true,
+      "semantics": "Single anomalous observation: run context + failure fact (§5.8)."
+    },
+    "finding": {
+      "file": "schemas/finding/v1.json",
+      "$id": "https://nightwatch.local/schemas/finding/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "§5.8/§15: classification, six-component fingerprint, reproduction history; hypothesis-only root causes."
+    },
+    "issue_draft": {
+      "file": "schemas/issue_draft/v1.json",
+      "$id": "https://nightwatch.local/schemas/issue_draft/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "§16 template as structured object."
+    },
+    "publish_receipt": {
+      "file": "schemas/publish_receipt/v1.json",
+      "$id": "https://nightwatch.local/schemas/publish_receipt/v1.json",
+      "version": "1.0.0",
+      "immutable": true,
+      "semantics": "Issue ref + idempotency key + publish time + all six §5.9 gate results."
+    },
+    "audit_event": {
+      "file": "schemas/audit_event/v1.json",
+      "$id": "https://nightwatch.local/schemas/audit_event/v1.json",
+      "version": "1.0.0",
+      "immutable": true,
+      "semantics": "JSONL audit event: actor/action/target/timestamp/idempotency_key (§5.10 C14)."
+    },
+    "lock": {
+      "file": "schemas/lock/v1.json",
+      "$id": "https://nightwatch.local/schemas/lock/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "Expiring lock; expired locks rejected, never auto-extended (§22.5.4)."
+    },
+    "policy_decision": {
+      "file": "schemas/policy_decision/v1.json",
+      "$id": "https://nightwatch.local/schemas/policy_decision/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "C04 decision approved/denied + reason + expiry (§22.5.4)."
+    },
+    "approval_record": {
+      "file": "schemas/approval_record/v1.json",
+      "$id": "https://nightwatch.local/schemas/approval_record/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "C04 human approval record with mandatory expiry."
+    },
+    "credential_reference": {
+      "file": "schemas/credential_reference/v1.json",
+      "$id": "https://nightwatch.local/schemas/credential_reference/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "Reference-only credential descriptor; NO value fields (§13.1)."
+    },
+    "injection_lease": {
+      "file": "schemas/injection_lease/v1.json",
+      "$id": "https://nightwatch.local/schemas/injection_lease/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "Run-scoped short-lived credential lease; expired leases rejected (§13.1/§22.5.4)."
+    },
+    "registry_entry": {
+      "file": "schemas/registry_entry/v1.json",
+      "$id": "https://nightwatch.local/schemas/registry_entry/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "§5.3 registry entry; last_valid preserved across invalid imports (§9.1)."
+    },
+    "import_history": {
+      "file": "schemas/import_history/v1.json",
+      "$id": "https://nightwatch.local/schemas/import_history/v1.json",
+      "version": "1.0.0",
+      "immutable": true,
+      "semantics": "§9.1 per-import record incl. failed imports."
+    },
+    "error": {
+      "file": "schemas/error/v1.json",
+      "$id": "https://nightwatch.local/schemas/error/v1.json",
+      "version": "1.0.0",
+      "immutable": false,
+      "semantics": "§5.4 unified error envelope {code, message, details, retryable, idempotent_replay}."
+    }
+  },
+  "commands": {
+    "createSession": {
+      "file": "schemas/commands/createSession/v1.json",
+      "$id": "https://nightwatch.local/schemas/commands/createSession/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "workspace_id, goal, authorization_boundary?"
+    },
+    "resumeSession": {
+      "file": "schemas/commands/resumeSession/v1.json",
+      "$id": "https://nightwatch.local/schemas/commands/resumeSession/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "session_id, from_checkpoint_sequence?"
+    },
+    "startRun": {
+      "file": "schemas/commands/startRun/v1.json",
+      "$id": "https://nightwatch.local/schemas/commands/startRun/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "session_id, environment, plan_id?, scenario_id?; command_id is the idempotency key"
+    },
+    "cancelRun": {
+      "file": "schemas/commands/cancelRun/v1.json",
+      "$id": "https://nightwatch.local/schemas/commands/cancelRun/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "run_id, reason?"
+    },
+    "retryRun": {
+      "file": "schemas/commands/retryRun/v1.json",
+      "$id": "https://nightwatch.local/schemas/commands/retryRun/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "run_id (retry creates a new run object with supersedes_run_id), reason?"
+    },
+    "publishIssue": {
+      "file": "schemas/commands/publishIssue/v1.json",
+      "$id": "https://nightwatch.local/schemas/commands/publishIssue/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "draft_id; command_id is the idempotency key"
+    },
+    "retestIssue": {
+      "file": "schemas/commands/retestIssue/v1.json",
+      "$id": "https://nightwatch.local/schemas/commands/retestIssue/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "issue_ref, session_id?"
+    }
+  },
+  "events": {
+    "sessionStateChanged": {
+      "file": "schemas/events/sessionStateChanged/v1.json",
+      "$id": "https://nightwatch.local/schemas/events/sessionStateChanged/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "from_state, to_state (constrained by §7.2 transition matrix), reason?"
+    },
+    "runStarted": {
+      "file": "schemas/events/runStarted/v1.json",
+      "$id": "https://nightwatch.local/schemas/events/runStarted/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "started_at, environment, execution_id?, scenario_id?"
+    },
+    "runStepRecorded": {
+      "file": "schemas/events/runStepRecorded/v1.json",
+      "$id": "https://nightwatch.local/schemas/events/runStepRecorded/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "step, step_index, status, output_checksum?"
+    },
+    "runCompleted": {
+      "file": "schemas/events/runCompleted/v1.json",
+      "$id": "https://nightwatch.local/schemas/events/runCompleted/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "terminal outcome, case_summary, finished_at, duration_ms, cleanup_status?"
+    },
+    "observationRecorded": {
+      "file": "schemas/events/observationRecorded/v1.json",
+      "$id": "https://nightwatch.local/schemas/events/observationRecorded/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "run_id, summary, execution_id?, case_id?"
+    },
+    "findingClassified": {
+      "file": "schemas/events/findingClassified/v1.json",
+      "$id": "https://nightwatch.local/schemas/events/findingClassified/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "classification, reproduction, fingerprint_digest?"
+    },
+    "issueDrafted": {
+      "file": "schemas/events/issueDrafted/v1.json",
+      "$id": "https://nightwatch.local/schemas/events/issueDrafted/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "finding_id, summary?"
+    },
+    "issuePublished": {
+      "file": "schemas/events/issuePublished/v1.json",
+      "$id": "https://nightwatch.local/schemas/events/issuePublished/v1.json",
+      "version": "1.0.0",
+      "payload_summary": "draft_id, issue_ref, gates_passed"
+    }
+  },
+  "state_machine": {
+    "object": "session",
+    "initial_state": "discovery",
+    "terminal_states": ["closed"],
+    "states": [
+      "discovery",
+      "library_draft",
+      "library_review",
+      "environment_ready",
+      "running",
+      "analyzing",
+      "issue_review",
+      "published",
+      "inconclusive",
+      "retest_pending",
+      "closed",
+      "blocked"
+    ],
+    "transitions": [
+      {"from": "discovery", "to": "library_draft"},
+      {"from": "library_draft", "to": "library_review"},
+      {"from": "library_review", "to": "environment_ready"},
+      {"from": "environment_ready", "to": "running"},
+      {"from": "running", "to": "analyzing"},
+      {"from": "running", "to": "blocked"},
+      {"from": "blocked", "to": "running"},
+      {"from": "analyzing", "to": "issue_review"},
+      {"from": "issue_review", "to": "published"},
+      {"from": "issue_review", "to": "inconclusive"},
+      {"from": "published", "to": "retest_pending"},
+      {"from": "inconclusive", "to": "retest_pending"},
+      {"from": "retest_pending", "to": "closed"}
+    ],
+    "notes": [
+      "Core path source: §7.2 state diagram.",
+      "inconclusive→retest_pending is included per WorkRequest §5.2 literal text ('published/inconclusive → retest_pending → closed'); the §7.2 diagram draws only published→retest_pending. Flagged for Coordinator review in DeliveryNotice.",
+      "'blocked' is a recoverable state: running→blocked→running (§7.2)."
+    ]
+  },
+  "error_registry": {
+    "file": "schemas/errors.json",
+    "envelope_schema": "schemas/error/v1.json",
+    "namespaces": ["CTL_", "REG_", "LIB_", "CMP_", "POL_", "CRED_", "EXE_", "FIX_", "EVD_", "FND_", "ISS_", "AUD_"],
+    "required_semantic_categories": [
+      "idempotency-conflict",
+      "timeout",
+      "cancellation",
+      "lock-expired",
+      "policy-denied",
+      "credential-missing",
+      "validation-failed",
+      "unauthorized"
+    ]
+  },
+  "version_compatibility_matrix": {
+    "rules": [
+      "Adding an OPTIONAL field (with a default or nullable) is a MINOR (backwards-compatible) bump.",
+      "Removing a field, changing its type, adding a required field, or NARROWING an enum is a MAJOR (breaking) bump.",
+      "Widening an enum or relaxing a constraint is MINOR.",
+      "Immutable objects (run, execution_result, observation, publish_receipt, audit_event, import_history) are NEVER mutated: a revision creates a NEW object with a parent reference (supersedes_*_id).",
+      "Any public schema change MUST bump the version and trigger recomputation of affected work packages (§22.5.1-5); silent overwrites in downstream development are forbidden."
+    ],
+    "entries": [
+      {"object": "*", "version": "1.0.0", "compatible_with": [], "notes": "Initial frozen contracts (WP-00). All objects start at v1.0.0; no prior versions exist, so no compatibility carries over."}
+    ]
+  },
+  "time_semantics": {
+    "timestamps": "UTC ISO-8601 strings, always Z-suffixed (common.json#/$defs/iso8601_utc).",
+    "durations_and_timeouts": "Millisecond integers (common.json#/$defs/duration_ms; test_case.timing.*_ms) per §5.5.",
+    "exception": "execution_request.timeout_seconds keeps its §5.7-frozen field name (seconds); recorded here explicitly as a deliberate reconciliation of WorkRequest §5.2 (field list) with §5.5 (ms rule for duration/timeout values).",
+    "clocks": "UTC wall clock for cross-system correlation; monotonic clock for duration/timeout/deadline (§22.5.4)."
+  },
+  "fixtures": {
+    "root": "fixtures/",
+    "manifest": "fixtures/index.json",
+    "requirements": "Every object ≥1 positive and ≥1 negative fixture; state machine: all legal transitions as positives + ≥3 illegal-transition negatives; error model: ≥1 positive per required semantic category; all data synthetic."
+  },
+  "verification": {
+    "entrypoint": "verify/verify.mjs",
+    "receipt": "verify/receipt.json",
+    "command": "node nightwatch/verify/verify.mjs"
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "object": "test_case",
+  "schema": "https://nightwatch.local/schemas/test_case/v1.json",
+  "positive": [
+    {
+      "case_id": "case_01J8HBK5Z8Q9W3DRT4N2M6PVXF",
+      "title": "Same idempotency key must not create duplicate orders",
+      "api_id": "synthetic-order-api",
+      "risk": "high",
+      "status": "validated",
+      "provenance": {
+        "source_revision": "synthetic-rev-8d9f2c1",
+        "generated_by": "synthetic-test-library-generator",
+        "skill_version": "timing-race-testing@1",
+        "last_validated_run": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB"
+      },
+      "type": "concurrency",
+      "preconditions": ["synthetic test account is active"],
+      "setup": {"workflow": "create-clean-synthetic-customer"},
+      "steps": [
+        {
+          "parallel": 10,
+          "barrier": "same-start",
+          "request": {
+            "method": "POST",
+            "path": "/orders",
+            "headers": {"Idempotency-Key": "{{generated_key}}"},
+            "body_ref": "datasets/synthetic-order-minimal.json"
+          }
+        }
+      ],
+      "assertions": [
+        "all responses are in [200, 201, 409]",
+        "exactly one order resource exists (verified via public GET /orders listing)",
+        "all successful responses reference the same order id"
+      ],
+      "timing": {"per_request_timeout_ms": 5000, "start_skew_max_ms": 20},
+      "repetitions": 20,
+      "cleanup": {"workflow": "delete-created-synthetic-order"},
+      "evidence": {"capture_timeline": true, "capture_request_response": "failures", "redact_profile": "default"}
+    },
+    {
+      "case_id": "case_01J8HBK5Z8Q9W3DRT4N2M6PVXQ",
+      "title": "Order API health endpoint returns 200",
+      "api_id": "synthetic-order-api",
+      "risk": "low",
+      "status": "draft",
+      "provenance": {
+        "source_revision": "synthetic-rev-8d9f2c1",
+        "generated_by": "synthetic-test-library-generator",
+        "skill_version": "schema-basics@1",
+        "last_validated_run": null
+      },
+      "type": "happy-path",
+      "preconditions": [],
+      "setup": {"workflow": "none"},
+      "steps": [
+        {"request": {"method": "GET", "path": "/healthz"}}
+      ],
+      "assertions": ["response status is 200"],
+      "timing": {"per_request_timeout_ms": 3000},
+      "repetitions": 1,
+      "cleanup": {"workflow": "none"},
+      "evidence": {"capture_timeline": false, "capture_request_response": "none", "redact_profile": "default"}
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "status uses a value outside the draft/reviewed/validated/active/deprecated lifecycle enum",
+      "instance": {
+        "case_id": "case_01J8HBK5Z8Q9W3DRT4N2M6PVXF",
+        "title": "Same idempotency key must not create duplicate orders",
+        "api_id": "synthetic-order-api",
+        "risk": "high",
+        "status": "archived",
+        "provenance": {
+          "source_revision": "synthetic-rev-8d9f2c1",
+          "generated_by": "synthetic-test-library-generator",
+          "skill_version": "timing-race-testing@1",
+          "last_validated_run": null
+        },
+        "type": "concurrency",
+        "preconditions": [],
+        "setup": {"workflow": "create-clean-synthetic-customer"},
+        "steps": [{"request": {"method": "POST", "path": "/orders"}}],
+        "assertions": ["all responses are in [200, 201, 409]"],
+        "timing": {"per_request_timeout_ms": 5000},
+        "repetitions": 20,
+        "cleanup": {"workflow": "delete-created-synthetic-order"},
+        "evidence": {"capture_timeline": true, "capture_request_response": "failures", "redact_profile": "default"}
+      }
+    },
+    {
+      "violated_rule": "risk uses a value outside the low/medium/high enum",
+      "instance": {
+        "case_id": "case_01J8HBK5Z8Q9W3DRT4N2M6PVXF",
+        "title": "Same idempotency key must not create duplicate orders",
+        "api_id": "synthetic-order-api",
+        "risk": "critical",
+        "status": "draft",
+        "provenance": {
+          "source_revision": "synthetic-rev-8d9f2c1",
+          "generated_by": "synthetic-test-library-generator",
+          "skill_version": "timing-race-testing@1",
+          "last_validated_run": null
+        },
+        "type": "concurrency",
+        "preconditions": [],
+        "setup": {"workflow": "create-clean-synthetic-customer"},
+        "steps": [{"request": {"method": "POST", "path": "/orders"}}],
+        "assertions": ["all responses are in [200, 201, 409]"],
+        "timing": {"per_request_timeout_ms": 5000},
+        "repetitions": 20,
+        "cleanup": {"workflow": "delete-created-synthetic-order"},
+        "evidence": {"capture_timeline": true, "capture_request_response": "failures", "redact_profile": "default"}
+      }
+    },
+    {
+      "violated_rule": "steps must contain at least one step with a request",
+      "instance": {
+        "case_id": "case_01J8HBK5Z8Q9W3DRT4N2M6PVXF",
+        "title": "Same idempotency key must not create duplicate orders",
+        "api_id": "synthetic-order-api",
+        "risk": "high",
+        "status": "draft",
+        "provenance": {
+          "source_revision": "synthetic-rev-8d9f2c1",
+          "generated_by": "synthetic-test-library-generator",
+          "skill_version": "timing-race-testing@1",
+          "last_validated_run": null
+        },
+        "type": "concurrency",
+        "preconditions": [],
+        "setup": {"workflow": "create-clean-synthetic-customer"},
+        "steps": [],
+        "assertions": ["all responses are in [200, 201, 409]"],
+        "timing": {"per_request_timeout_ms": 5000},
+        "repetitions": 20,
+        "cleanup": {"workflow": "delete-created-synthetic-order"},
+        "evidence": {"capture_timeline": true, "capture_request_response": "failures", "redact_profile": "default"}
+      }
+    }
+  ]
+}

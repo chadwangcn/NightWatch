@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/commands/createSession/v1.json",
+  "title": "Command: createSession",
+  "description": "C02→C03 command creating a new QA session. Every command carries command_id (idempotency key), issued_at, deadline and payload (WorkRequest §5.3; §22.5.4).",
+  "x-nightwatch-object": "command_createSession",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-command": "createSession",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["command_id", "issued_at", "deadline", "payload"],
+  "properties": {
+    "command_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/idempotency_key"},
+    "issued_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "deadline": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workspace_id", "goal"],
+      "properties": {
+        "workspace_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "goal": {"type": "string", "minLength": 1},
+        "authorization_boundary": {"type": "string"}
+      }
+    }
+  }
+}

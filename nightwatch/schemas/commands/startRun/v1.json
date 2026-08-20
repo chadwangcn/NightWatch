@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/commands/startRun/v1.json",
+  "title": "Command: startRun",
+  "description": "C02→C03 command starting a run. The command_id IS the idempotency key for the start operation (WorkRequest §5.3 'startRun(含幂等键)'); a replayed command_id with a different payload yields CTL_IDEMPOTENCY_CONFLICT.",
+  "x-nightwatch-object": "command_startRun",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-command": "startRun",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["command_id", "issued_at", "deadline", "payload"],
+  "properties": {
+    "command_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/idempotency_key"},
+    "issued_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "deadline": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["session_id", "environment"],
+      "properties": {
+        "session_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_session"},
+        "plan_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_plan"},
+        "scenario_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_scen"},
+        "environment": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

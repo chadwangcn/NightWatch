@@ -1,0 +1,41 @@
+{
+  "object": "command_resumeSession",
+  "schema": "https://nightwatch.local/schemas/commands/resumeSession/v1.json",
+  "positive": [
+    {
+      "command_id": "synthetic-cmd-resume-001",
+      "issued_at": "2026-08-20T04:10:00Z",
+      "deadline": "2026-08-20T04:15:00Z",
+      "payload": {
+        "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "from_checkpoint_sequence": 5
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "session_id violates the session_<ULID> ID rule",
+      "instance": {
+        "command_id": "synthetic-cmd-resume-001",
+        "issued_at": "2026-08-20T04:10:00Z",
+        "deadline": "2026-08-20T04:15:00Z",
+        "payload": {
+          "session_id": "session_bad-id",
+          "from_checkpoint_sequence": 5
+        }
+      }
+    },
+    {
+      "violated_rule": "from_checkpoint_sequence must be >= 1",
+      "instance": {
+        "command_id": "synthetic-cmd-resume-001",
+        "issued_at": "2026-08-20T04:10:00Z",
+        "deadline": "2026-08-20T04:15:00Z",
+        "payload": {
+          "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+          "from_checkpoint_sequence": 0
+        }
+      }
+    }
+  ]
+}

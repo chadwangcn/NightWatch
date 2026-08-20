@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/execution_request/v1.json",
+  "title": "NightWatch Execution Request",
+  "description": "Unified executor request (C02/C03 → C09). Field list source: §5.7 unified request, verbatim field names (execution_id, run_id, executor, executor_version, scenario_ref, environment, timeout_seconds, repetitions, seed, credential_env_allowlist, artifact_policy). Idempotency key and deadline are mandatory per §22.5.4 ('Command、Execution、Issue Publish 都必须带幂等键和明确 Deadline').",
+  "x-nightwatch-object": "execution_request",
+  "x-nightwatch-version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "execution_id",
+    "run_id",
+    "executor",
+    "executor_version",
+    "scenario_ref",
+    "environment",
+    "timeout_seconds",
+    "repetitions",
+    "seed",
+    "credential_env_allowlist",
+    "artifact_policy",
+    "idempotency_key",
+    "deadline"
+  ],
+  "properties": {
+    "execution_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_exec"},
+    "run_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_run"},
+    "executor": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/executor_name"},
+    "executor_version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Pinned executor version."
+    },
+    "scenario_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Reference to the compiled scenario asset (path or identifier)."
+    },
+    "environment": {"type": "string", "minLength": 1},
+    "timeout_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Execution timeout budget in seconds (field name frozen by §5.7)."
+    },
+    "repetitions": {"type": "integer", "minimum": 1},
+    "seed": {"type": "integer", "minimum": 0},
+    "credential_env_allowlist": {
+      "type": "array",
+      "items": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/credential_reference_name"},
+      "description": "Whitelist of credential variable NAMES injected into the worker subprocess. Children never inherit full process.env (§13.1.1)."
+    },
+    "artifact_policy": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Artifact capture policy, e.g. 'full-on-failure' (value vocabulary owned by executors; not frozen as an enum in v1)."
+    },
+    "idempotency_key": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/idempotency_key"},
+    "deadline": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"}
+  }
+}

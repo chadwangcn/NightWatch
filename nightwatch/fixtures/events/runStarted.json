@@ -1,0 +1,49 @@
+{
+  "object": "event_runStarted",
+  "schema": "https://nightwatch.local/schemas/events/runStarted/v1.json",
+  "positive": [
+    {
+      "event_id": "synthetic-evt-run-001",
+      "object_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+      "object_type": "run",
+      "occurred_at": "2026-08-20T03:30:00Z",
+      "sequence": 1,
+      "payload": {
+        "started_at": "2026-08-20T03:30:00Z",
+        "environment": "synthetic-staging",
+        "execution_id": "exec_01J8HBK5Z8Q9W3DRT4N2M6PVXC",
+        "scenario_id": "scen_01J8HBK5Z8Q9W3DRT4N2M6PVXE"
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "object_type must be 'run' for runStarted events",
+      "instance": {
+        "event_id": "synthetic-evt-run-e001",
+        "object_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "object_type": "session",
+        "occurred_at": "2026-08-20T03:30:00Z",
+        "sequence": 1,
+        "payload": {
+          "started_at": "2026-08-20T03:30:00Z",
+          "environment": "synthetic-staging"
+        }
+      }
+    },
+    {
+      "violated_rule": "object_id violates the run_<ULID> ID rule",
+      "instance": {
+        "event_id": "synthetic-evt-run-e002",
+        "object_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "object_type": "run",
+        "occurred_at": "2026-08-20T03:30:00Z",
+        "sequence": 1,
+        "payload": {
+          "started_at": "2026-08-20T03:30:00Z",
+          "environment": "synthetic-staging"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/lock/v1.json",
+  "title": "NightWatch Lock",
+  "description": "Explicit lock with expiry over a shared resource (§7.3, §22.5.4). RUNTIME SEMANTIC (not schema-expressible): an expired lock is REJECTED by default, never auto-extended (§22.5.4).",
+  "x-nightwatch-object": "lock",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-runtime-semantics": "Expired locks are rejected, not auto-extended.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lock_id", "resource", "owner", "acquired_at", "expires_at"],
+  "properties": {
+    "lock_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_lock"},
+    "resource": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Namespaced shared-resource identifier, e.g. 'shared-account:synthetic-test-account-01'."
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Lock holder identity (session/run/component)."
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "acquired_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "expires_at": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"}],
+      "description": "Expiry instant; after this the lock is rejected by default."
+    }
+  }
+}

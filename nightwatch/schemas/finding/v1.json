@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/finding/v1.json",
+  "title": "NightWatch Finding",
+  "description": "Cross-run problem entity after reproduction and review (§5.8, §15). Fingerprint composition source: §15 (api_id + normalized_method_path + assertion_class + normalized_status_or_error + response_signature + scenario_state). Internal root-cause statements may ONLY live in the 'hypothesis' field, which defaults to empty (§14.1).",
+  "x-nightwatch-object": "finding",
+  "x-nightwatch-version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "finding_id",
+    "fingerprint",
+    "classification",
+    "reproduction",
+    "hypothesis",
+    "first_observed_at",
+    "last_observed_at"
+  ],
+  "properties": {
+    "finding_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_find"},
+    "fingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "api_id",
+        "normalized_method_path",
+        "assertion_class",
+        "normalized_status_or_error",
+        "response_signature",
+        "scenario_state"
+      ],
+      "properties": {
+        "api_id": {"type": "string", "minLength": 1},
+        "normalized_method_path": {"type": "string", "minLength": 1},
+        "assertion_class": {"type": "string", "minLength": 1},
+        "normalized_status_or_error": {"type": "string", "minLength": 1},
+        "response_signature": {"type": "string", "minLength": 1},
+        "scenario_state": {"type": "string", "minLength": 1}
+      },
+      "description": "Dedup fingerprint, all six components mandatory (§15)."
+    },
+    "classification": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/finding_classification"}],
+      "description": "confirmed / flaky / environmental / spec-ambiguity / inconclusive / duplicate (§5.8)."
+    },
+    "reproduction": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/reproducibility"}],
+      "description": "Reproduction history: attempts, failures, rate (aggregated across runs by fingerprint)."
+    },
+    "hypothesis": {
+      "type": "string",
+      "default": "",
+      "description": "MAY contain suspected internal causes, explicitly marked as hypothesis and separated from confirmed external symptoms. Defaults to empty."
+    },
+    "observation_ids": {
+      "type": "array",
+      "items": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_obs"},
+      "description": "Observations aggregated into this finding."
+    },
+    "issue_refs": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "description": "External issue references linked to this finding (existing issues get new reproduction info appended, §15)."
+    },
+    "first_observed_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "last_observed_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"}
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/test_plan/v1.json",
+  "title": "NightWatch Test Plan",
+  "description": "Reusable risk and coverage design (§5.6): test objective, scope, risks, executors, environments, coverage matrix, exit criteria. Executor-neutral model; Newman assets are compiled downstream (C07).",
+  "x-nightwatch-object": "test_plan",
+  "x-nightwatch-version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["plan_id", "objective", "scope", "executors", "environments", "exit_criteria"],
+  "properties": {
+    "plan_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_plan"},
+    "objective": {"type": "string", "minLength": 1},
+    "scope": {"type": "string", "minLength": 1},
+    "risks": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "api_ids": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "executors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/executor_name"}
+    },
+    "environments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "coverage_matrix": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["api_id", "case_ids"],
+        "properties": {
+          "api_id": {"type": "string", "minLength": 1},
+          "case_ids": {
+            "type": "array",
+            "items": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_case"}
+          }
+        }
+      },
+      "description": "Coverage matrix rows mapping APIs to covering cases."
+    },
+    "exit_criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

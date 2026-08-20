@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/events/runCompleted/v1.json",
+  "title": "Event: runCompleted",
+  "description": "Terminal notification that a run finished with a final outcome (completed/failed/cancelled/timed_out) and its case summary (WorkRequest §5.3 'runCompleted(终态)').",
+  "x-nightwatch-object": "event_runCompleted",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-event": "runCompleted",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "object_id", "object_type", "occurred_at", "sequence", "payload"],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "object_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_run"},
+    "object_type": {"const": "run"},
+    "occurred_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "case_summary", "finished_at", "duration_ms"],
+      "properties": {
+        "outcome": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/run_outcome"},
+        "case_summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["total", "passed", "failed", "error", "skipped"],
+          "properties": {
+            "total": {"type": "integer", "minimum": 0},
+            "passed": {"type": "integer", "minimum": 0},
+            "failed": {"type": "integer", "minimum": 0},
+            "error": {"type": "integer", "minimum": 0},
+            "skipped": {"type": "integer", "minimum": 0}
+          }
+        },
+        "finished_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+        "duration_ms": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/duration_ms"},
+        "cleanup_status": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/cleanup_status"}
+      }
+    }
+  }
+}

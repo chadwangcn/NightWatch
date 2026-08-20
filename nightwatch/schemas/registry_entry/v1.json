@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/registry_entry/v1.json",
+  "title": "NightWatch API Registry Entry",
+  "description": "API Registry entry (§5.3): API identity/owner/purpose, source with revision + checksum, normalized environments with credential REFERENCE NAMES. The 'last_valid' block expresses the 'bad spec does not overwrite the last valid version' semantic (§9.1-4): a failed import is recorded in 'latest_import' with status=invalid while 'last_valid' keeps pointing at the last valid revision. The registry is a local index only; D0 remains the authoritative contract source.",
+  "x-nightwatch-object": "registry_entry",
+  "x-nightwatch-version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["api_id", "display_name", "source", "last_valid", "environments"],
+  "properties": {
+    "api_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "API identity, e.g. 'payment-api' (§5.3 example)."
+    },
+    "display_name": {"type": "string", "minLength": 1},
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "description": "API owner identity."
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1,
+      "description": "API purpose description."
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "location", "revision", "checksum"],
+      "properties": {
+        "type": {"enum": ["file", "git", "http", "d0"]},
+        "location": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "minLength": 1},
+        "checksum": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/checksum"}
+      },
+      "description": "Source type/location/revision/checksum (file/git/http/D0 intake, §5.10 C05)."
+    },
+    "last_valid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision", "checksum", "imported_at"],
+      "properties": {
+        "revision": {"type": "string", "minLength": 1},
+        "checksum": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/checksum"},
+        "imported_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"}
+      },
+      "description": "Last VALID imported version; never overwritten by a failed (invalid) import (§9.1)."
+    },
+    "latest_import": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision", "checksum", "imported_at", "status"],
+      "properties": {
+        "revision": {"type": "string", "minLength": 1},
+        "checksum": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/checksum"},
+        "imported_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+        "status": {"enum": ["valid", "invalid"]}
+      },
+      "description": "Most recent import attempt, possibly invalid; when invalid it coexists with an unchanged last_valid."
+    },
+    "environments": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"pattern": "^[a-z][a-z0-9-]*$"},
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["base_url_env", "auth_profile", "destructive_allowed"],
+        "properties": {
+          "base_url_env": {
+            "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/credential_reference_name"}],
+            "description": "Environment variable NAME holding the base URL (never the URL value)."
+          },
+          "auth_profile": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Auth profile name (itself a credential-reference container)."
+          },
+          "destructive_allowed": {"type": "boolean"},
+          "load_allowed": {"type": "boolean"}
+        }
+      },
+      "description": "Environment matrix with credential reference names and test-level allowances (§5.3 example)."
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "object": "publish_receipt",
+  "schema": "https://nightwatch.local/schemas/publish_receipt/v1.json",
+  "positive": [
+    {
+      "receipt_id": "issue_01J8HBK5Z8Q9W3DRT4N2M6PVXK",
+      "draft_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+      "issue_ref": "synthetic-org/synthetic-repo#42",
+      "idempotency_key": "synthetic-publish-key-042",
+      "published_at": "2026-08-20T05:00:00Z",
+      "gates": [
+        {"gate": "evidence-completeness", "passed": true},
+        {"gate": "secret-scan", "passed": true},
+        {"gate": "fingerprint-dedup", "passed": true},
+        {"gate": "minimal-reproduction", "passed": true},
+        {"gate": "environment-scope", "passed": true},
+        {"gate": "reviewer", "passed": true}
+      ]
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "a publish receipt represents a successful publish: a gate with passed=false is not expressible (all six §5.9 gates must pass)",
+      "instance": {
+        "receipt_id": "issue_01J8HBK5Z8Q9W3DRT4N2M6PVXK",
+        "draft_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+        "issue_ref": "synthetic-org/synthetic-repo#42",
+        "idempotency_key": "synthetic-publish-key-042",
+        "published_at": "2026-08-20T05:00:00Z",
+        "gates": [
+          {"gate": "evidence-completeness", "passed": true},
+          {"gate": "secret-scan", "passed": true},
+          {"gate": "fingerprint-dedup", "passed": false},
+          {"gate": "minimal-reproduction", "passed": true},
+          {"gate": "environment-scope", "passed": true},
+          {"gate": "reviewer", "passed": true}
+        ]
+      }
+    },
+    {
+      "violated_rule": "gate name uses a value outside the six §5.9 publish gates",
+      "instance": {
+        "receipt_id": "issue_01J8HBK5Z8Q9W3DRT4N2M6PVXK",
+        "draft_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+        "issue_ref": "synthetic-org/synthetic-repo#42",
+        "idempotency_key": "synthetic-publish-key-042",
+        "published_at": "2026-08-20T05:00:00Z",
+        "gates": [
+          {"gate": "evidence-completeness", "passed": true},
+          {"gate": "secret-scan", "passed": true},
+          {"gate": "fingerprint-dedup", "passed": true},
+          {"gate": "minimal-reproduction", "passed": true},
+          {"gate": "environment-scope", "passed": true},
+          {"gate": "sanity-check", "passed": true}
+        ]
+      }
+    },
+    {
+      "violated_rule": "receipt_id violates the issue_<ULID> ID rule",
+      "instance": {
+        "receipt_id": "receipt_01J8HBK5Z8Q9W3DRT4N2M6PVXK",
+        "draft_id": "draft_01J8HBK5Z8Q9W3DRT4N2M6PVXJ",
+        "issue_ref": "synthetic-org/synthetic-repo#42",
+        "idempotency_key": "synthetic-publish-key-042",
+        "published_at": "2026-08-20T05:00:00Z",
+        "gates": [
+          {"gate": "evidence-completeness", "passed": true},
+          {"gate": "secret-scan", "passed": true},
+          {"gate": "fingerprint-dedup", "passed": true},
+          {"gate": "minimal-reproduction", "passed": true},
+          {"gate": "environment-scope", "passed": true},
+          {"gate": "reviewer", "passed": true}
+        ]
+      }
+    }
+  ]
+}

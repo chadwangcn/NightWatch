@@ -1,0 +1,756 @@
+{
+  "ok": true,
+  "finished_at": "2026-08-20T06:57:00.158Z",
+  "verifier": "nightwatch/verify/verify.mjs",
+  "task_fingerprint": "nw+p0+wp00+contracts-foundation+impl+arch@v1.4+a034841",
+  "checks": {
+    "schemas_meta_valid": {
+      "total": 37,
+      "failed": 0,
+      "failures": []
+    },
+    "fixtures_positive": {
+      "total": 63,
+      "failed": 0,
+      "failures": []
+    },
+    "fixtures_negative_rejected": {
+      "total": 87,
+      "not_rejected": 0,
+      "details": [
+        {
+          "file": "objects/session.json",
+          "violated_rule": "state uses a value outside the §7.2 state enum",
+          "rejected": true,
+          "errors": [
+            "/state enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/session.json",
+          "violated_rule": "session_id violates the '<prefix>_<ULID 26 chars>' ID rule (too short)",
+          "rejected": true,
+          "errors": [
+            "/session_id pattern must match pattern \"^session_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        },
+        {
+          "file": "objects/session.json",
+          "violated_rule": "missing required field 'goal'",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'goal'"
+          ]
+        },
+        {
+          "file": "objects/session.json",
+          "violated_rule": "state=blocked without the mandatory blocked_reason",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'blocked_reason'",
+            "/ if must match \"then\" schema"
+          ]
+        },
+        {
+          "file": "objects/checkpoint.json",
+          "violated_rule": "credential_variables_used must contain reference NAMES only (uppercase env-style), value 'order_api_token' violates the reference-name pattern",
+          "rejected": true,
+          "errors": [
+            "/credential_variables_used/0 pattern must match pattern \"^[A-Z][A-Z0-9_]*$\""
+          ]
+        },
+        {
+          "file": "objects/checkpoint.json",
+          "violated_rule": "completed_steps entry missing the mandatory output_checksum (§7.2 step checksum requirement)",
+          "rejected": true,
+          "errors": [
+            "/completed_steps/0 required must have required property 'output_checksum'"
+          ]
+        },
+        {
+          "file": "objects/checkpoint.json",
+          "violated_rule": "missing required field 'idempotency_key' (WorkRequest §8 recovery acceptance)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'idempotency_key'"
+          ]
+        },
+        {
+          "file": "objects/run.json",
+          "violated_rule": "duration_ms must be a non-negative millisecond integer",
+          "rejected": true,
+          "errors": [
+            "/duration_ms minimum must be >= 0"
+          ]
+        },
+        {
+          "file": "objects/run.json",
+          "violated_rule": "case_summary missing the mandatory 'error' counter (§14 case summary)",
+          "rejected": true,
+          "errors": [
+            "/case_summary required must have required property 'error'"
+          ]
+        },
+        {
+          "file": "objects/run.json",
+          "violated_rule": "status uses a value outside the run terminal-outcome enum",
+          "rejected": true,
+          "errors": [
+            "/status enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/execution_request.json",
+          "violated_rule": "credential_env_allowlist must be an array of reference NAMES (uppercase env-style); lowercase value violates the reference-name pattern (security: allowlist never carries values)",
+          "rejected": true,
+          "errors": [
+            "/credential_env_allowlist/0 pattern must match pattern \"^[A-Z][A-Z0-9_]*$\""
+          ]
+        },
+        {
+          "file": "objects/execution_request.json",
+          "violated_rule": "missing required field 'deadline' (§22.5.4: Execution must carry a deadline)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'deadline'"
+          ]
+        },
+        {
+          "file": "objects/execution_request.json",
+          "violated_rule": "execution_id violates the exec_<ULID> ID rule (uses 'execution_' prefix)",
+          "rejected": true,
+          "errors": [
+            "/execution_id pattern must match pattern \"^exec_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        },
+        {
+          "file": "objects/execution_result.json",
+          "violated_rule": "per-case status uses a value outside the Pass/Fail/Error/Skipped enum",
+          "rejected": true,
+          "errors": [
+            "/case_results/0/status enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/execution_result.json",
+          "violated_rule": "duration_ms must be an integer (monotonic-clock milliseconds), not a string",
+          "rejected": true,
+          "errors": [
+            "/duration_ms type must be integer"
+          ]
+        },
+        {
+          "file": "objects/execution_result.json",
+          "violated_rule": "cleanup missing the mandatory residual_resources list (§5.7)",
+          "rejected": true,
+          "errors": [
+            "/cleanup required must have required property 'residual_resources'"
+          ]
+        },
+        {
+          "file": "objects/test_plan.json",
+          "violated_rule": "exit_criteria must be a non-empty array (§5.6 exit criteria are mandatory plan content)",
+          "rejected": true,
+          "errors": [
+            "/exit_criteria minItems must NOT have fewer than 1 items"
+          ]
+        },
+        {
+          "file": "objects/test_plan.json",
+          "violated_rule": "plan_id violates the plan_<ULID> ID rule (ULID part contains illegal character 'I' for Crockford Base32)",
+          "rejected": true,
+          "errors": [
+            "/plan_id pattern must match pattern \"^plan_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        },
+        {
+          "file": "objects/scenario.json",
+          "violated_rule": "endpoints must contain at least one endpoint (a scenario crosses one or more endpoints, §5.6)",
+          "rejected": true,
+          "errors": [
+            "/endpoints minItems must NOT have fewer than 1 items"
+          ]
+        },
+        {
+          "file": "objects/scenario.json",
+          "violated_rule": "assumption status uses a value outside the confirmed/unconfirmed enum",
+          "rejected": true,
+          "errors": [
+            "/assumptions/0/status enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/test_case.json",
+          "violated_rule": "status uses a value outside the draft/reviewed/validated/active/deprecated lifecycle enum",
+          "rejected": true,
+          "errors": [
+            "/status enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/test_case.json",
+          "violated_rule": "risk uses a value outside the low/medium/high enum",
+          "rejected": true,
+          "errors": [
+            "/risk enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/test_case.json",
+          "violated_rule": "steps must contain at least one step with a request",
+          "rejected": true,
+          "errors": [
+            "/steps minItems must NOT have fewer than 1 items"
+          ]
+        },
+        {
+          "file": "objects/observation.json",
+          "violated_rule": "fact missing the mandatory status_or_error (failure fact must state the observed status or error)",
+          "rejected": true,
+          "errors": [
+            "/fact required must have required property 'status_or_error'"
+          ]
+        },
+        {
+          "file": "objects/observation.json",
+          "violated_rule": "observation_id violates the obs_<ULID> ID rule",
+          "rejected": true,
+          "errors": [
+            "/observation_id pattern must match pattern \"^obs_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        },
+        {
+          "file": "objects/finding.json",
+          "violated_rule": "classification uses a value outside the §5.8 enum (confirmed/flaky/environmental/spec-ambiguity/inconclusive/duplicate)",
+          "rejected": true,
+          "errors": [
+            "/classification enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/finding.json",
+          "violated_rule": "fingerprint missing the mandatory response_signature component (§15 six-component fingerprint)",
+          "rejected": true,
+          "errors": [
+            "/fingerprint required must have required property 'response_signature'"
+          ]
+        },
+        {
+          "file": "objects/finding.json",
+          "violated_rule": "reproduction.rate must be within [0, 1]",
+          "rejected": true,
+          "errors": [
+            "/reproduction/rate maximum must be <= 1"
+          ]
+        },
+        {
+          "file": "objects/issue_draft.json",
+          "violated_rule": "reproducibility.rate must be within [0, 1] (§16 Reproducibility)",
+          "rejected": true,
+          "errors": [
+            "/reproducibility/rate maximum must be <= 1"
+          ]
+        },
+        {
+          "file": "objects/issue_draft.json",
+          "violated_rule": "missing required field 'scope_boundary' (§16 template section)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'scope_boundary'"
+          ]
+        },
+        {
+          "file": "objects/publish_receipt.json",
+          "violated_rule": "a publish receipt represents a successful publish: a gate with passed=false is not expressible (all six §5.9 gates must pass)",
+          "rejected": true,
+          "errors": [
+            "/ not must NOT be valid"
+          ]
+        },
+        {
+          "file": "objects/publish_receipt.json",
+          "violated_rule": "gate name uses a value outside the six §5.9 publish gates",
+          "rejected": true,
+          "errors": [
+            "/gates/5/gate enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/publish_receipt.json",
+          "violated_rule": "receipt_id violates the issue_<ULID> ID rule",
+          "rejected": true,
+          "errors": [
+            "/receipt_id pattern must match pattern \"^issue_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        },
+        {
+          "file": "objects/audit_event.json",
+          "violated_rule": "missing required field 'idempotency_key' (§5.10 C14: audit events carry idempotency keys)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'idempotency_key'"
+          ]
+        },
+        {
+          "file": "objects/audit_event.json",
+          "violated_rule": "target missing the mandatory object_id",
+          "rejected": true,
+          "errors": [
+            "/target required must have required property 'object_id'"
+          ]
+        },
+        {
+          "file": "objects/lock.json",
+          "violated_rule": "missing required field 'expires_at' (§22.5.4: locks must carry an expiry; expired locks are rejected, never auto-extended)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'expires_at'"
+          ]
+        },
+        {
+          "file": "objects/lock.json",
+          "violated_rule": "expires_at is not a UTC ISO-8601 Z-suffixed timestamp (time semantics §5.5)",
+          "rejected": true,
+          "errors": [
+            "/expires_at pattern must match pattern \"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$\""
+          ]
+        },
+        {
+          "file": "objects/policy_decision.json",
+          "violated_rule": "decision uses a value outside the approved/denied enum",
+          "rejected": true,
+          "errors": [
+            "/decision enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/policy_decision.json",
+          "violated_rule": "missing required field 'expires_at' (§22.5.4: policy decisions must carry an expiry)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'expires_at'"
+          ]
+        },
+        {
+          "file": "objects/approval_record.json",
+          "violated_rule": "missing required field 'expires_at' (§22.5.4: approvals must carry an expiry; expired approvals are rejected, never auto-extended)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'expires_at'"
+          ]
+        },
+        {
+          "file": "objects/approval_record.json",
+          "violated_rule": "decision uses a value outside the approved/denied enum",
+          "rejected": true,
+          "errors": [
+            "/decision enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/credential_reference.json",
+          "violated_rule": "SECURITY: credential objects must not contain value fields — additional property 'value' is rejected by additionalProperties:false (§13.1)",
+          "rejected": true,
+          "errors": [
+            "/ additionalProperties must NOT have additional properties"
+          ]
+        },
+        {
+          "file": "objects/credential_reference.json",
+          "violated_rule": "provider_type uses a value outside the process_env/ci_secret_store/keychain enum (§13.1.1)",
+          "rejected": true,
+          "errors": [
+            "/provider_type enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/credential_reference.json",
+          "violated_rule": "reference_name violates the reference-name pattern (must be an uppercase env-style name)",
+          "rejected": true,
+          "errors": [
+            "/reference_name pattern must match pattern \"^[A-Z][A-Z0-9_]*$\""
+          ]
+        },
+        {
+          "file": "objects/injection_lease.json",
+          "violated_rule": "SECURITY: injection leases must not contain value fields — additional property 'injected_value' is rejected by additionalProperties:false (§13.1)",
+          "rejected": true,
+          "errors": [
+            "/ additionalProperties must NOT have additional properties"
+          ]
+        },
+        {
+          "file": "objects/injection_lease.json",
+          "violated_rule": "missing required field 'expires_at' (§22.5.4: credential leases must carry an expiry; expired leases are rejected)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'expires_at'"
+          ]
+        },
+        {
+          "file": "objects/registry_entry.json",
+          "violated_rule": "environment entry missing the mandatory destructive_allowed flag (§5.3 environment matrix)",
+          "rejected": true,
+          "errors": [
+            "/environments/test required must have required property 'destructive_allowed'"
+          ]
+        },
+        {
+          "file": "objects/registry_entry.json",
+          "violated_rule": "base_url_env must be a credential REFERENCE NAME (uppercase env-style), not a URL value (§13.1 reference-only rule)",
+          "rejected": true,
+          "errors": [
+            "/environments/test/base_url_env pattern must match pattern \"^[A-Z][A-Z0-9_]*$\""
+          ]
+        },
+        {
+          "file": "objects/registry_entry.json",
+          "violated_rule": "api_id must be kebab-case lowercase",
+          "rejected": true,
+          "errors": [
+            "/api_id pattern must match pattern \"^[a-z0-9][a-z0-9-]*$\""
+          ]
+        },
+        {
+          "file": "objects/import_history.json",
+          "violated_rule": "status uses a value outside the valid/invalid enum (a failed import is recorded as invalid, never silently dropped, §9.1-4)",
+          "rejected": true,
+          "errors": [
+            "/status enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/import_history.json",
+          "violated_rule": "missing required field 'sequence' (import history is addressed by api_id + sequence)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'sequence'"
+          ]
+        },
+        {
+          "file": "objects/error.json",
+          "violated_rule": "code uses a value outside the registered error-code enum (registry: nightwatch/schemas/errors.json)",
+          "rejected": true,
+          "errors": [
+            "/code enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "objects/error.json",
+          "violated_rule": "missing required field 'retryable' (§5.4 error envelope)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'retryable'"
+          ]
+        },
+        {
+          "file": "objects/error.json",
+          "violated_rule": "missing required field 'idempotent_replay' (§5.4 error envelope)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'idempotent_replay'"
+          ]
+        },
+        {
+          "file": "commands/createSession.json",
+          "violated_rule": "missing required field 'command_id' (command_id is the idempotency key, WorkRequest §5.3)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'command_id'"
+          ]
+        },
+        {
+          "file": "commands/createSession.json",
+          "violated_rule": "missing required field 'deadline' (§22.5.4: commands must carry a deadline)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'deadline'"
+          ]
+        },
+        {
+          "file": "commands/resumeSession.json",
+          "violated_rule": "session_id violates the session_<ULID> ID rule",
+          "rejected": true,
+          "errors": [
+            "/payload/session_id pattern must match pattern \"^session_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        },
+        {
+          "file": "commands/resumeSession.json",
+          "violated_rule": "from_checkpoint_sequence must be >= 1",
+          "rejected": true,
+          "errors": [
+            "/payload/from_checkpoint_sequence minimum must be >= 1"
+          ]
+        },
+        {
+          "file": "commands/startRun.json",
+          "violated_rule": "deadline is not a UTC ISO-8601 Z-suffixed timestamp",
+          "rejected": true,
+          "errors": [
+            "/deadline pattern must match pattern \"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$\""
+          ]
+        },
+        {
+          "file": "commands/startRun.json",
+          "violated_rule": "payload missing required field 'environment'",
+          "rejected": true,
+          "errors": [
+            "/payload required must have required property 'environment'"
+          ]
+        },
+        {
+          "file": "commands/cancelRun.json",
+          "violated_rule": "payload missing required field 'run_id'",
+          "rejected": true,
+          "errors": [
+            "/payload required must have required property 'run_id'"
+          ]
+        },
+        {
+          "file": "commands/cancelRun.json",
+          "violated_rule": "run_id violates the run_<ULID> ID rule",
+          "rejected": true,
+          "errors": [
+            "/payload/run_id pattern must match pattern \"^run_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        },
+        {
+          "file": "commands/retryRun.json",
+          "violated_rule": "run_id violates the run_<ULID> ID rule (ULID part too short)",
+          "rejected": true,
+          "errors": [
+            "/payload/run_id pattern must match pattern \"^run_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        },
+        {
+          "file": "commands/retryRun.json",
+          "violated_rule": "missing required field 'issued_at'",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'issued_at'"
+          ]
+        },
+        {
+          "file": "commands/publishIssue.json",
+          "violated_rule": "missing required field 'deadline' (§22.5.4: issue publish must carry a deadline)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'deadline'"
+          ]
+        },
+        {
+          "file": "commands/publishIssue.json",
+          "violated_rule": "draft_id violates the draft_<ULID> ID rule",
+          "rejected": true,
+          "errors": [
+            "/payload/draft_id pattern must match pattern \"^draft_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        },
+        {
+          "file": "commands/retestIssue.json",
+          "violated_rule": "payload missing required field 'issue_ref'",
+          "rejected": true,
+          "errors": [
+            "/payload required must have required property 'issue_ref'"
+          ]
+        },
+        {
+          "file": "commands/retestIssue.json",
+          "violated_rule": "session_id violates the session_<ULID> ID rule (ULID part contains illegal characters 'I'/'L' for Crockford Base32)",
+          "rejected": true,
+          "errors": [
+            "/payload/session_id pattern must match pattern \"^session_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        },
+        {
+          "file": "events/sessionStateChanged.json",
+          "violated_rule": "ILLEGAL TRANSITION: discovery→running skips library_draft/library_review/environment_ready (not in the §7.2 transition matrix)",
+          "rejected": true,
+          "errors": [
+            "/payload/to_state enum must be equal to one of the allowed values",
+            "/payload if must match \"then\" schema"
+          ]
+        },
+        {
+          "file": "events/sessionStateChanged.json",
+          "violated_rule": "ILLEGAL TRANSITION: closed is a terminal state with no outgoing transitions",
+          "rejected": true,
+          "errors": [
+            "/payload false schema boolean schema is false",
+            "/payload if must match \"then\" schema"
+          ]
+        },
+        {
+          "file": "events/sessionStateChanged.json",
+          "violated_rule": "ILLEGAL TRANSITION: blocked may only return to running (blocked→analyzing is not in the §7.2 matrix)",
+          "rejected": true,
+          "errors": [
+            "/payload/to_state enum must be equal to one of the allowed values",
+            "/payload if must match \"then\" schema"
+          ]
+        },
+        {
+          "file": "events/sessionStateChanged.json",
+          "violated_rule": "ILLEGAL TRANSITION: issue_review cannot go back to running (backward transitions are not expressible)",
+          "rejected": true,
+          "errors": [
+            "/payload/to_state enum must be equal to one of the allowed values",
+            "/payload if must match \"then\" schema"
+          ]
+        },
+        {
+          "file": "events/sessionStateChanged.json",
+          "violated_rule": "ILLEGAL TRANSITION: running cannot jump directly to issue_review (must pass through analyzing)",
+          "rejected": true,
+          "errors": [
+            "/payload/to_state enum must be equal to one of the allowed values",
+            "/payload if must match \"then\" schema"
+          ]
+        },
+        {
+          "file": "events/runStarted.json",
+          "violated_rule": "object_type must be 'run' for runStarted events",
+          "rejected": true,
+          "errors": [
+            "/object_type const must be equal to constant"
+          ]
+        },
+        {
+          "file": "events/runStarted.json",
+          "violated_rule": "object_id violates the run_<ULID> ID rule",
+          "rejected": true,
+          "errors": [
+            "/object_id pattern must match pattern \"^run_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        },
+        {
+          "file": "events/runStepRecorded.json",
+          "violated_rule": "step status uses a value outside the passed/failed/error/skipped enum",
+          "rejected": true,
+          "errors": [
+            "/payload/status enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "events/runStepRecorded.json",
+          "violated_rule": "missing required field 'sequence' (events carry a per-object monotonic sequence)",
+          "rejected": true,
+          "errors": [
+            "/ required must have required property 'sequence'"
+          ]
+        },
+        {
+          "file": "events/runCompleted.json",
+          "violated_rule": "terminal outcome uses a value outside the completed/failed/cancelled/timed_out enum",
+          "rejected": true,
+          "errors": [
+            "/payload/outcome enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "events/runCompleted.json",
+          "violated_rule": "case_summary missing the mandatory 'skipped' counter",
+          "rejected": true,
+          "errors": [
+            "/payload/case_summary required must have required property 'skipped'"
+          ]
+        },
+        {
+          "file": "events/observationRecorded.json",
+          "violated_rule": "object_id violates the obs_<ULID> ID rule (a run id used as observation object_id)",
+          "rejected": true,
+          "errors": [
+            "/object_id pattern must match pattern \"^obs_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        },
+        {
+          "file": "events/observationRecorded.json",
+          "violated_rule": "payload missing required field 'summary'",
+          "rejected": true,
+          "errors": [
+            "/payload required must have required property 'summary'"
+          ]
+        },
+        {
+          "file": "events/findingClassified.json",
+          "violated_rule": "classification uses a value outside the §5.8 enum",
+          "rejected": true,
+          "errors": [
+            "/payload/classification enum must be equal to one of the allowed values"
+          ]
+        },
+        {
+          "file": "events/findingClassified.json",
+          "violated_rule": "reproduction missing the mandatory 'rate' field",
+          "rejected": true,
+          "errors": [
+            "/payload/reproduction required must have required property 'rate'"
+          ]
+        },
+        {
+          "file": "events/issueDrafted.json",
+          "violated_rule": "payload missing required field 'finding_id' (drafts originate from findings)",
+          "rejected": true,
+          "errors": [
+            "/payload required must have required property 'finding_id'"
+          ]
+        },
+        {
+          "file": "events/issueDrafted.json",
+          "violated_rule": "object_type must be 'issue_draft' for issueDrafted events",
+          "rejected": true,
+          "errors": [
+            "/object_type const must be equal to constant"
+          ]
+        },
+        {
+          "file": "events/issuePublished.json",
+          "violated_rule": "payload missing required field 'gates_passed' (publish events must state whether all gates passed)",
+          "rejected": true,
+          "errors": [
+            "/payload required must have required property 'gates_passed'"
+          ]
+        },
+        {
+          "file": "events/issuePublished.json",
+          "violated_rule": "object_id violates the issue_<ULID> ID rule (must reference a publish receipt)",
+          "rejected": true,
+          "errors": [
+            "/object_id pattern must match pattern \"^issue_[0-9A-HJKMNP-TV-Z]{26}$\""
+          ]
+        }
+      ]
+    },
+    "state_machine_consistency": {
+      "ok": true,
+      "legal_transitions": 13,
+      "legal_transition_fixtures": 13,
+      "illegal_transition_negatives": 5,
+      "failures": []
+    },
+    "error_registry_consistency": {
+      "ok": true,
+      "registered_codes": 36,
+      "namespaces": 12,
+      "required_categories": 8,
+      "failures": []
+    },
+    "id_prefix_coverage": {
+      "missing": []
+    },
+    "secret_scan": {
+      "hits": 0,
+      "scanned_files": 76,
+      "scanned_dirs": [
+        "nightwatch/fixtures",
+        "nightwatch/schemas"
+      ],
+      "findings": []
+    }
+  },
+  "artifacts": [
+    "nightwatch/schemas/index.json",
+    "nightwatch/verify/receipt.json"
+  ]
+}

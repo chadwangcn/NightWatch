@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/commands/publishIssue/v1.json",
+  "title": "Command: publishIssue",
+  "description": "C02→C03 command publishing an issue draft through C13. The command_id IS the idempotency key for the publish operation (WorkRequest §5.3 'publishIssue(含幂等键)'). Publish may only occur after evidence seal, finding review and reviewer approval (§22.5.4).",
+  "x-nightwatch-object": "command_publishIssue",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-command": "publishIssue",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["command_id", "issued_at", "deadline", "payload"],
+  "properties": {
+    "command_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/idempotency_key"},
+    "issued_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "deadline": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["draft_id"],
+      "properties": {
+        "draft_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_draft"}
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "object": "command_startRun",
+  "schema": "https://nightwatch.local/schemas/commands/startRun/v1.json",
+  "positive": [
+    {
+      "command_id": "synthetic-cmd-run-001",
+      "issued_at": "2026-08-20T03:28:30Z",
+      "deadline": "2026-08-20T03:30:00Z",
+      "payload": {
+        "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "plan_id": "plan_01J8HBK5Z8Q9W3DRT4N2M6PVXD",
+        "scenario_id": "scen_01J8HBK5Z8Q9W3DRT4N2M6PVXE",
+        "environment": "synthetic-staging"
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "deadline is not a UTC ISO-8601 Z-suffixed timestamp",
+      "instance": {
+        "command_id": "synthetic-cmd-run-001",
+        "issued_at": "2026-08-20T03:28:30Z",
+        "deadline": "2026-08-20 03:30:00",
+        "payload": {
+          "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+          "environment": "synthetic-staging"
+        }
+      }
+    },
+    {
+      "violated_rule": "payload missing required field 'environment'",
+      "instance": {
+        "command_id": "synthetic-cmd-run-001",
+        "issued_at": "2026-08-20T03:28:30Z",
+        "deadline": "2026-08-20T03:30:00Z",
+        "payload": {
+          "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA"
+        }
+      }
+    }
+  ]
+}

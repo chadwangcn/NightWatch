@@ -1,0 +1,78 @@
+{
+  "object": "session",
+  "schema": "https://nightwatch.local/schemas/session/v1.json",
+  "positive": [
+    {
+      "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "workspace_id": "synthetic-workspace-01",
+      "goal": "Synthetic goal: verify order idempotency API behavior on synthetic staging",
+      "state": "running",
+      "authorization_boundary": "synthetic staging environment only; no production writes; max 500 requests",
+      "environment": "synthetic-staging",
+      "created_at": "2026-08-20T02:00:00Z",
+      "updated_at": "2026-08-20T03:30:00Z"
+    },
+    {
+      "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+      "workspace_id": "synthetic-workspace-01",
+      "goal": "Synthetic goal: verify order idempotency API behavior on synthetic staging",
+      "state": "blocked",
+      "blocked_reason": "Waiting for synthetic credential SYNTHETIC_ORDER_API_TOKEN to be configured",
+      "created_at": "2026-08-20T02:00:00Z",
+      "updated_at": "2026-08-20T04:00:00Z"
+    },
+    {
+      "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXS",
+      "workspace_id": "synthetic-workspace-01",
+      "goal": "Synthetic goal: closed retest session",
+      "state": "closed",
+      "created_at": "2026-08-20T02:00:00Z",
+      "updated_at": "2026-08-20T06:00:00Z"
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "state uses a value outside the §7.2 state enum",
+      "instance": {
+        "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "workspace_id": "synthetic-workspace-01",
+        "goal": "Synthetic goal",
+        "state": "archived",
+        "created_at": "2026-08-20T02:00:00Z",
+        "updated_at": "2026-08-20T03:30:00Z"
+      }
+    },
+    {
+      "violated_rule": "session_id violates the '<prefix>_<ULID 26 chars>' ID rule (too short)",
+      "instance": {
+        "session_id": "session_shortid",
+        "workspace_id": "synthetic-workspace-01",
+        "goal": "Synthetic goal",
+        "state": "discovery",
+        "created_at": "2026-08-20T02:00:00Z",
+        "updated_at": "2026-08-20T03:30:00Z"
+      }
+    },
+    {
+      "violated_rule": "missing required field 'goal'",
+      "instance": {
+        "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "workspace_id": "synthetic-workspace-01",
+        "state": "discovery",
+        "created_at": "2026-08-20T02:00:00Z",
+        "updated_at": "2026-08-20T03:30:00Z"
+      }
+    },
+    {
+      "violated_rule": "state=blocked without the mandatory blocked_reason",
+      "instance": {
+        "session_id": "session_01J8HBK5Z8Q9W3DRT4N2M6PVXA",
+        "workspace_id": "synthetic-workspace-01",
+        "goal": "Synthetic goal",
+        "state": "blocked",
+        "created_at": "2026-08-20T02:00:00Z",
+        "updated_at": "2026-08-20T04:00:00Z"
+      }
+    }
+  ]
+}

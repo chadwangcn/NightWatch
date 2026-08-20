@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/test_case/v1.json",
+  "title": "NightWatch Test Case",
+  "description": "Executor-neutral test case model (§10). Mandatory fields (WorkRequest §5.2): case_id, title, api_id, risk, status (draft/reviewed/validated/active/deprecated), provenance (source_revision, generated_by, skill_version, last_validated_run), type, preconditions, setup, steps, assertions, timing, repetitions, cleanup, evidence. Timing values are millisecond integers (§5.5). CONTENT CONSTRAINT (not schema-expressible, enforced at review time): a case must NOT require reading the database as a mandatory assertion; verify external results via public query APIs, idempotent responses or resource listings (§10).",
+  "x-nightwatch-object": "test_case",
+  "x-nightwatch-version": "1.0.0",
+  "x-nightwatch-content-constraints": [
+    "Mandatory assertions must be verifiable through black-box means (public query API, idempotent response, resource listing); direct database reads are forbidden (§10)."
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_id",
+    "title",
+    "api_id",
+    "risk",
+    "status",
+    "provenance",
+    "type",
+    "preconditions",
+    "setup",
+    "steps",
+    "assertions",
+    "timing",
+    "repetitions",
+    "cleanup",
+    "evidence"
+  ],
+  "properties": {
+    "case_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_case"},
+    "title": {"type": "string", "minLength": 1},
+    "api_id": {"type": "string", "minLength": 1},
+    "risk": {
+      "enum": ["low", "medium", "high"],
+      "description": "Risk level of the behavior under test."
+    },
+    "status": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/case_status"},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_revision", "generated_by", "skill_version", "last_validated_run"],
+      "properties": {
+        "source_revision": {"type": "string", "minLength": 1},
+        "generated_by": {"type": "string", "minLength": 1},
+        "skill_version": {"type": "string", "minLength": 1},
+        "last_validated_run": {
+          "anyOf": [
+            {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_run"},
+            {"type": "null"}
+          ],
+          "description": "Most recent run that validated this case; null while status=draft."
+        }
+      }
+    },
+    "type": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Test type, e.g. 'concurrency' (§10). Vocabulary owned by the library layer; not frozen as an enum in v1."
+    },
+    "preconditions": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "setup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workflow"],
+      "properties": {
+        "workflow": {"type": "string", "minLength": 1}
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["request"],
+        "properties": {
+          "parallel": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of parallel invocations for concurrency cases."
+          },
+          "barrier": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Barrier name: concurrent steps sharing a barrier start together (§7.3)."
+          },
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["method", "path"],
+            "properties": {
+              "method": {"type": "string", "minLength": 1},
+              "path": {"type": "string", "minLength": 1},
+              "headers": {
+                "type": "object",
+                "additionalProperties": {"type": "string"}
+              },
+              "body_ref": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Reference to a dataset file (never an inline secret)."
+              }
+            }
+          }
+        }
+      }
+    },
+    "assertions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["per_request_timeout_ms"],
+      "properties": {
+        "per_request_timeout_ms": {"type": "integer", "minimum": 1},
+        "start_skew_max_ms": {"type": "integer", "minimum": 0}
+      }
+    },
+    "repetitions": {"type": "integer", "minimum": 1},
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workflow"],
+      "properties": {
+        "workflow": {"type": "string", "minLength": 1}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capture_timeline", "capture_request_response", "redact_profile"],
+      "properties": {
+        "capture_timeline": {"type": "boolean"},
+        "capture_request_response": {"enum": ["all", "failures", "none"]},
+        "redact_profile": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "object": "command_retryRun",
+  "schema": "https://nightwatch.local/schemas/commands/retryRun/v1.json",
+  "positive": [
+    {
+      "command_id": "synthetic-cmd-retry-001",
+      "issued_at": "2026-08-20T03:36:00Z",
+      "deadline": "2026-08-20T03:40:00Z",
+      "payload": {
+        "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB",
+        "reason": "retry after flaky failure"
+      }
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "run_id violates the run_<ULID> ID rule (ULID part too short)",
+      "instance": {
+        "command_id": "synthetic-cmd-retry-001",
+        "issued_at": "2026-08-20T03:36:00Z",
+        "deadline": "2026-08-20T03:40:00Z",
+        "payload": {
+          "run_id": "run_not_a_ulid",
+          "reason": "retry with malformed run id"
+        }
+      }
+    },
+    {
+      "violated_rule": "missing required field 'issued_at'",
+      "instance": {
+        "command_id": "synthetic-cmd-retry-001",
+        "deadline": "2026-08-20T03:40:00Z",
+        "payload": {
+          "run_id": "run_01J8HBK5Z8Q9W3DRT4N2M6PVXB"
+        }
+      }
+    }
+  ]
+}

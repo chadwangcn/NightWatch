@@ -1,0 +1,100 @@
+{
+  "object": "finding",
+  "schema": "https://nightwatch.local/schemas/finding/v1.json",
+  "positive": [
+    {
+      "finding_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXH",
+      "fingerprint": {
+        "api_id": "synthetic-order-api",
+        "normalized_method_path": "POST /orders",
+        "assertion_class": "status-code",
+        "normalized_status_or_error": "500",
+        "response_signature": "synthetic-sig-500-null-body",
+        "scenario_state": "concurrent-submit-barrier-1"
+      },
+      "classification": "flaky",
+      "reproduction": {"attempts": 20, "failures": 7, "rate": 0.35},
+      "hypothesis": "",
+      "observation_ids": ["obs_01J8HBK5Z8Q9W3DRT4N2M6PVXG"],
+      "issue_refs": [],
+      "first_observed_at": "2026-08-20T03:31:12Z",
+      "last_observed_at": "2026-08-20T03:34:50Z"
+    },
+    {
+      "finding_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXR",
+      "fingerprint": {
+        "api_id": "synthetic-order-api",
+        "normalized_method_path": "GET /orders",
+        "assertion_class": "response-schema",
+        "normalized_status_or_error": "200",
+        "response_signature": "synthetic-sig-200-missing-field",
+        "scenario_state": "listing-after-create"
+      },
+      "classification": "confirmed",
+      "reproduction": {"attempts": 5, "failures": 5, "rate": 1.0},
+      "hypothesis": "Suspected internal cause (unverified): response serializer may drop the field under load. This is a hypothesis, not a confirmed fact.",
+      "observation_ids": [],
+      "issue_refs": ["synthetic-org/synthetic-repo#42"],
+      "first_observed_at": "2026-08-20T03:32:00Z",
+      "last_observed_at": "2026-08-20T03:34:00Z"
+    }
+  ],
+  "negative": [
+    {
+      "violated_rule": "classification uses a value outside the §5.8 enum (confirmed/flaky/environmental/spec-ambiguity/inconclusive/duplicate)",
+      "instance": {
+        "finding_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXH",
+        "fingerprint": {
+          "api_id": "synthetic-order-api",
+          "normalized_method_path": "POST /orders",
+          "assertion_class": "status-code",
+          "normalized_status_or_error": "500",
+          "response_signature": "synthetic-sig-500-null-body",
+          "scenario_state": "concurrent-submit-barrier-1"
+        },
+        "classification": "suspected",
+        "reproduction": {"attempts": 20, "failures": 7, "rate": 0.35},
+        "hypothesis": "",
+        "first_observed_at": "2026-08-20T03:31:12Z",
+        "last_observed_at": "2026-08-20T03:34:50Z"
+      }
+    },
+    {
+      "violated_rule": "fingerprint missing the mandatory response_signature component (§15 six-component fingerprint)",
+      "instance": {
+        "finding_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXH",
+        "fingerprint": {
+          "api_id": "synthetic-order-api",
+          "normalized_method_path": "POST /orders",
+          "assertion_class": "status-code",
+          "normalized_status_or_error": "500",
+          "scenario_state": "concurrent-submit-barrier-1"
+        },
+        "classification": "flaky",
+        "reproduction": {"attempts": 20, "failures": 7, "rate": 0.35},
+        "hypothesis": "",
+        "first_observed_at": "2026-08-20T03:31:12Z",
+        "last_observed_at": "2026-08-20T03:34:50Z"
+      }
+    },
+    {
+      "violated_rule": "reproduction.rate must be within [0, 1]",
+      "instance": {
+        "finding_id": "find_01J8HBK5Z8Q9W3DRT4N2M6PVXH",
+        "fingerprint": {
+          "api_id": "synthetic-order-api",
+          "normalized_method_path": "POST /orders",
+          "assertion_class": "status-code",
+          "normalized_status_or_error": "500",
+          "response_signature": "synthetic-sig-500-null-body",
+          "scenario_state": "concurrent-submit-barrier-1"
+        },
+        "classification": "flaky",
+        "reproduction": {"attempts": 20, "failures": 7, "rate": 1.5},
+        "hypothesis": "",
+        "first_observed_at": "2026-08-20T03:31:12Z",
+        "last_observed_at": "2026-08-20T03:34:50Z"
+      }
+    }
+  ]
+}

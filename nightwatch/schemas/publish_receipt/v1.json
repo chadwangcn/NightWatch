@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/publish_receipt/v1.json",
+  "title": "NightWatch Issue Publish Receipt",
+  "description": "Result of an issue publish (C13): issue reference, idempotency key, publish time, gate results. Publish must happen only AFTER evidence seal, finding review and reviewer approval (§22.5.4); every §5.9 gate must be recorded as passed.",
+  "x-nightwatch-object": "publish_receipt",
+  "x-nightwatch-version": "1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["receipt_id", "draft_id", "issue_ref", "idempotency_key", "published_at", "gates"],
+  "properties": {
+    "receipt_id": {
+      "allOf": [{"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_issue"}],
+      "description": "Receipt ID uses the 'issue_' prefix (issue-domain internal object, §5.5 prefix table)."
+    },
+    "draft_id": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/id_draft"},
+    "issue_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "External issue reference (e.g. 'synthetic-org/synthetic-repo#42' or issue URL)."
+    },
+    "idempotency_key": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/idempotency_key"},
+    "published_at": {"$ref": "https://nightwatch.local/schemas/common.json#/$defs/iso8601_utc"},
+    "gates": {
+      "type": "array",
+      "minItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["gate", "passed"],
+        "properties": {
+          "gate": {
+            "enum": [
+              "evidence-completeness",
+              "secret-scan",
+              "fingerprint-dedup",
+              "minimal-reproduction",
+              "environment-scope",
+              "reviewer"
+            ],
+            "description": "The six mandatory publish gates (§5.9)."
+          },
+          "passed": {"type": "boolean"}
+        }
+      },
+      "description": "All six §5.9 gates, each recorded with its outcome; a receipt represents a successful publish so every gate must be true (enforced by allOf below)."
+    }
+  },
+  "allOf": [
+    {
+      "not": {
+        "properties": {
+          "gates": {
+            "type": "array",
+            "contains": {"properties": {"passed": {"const": false}}, "required": ["passed"]}
+          }
+        },
+        "required": ["gates"]
+      }
+    }
+  ]
+}
