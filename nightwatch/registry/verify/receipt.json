@@ -1,0 +1,86 @@
+{
+  "ok": true,
+  "finished_at": "2026-08-20T09:09:39.176Z",
+  "verifier": "nightwatch/registry/verify.mjs",
+  "task_fingerprint": "nw+p0+wp01+contract-intake-registry+impl+arch@v1.4+f2871c4",
+  "checks": {
+    "a1_same_checksum_idempotent": {
+      "ok": true,
+      "assertions": 5,
+      "failures": []
+    },
+    "a2_bad_spec_keeps_last_valid": {
+      "ok": true,
+      "assertions": 12,
+      "failures": []
+    },
+    "a3_diff_and_impact_machine_receipt": {
+      "ok": true,
+      "assertions": 14,
+      "failures": []
+    },
+    "a4_prompt_injection_isolation": {
+      "ok": true,
+      "assertions": 8,
+      "failures": []
+    },
+    "a5_uncovered_and_destructive_impact": {
+      "ok": true,
+      "assertions": 4,
+      "failures": []
+    },
+    "a6_real_postman_collections_import": {
+      "ok": true,
+      "assertions": 17,
+      "failures": [],
+      "collections": {
+        "lumi-device-platform": 19,
+        "lumi-s4-interaction": 14,
+        "lumi-s5-content-media": 58,
+        "lumi-s6-observation": 12
+      }
+    },
+    "a7_wp00_schema_validation": {
+      "ok": true,
+      "assertions": 21,
+      "failures": [],
+      "entries_checked": 6,
+      "history_checked": 10,
+      "error_envelopes_checked": 4
+    },
+    "a8_secret_scan": {
+      "ok": true,
+      "hits": 0,
+      "scanned_files": 50,
+      "scanned_dirs": [
+        "nightwatch/registry/.state/run-a",
+        "nightwatch/registry/fixtures"
+      ],
+      "findings": []
+    },
+    "a9_determinism": {
+      "ok": true,
+      "assertions": 3,
+      "failures": [],
+      "runs": 2,
+      "files_compared": 45
+    }
+  },
+  "artifacts": [
+    "nightwatch/registry/verify.mjs",
+    "nightwatch/registry/lib/pipeline.mjs",
+    "nightwatch/registry/lib/parse.mjs",
+    "nightwatch/registry/lib/diff.mjs",
+    "nightwatch/registry/lib/impact.mjs",
+    "nightwatch/registry/lib/store.mjs",
+    "nightwatch/registry/lib/untrusted.mjs",
+    "nightwatch/registry/lib/schemas.mjs",
+    "nightwatch/registry/lib/errors.mjs",
+    "nightwatch/registry/fixtures/order-api-v1.openapi.json",
+    "nightwatch/registry/fixtures/order-api-v2.openapi.json",
+    "nightwatch/registry/fixtures/broken.openapi.json",
+    "nightwatch/registry/fixtures/malicious.openapi.json",
+    "nightwatch/registry/fixtures/impact-links.json",
+    "nightwatch/registry/verify/receipt.json"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "_comment": "Synthetic endpoint-to-plan/scenario/case associations consumed by the WP-01 impact analysis step. Real associations are established by WP-02 (Test Library); this stub only expresses the Registry-internal linkage shape. IDs follow the §5.5 ULID prefix rules.",
+  "links": [
+    {
+      "api_id": "order-api",
+      "method": "POST",
+      "path": "/v1/orders",
+      "plans": ["plan_01J8Z9A0BCDEFGHJKMNPQRSTVW"],
+      "scenarios": ["scen_01J8Z9A0BCDEFGHJKMNPQRSTVW"],
+      "cases": ["case_01J8Z9A0BCDEFGHJKMNPQRSTVW"]
+    },
+    {
+      "api_id": "order-api",
+      "method": "DELETE",
+      "path": "/v1/orders/{orderId}",
+      "plans": ["plan_01J8Z9A1ZXCVBNMASDFGHJKLQW"],
+      "scenarios": ["scen_01J8Z9A1ZXCVBNMASDFGHJKLQW"],
+      "cases": ["case_01J8Z9A1ZXCVBNMASDFGHJKLQW"]
+    },
+    {
+      "api_id": "order-api",
+      "method": "GET",
+      "path": "/v1/orders",
+      "plans": ["plan_01J8Z9A2QWERTYUIOPASDFGHJK"],
+      "scenarios": [],
+      "cases": []
+    }
+  ]
+}

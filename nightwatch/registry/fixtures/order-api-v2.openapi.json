@@ -1,0 +1,224 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Order API",
+    "version": "2.0.0",
+    "description": "Synthetic Order API fixture (version 2) for NightWatch WP-01 contract intake verification. Compared to version 1: DELETE /v1/orders/{orderId} removed; GET /v1/orders/{orderId}/items added; POST /v1/orders requires a new mandatory field and drops the 409 response; GET /v1/orders requires an additional security scheme."
+  },
+  "servers": [
+    {
+      "url": "https://orders.example.test",
+      "description": "Synthetic test server"
+    }
+  ],
+  "security": [
+    {
+      "orderBearer": []
+    }
+  ],
+  "paths": {
+    "/v1/orders": {
+      "get": {
+        "operationId": "listOrders",
+        "summary": "List orders",
+        "description": "Returns all orders visible to the caller, ordered by creation time.",
+        "security": [
+          {
+            "orderBearer": [],
+            "orderApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Order"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createOrder",
+        "summary": "Create order",
+        "description": "Creates a new order.",
+        "security": [
+          {
+            "orderBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["customer_id", "items"],
+                "properties": {
+                  "customer_id": {
+                    "type": "string"
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          }
+        }
+      }
+    },
+    "/v1/orders/{orderId}": {
+      "get": {
+        "operationId": "getOrder",
+        "summary": "Get order",
+        "description": "Returns a single order by id, including the order total.",
+        "security": [
+          {
+            "orderBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["id", "status"],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/orders/{orderId}/items": {
+      "get": {
+        "operationId": "listOrderItems",
+        "summary": "List order items",
+        "description": "Returns the items of an order.",
+        "security": [
+          {
+            "orderBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Order": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "orderBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Synthetic bearer auth for the Order API."
+      },
+      "orderApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Order-API-Key",
+        "description": "Synthetic additional API key scheme introduced in version 2."
+      }
+    }
+  }
+}

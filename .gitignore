@@ -31,3 +31,7 @@ postman/ai-config.local.json
 
 # Schemathesis 模糊测试缓存
 .schemathesis/
+
+# NightWatch 运行时可重建状态（WP-03: catalog/audit/checkpoints/locks 产物，verify 可完全重建）
+nightwatch/**/.state/
+nightwatch/state/.store/

@@ -1,0 +1,148 @@
+{
+  "ok": true,
+  "finished_at": "2026-08-20T09:09:39.184Z",
+  "verifier": "nightwatch/state/verify.mjs",
+  "task_fingerprint": "nw+p0+wp03+audit-checkpoint-catalog+impl+rev1+arch@v1.4+f2871c4",
+  "checks": {
+    "audit_idempotent_replay": {
+      "ok": true,
+      "first_append_ok": true,
+      "replay_flag": true,
+      "replay_returns_recorded_event": true,
+      "no_second_record": true,
+      "valid_events": 1
+    },
+    "audit_idempotency_conflict": {
+      "ok": true,
+      "error_code": "AUD_REPLAY_MISMATCH",
+      "retryable": false,
+      "idempotent_replay_flag": false,
+      "no_new_record": true,
+      "valid_events": 2
+    },
+    "audit_crash_recovery": {
+      "ok": true,
+      "torn_line_skipped": true,
+      "skipped_reason": "invalid_json",
+      "skipped_recorded_in_report": true,
+      "complete_lines_preserved": true,
+      "valid_events_after_truncation": 2,
+      "valid_events_after_recovery_append": 3,
+      "torn_fragment_bytes_preserved": true,
+      "append_after_torn_tail_ok": true
+    },
+    "lock_expiry_and_conflict": {
+      "ok": true,
+      "born_expired_acquire_rejected": true,
+      "conflict_error_code": "FIX_RESOURCE_LOCKED",
+      "nonholder_release_error_code": "CTL_UNAUTHORIZED",
+      "expired_renew_error_code": "CTL_LOCK_EXPIRED",
+      "expiry_not_auto_extended": true,
+      "expired_lock_swept_and_reacquired": true,
+      "holder_release_ok": true,
+      "valid_lock_survives_reopen": true,
+      "same_owner_reacquire_idempotent": true
+    },
+    "checkpoint_recovery": {
+      "ok": true,
+      "history_preserved_count": 3,
+      "latest_resume_sequence": 3,
+      "specified_resume_sequence": 2,
+      "corrupt_truncated_fallback_sequence": 2,
+      "corrupt_reason_truncated": "invalid_json",
+      "tampered_integrity_fallback_sequence": 2,
+      "corrupt_reason_tampered": "integrity_checksum_mismatch",
+      "non_monotonic_write_rejected": true,
+      "schema_invalid_write_rejected": true
+    },
+    "catalog_rebuild_deterministic": {
+      "ok": true,
+      "byte_identical_rebuild": true,
+      "catalog_self_consistent": true,
+      "schema_entries": 39,
+      "fixture_entries": 37,
+      "registry_entries_present": true,
+      "audit_event_entries": 3,
+      "lock_entries": 3,
+      "checkpoint_entries": 3,
+      "query_by_object_type_works": true,
+      "query_by_id_prefix_works": true
+    },
+    "schema_validation_of_products": {
+      "ok": true,
+      "audit_events": {
+        "total": 3,
+        "valid": 3
+      },
+      "lock_records": {
+        "total": 3,
+        "valid": 3
+      },
+      "checkpoint_files": {
+        "total": 3,
+        "valid": 3
+      },
+      "error_envelopes": {
+        "total": 7,
+        "valid": 7
+      },
+      "all_error_codes_registered": true
+    },
+    "secret_scan": {
+      "ok": true,
+      "hits": 0,
+      "findings": [],
+      "scanned_files": 10,
+      "patterns_checked": 7,
+      "credential_names_only": true,
+      "credential_name_pattern_enforced": true
+    },
+    "parallel_race_regression": {
+      "ok": true,
+      "build_survived_parallel_churn": true,
+      "race_injections_fired": {
+        "registry_victim": true,
+        "store_victim": true
+      },
+      "enoent_tolerated_and_recorded": true,
+      "skipped_files": [
+        {
+          "file": "registry/ephemeral-race.json",
+          "reason": "vanished_before_read"
+        },
+        {
+          "file": "state/.store/locks/lock_wp03-race-victim.json",
+          "reason": "vanished_before_read"
+        }
+      ],
+      "dot_state_entries": 0,
+      "victim_entries_excluded": true,
+      "stable_entry_indexed": true,
+      "kept_lock_indexed": true,
+      "state_churn": {
+        "hook_calls": 4,
+        "files_created": 4,
+        "files_removed": 3
+      },
+      "rebuild_after_churn_stable": true
+    },
+    "determinism": {
+      "ok": true,
+      "strategy": "two full acceptance passes from a clean store in one process",
+      "passes_compared": 2,
+      "checks_byte_identical": true
+    }
+  },
+  "artifacts": [
+    "nightwatch/state/index.mjs",
+    "nightwatch/state/lib/ids.mjs",
+    "nightwatch/state/lib/errors.mjs",
+    "nightwatch/state/lib/schema.mjs",
+    "nightwatch/state/lib/audit.mjs",
+    "nightwatch/state/lib/lock.mjs",
+    "nightwatch/state/lib/checkpoint.mjs",
+    "nightwatch/state/lib/catalog.mjs",
+    "nightwatch/state/verify.mjs",
+    "nightwatch/state/verify/receipt.json"
+  ]
+}
