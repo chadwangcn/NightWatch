@@ -117,6 +117,12 @@ API-Test/
 - `POST /api/ai/chat` — OpenAI 兼容 chat/completions 流式对话
 - `POST /api/ai/trae` — Trae CLI Agent SSE 端点(注入本文件作为 system prompt)
 
+#### GitHub Issue 自动提交
+- `GET /api/github/config` — 查询 GitHub 配置状态(token 是否设置 + 集合→仓库映射)
+- `GET /api/github/issues?collection=X&state=open&labels=automated-test` — 列出已有 Issue(供 Agent 查重)
+- `POST /api/github/issues?collection=X` body:`{title, body, labels}` — 创建新 Issue(供 Agent 调用)
+- `POST /api/github/issues/:number/comments?collection=X` body:`{body}` — 在已有 Issue 追加评论(供 Agent 调用)
+
 #### 故障诊断
 - `POST /api/diagnostics/obs-query` — 拉取 S6 Observation 日志
 - `POST /api/diagnostics/investigate` — 一键诊断(凭证自动获取)
@@ -285,3 +291,122 @@ Lumi 设备平台 API(device/user/ops 三面) + S4 交互 + S5 内容媒体 + S6
 ### 健康检查
 - `GET /healthz` → 200(根路径,绝对 URL)
 - `GET /readyz` → 404(内部接口,外部不可访问)
+
+## GitHub Issue 自动提交工作流
+
+当测试运行失败时,server.js 自动写入 `.workspace/last-failure.json`,并触发 Trae CLI Agent 按以下工作流执行 Issue 提交。**整个工作流由 Agent 自主决策,server.js 仅提供 GitHub API 代理端点**。
+
+### 集合 → 仓库映射
+
+| 集合 | GitHub 仓库 |
+|---|---|
+| `lumi-device-platform` | `chadwangcn/lumi-device-platform` |
+| `lumi-s4-interaction` | `chadwangcn/lumi-s4-interaction` |
+| `lumi-s5-content-media` | `chadwangcn/lumi-s5-content-media` |
+| `lumi-s6-observation` | `chadwangcn/lumi-s6-observation` |
+
+### 工作流步骤
+
+1. **读取失败详情** — `cat .workspace/last-failure.json`,获取:
+   - `collection` / `folder` / `stats` — 失败上下文
+   - `failedExecutions[]` — 每个失败请求的 method/url/request/response/assertions
+
+2. **查重(对每个失败请求)** — 调用:
+   ```
+   GET http://localhost:8088/api/github/issues?collection={collection}&state=open&labels=automated-test
+   ```
+   返回 `[{number, title, state, url, labels, comments}]`。判断标题是否精确匹配 `[Auto] {collection} · {请求名} 失败`。
+
+3. **决策**:
+   - **已有 open Issue 标题匹配** → 追加评论(补充本次失败信息):
+     ```
+     POST http://localhost:8088/api/github/issues/{number}/comments?collection={collection}
+     body: {"body": "<评论内容>"}
+     ```
+   - **无匹配** → 创建新 Issue:
+     ```
+     POST http://localhost:8088/api/github/issues?collection={collection}
+     body: {"title": "[Auto] {collection} · {请求名} 失败", "body": "<正文>", "labels": ["bug","automated-test"]}
+     ```
+
+### Issue 内容规范
+
+**标题**:`[Auto] {collection} · {requestName} 失败`
+
+**正文/评论**(Agent 生成,需精简):
+```markdown
+## 根因
+<1-2 句话根因分析,引用具体状态码/错误码>
+
+## 证据
+- 请求:`POST /ops/v1/uploads`
+- 响应:`401 Unauthorized`
+- 断言失败:`Upload story returns 201`(期望 201,实际 401)
+- 关键字段:`operator_access_token` 为空(E0 登录失败级联)
+
+## 复现
+1. 运行 `{collection}` 集合,执行 `{folder}` 场景
+2. 执行请求 `{requestName}`
+3. 检查响应状态码与断言
+
+## 建议 Action
+1. <可执行的修复步骤>
+2. ...
+```
+
+**禁止行为**:
+- ❌ 不要创建重复 Issue,务必先查重
+- ❌ 不要在正文中粘贴完整响应体(超过 1000 字符截断)
+- ❌ 不要修改已关闭 Issue(只对 open Issue 追加评论)
+- ✅ 标题必须用 `[Auto]` 前缀 + 精确请求名,确保后续查重有效
+
+### GitHub Token 配置
+
+- 环境变量 `GITHUB_TOKEN`(Personal Access Token,需 `repo` scope)
+- 未设置时,Agent 提示用户设置并跳过提交
+
+## Agent 技能清单(Skills)
+
+Agent 可使用以下工具/技能完成任务:
+
+### 文件操作
+- `cat` / `head` / `tail` — 读取文件
+- `jq` — JSON 解析与查询
+- `write` — 写入 `.workspace/` 临时文件
+
+### HTTP 调用
+- `curl` — 调用 server.js 端点 / 外部 API
+- `httpie` (`http`) — 更友好的 HTTP 客户端(如已安装)
+
+### 测试运行
+- `newman` — 运行 Postman 集合(CLI 模式)
+- `bash scripts/run-newman.sh <mode>` — CI 入口(smoke/device/guardian/ops/s5-full/all)
+- `bash scripts/check-deps.sh` — 依赖检查
+
+### Git 操作
+- `git status` / `git diff` / `git log` — 查看仓库状态
+- `git add` / `git commit` — 提交变更(需用户确认)
+
+### GitHub 集成
+- `GET /api/github/config` — 查询配置
+- `GET /api/github/issues` — 查询 Issue
+- `POST /api/github/issues` — 创建 Issue
+- `POST /api/github/issues/:number/comments` — 追加评论
+
+### 诊断工具
+- `cat .workspace/last-request.json` — 最近请求-响应详情
+- `cat .workspace/last-failure.json` — 最近测试失败详情
+- `GET /api/context/current` — 当前页面/集合/请求指针
+- `POST /api/diagnostics/investigate` — S6 日志拉取与根因分析
+
+### 分析能力
+- Newman JSON 报告解析(统计/失败用例/响应详情)
+- Postman Collection v2.1.0 结构分析(覆盖度/缺口)
+- HMAC-SHA256 / JWT / ES256 凭证机制分析
+- API 契约符合性验证(对照上游文档)
+
+### 编码能力
+- 生成 Postman prerequest/test 脚本
+- 生成 cURL / Raw HTTP 命令
+- 生成 Vitest 单元测试
+- 生成 Markdown 测试方案/缺陷报告

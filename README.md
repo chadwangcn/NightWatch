@@ -181,6 +181,38 @@ NightWatch/
 | `OPERATOR_ACCOUNT` / `OPERATOR_PASSWORD` | 运营账号凭证 |
 | `S5_TEST_FAMILY_ID` / `S5_TEST_CHILD_ID` | S5 场景B private_child 参数 |
 | `S5_TEST_AUDIO_PATH` | S5 测试音频路径(CI 自动生成) |
+| `GITHUB_TOKEN` | 自动提交 Issue 用 PAT(需 `repo` scope),供 server.js 与 Trae Agent 调用 |
+
+## GitHub Issue 自动提交
+
+测试失败时,可自动向对应后端仓库提交 Issue。整个工作流由 Trae CLI Agent 自主决策:查重 → 生成 Issue 内容(根因/证据/复现/Action) → 创建新 Issue 或追加评论。
+
+### 集合 → 仓库映射
+
+| 集合 | GitHub 仓库 |
+|---|---|
+| `lumi-device-platform` | `chadwangcn/lumi-device-platform` |
+| `lumi-s4-interaction` | `chadwangcn/lumi-s4-interaction` |
+| `lumi-s5-content-media` | `chadwangcn/lumi-s5-content-media` |
+| `lumi-s6-observation` | `chadwangcn/lumi-s6-observation` |
+
+### 配置
+
+```bash
+# 设置 GitHub Personal Access Token(需 repo scope)
+export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+
+# 启动服务
+npm run console
+```
+
+### 使用
+
+1. 在 Runner 页勾选「失败自动提交 Issue」
+2. 选择场景 + 运行策略(失败停止/失败继续)
+3. 运行 → 失败时自动触发 Agent 处理
+
+Agent 工作流详情见 [AGENTS.md](./AGENTS.md)「GitHub Issue 自动提交工作流」章节。
 
 ## 技术栈
 

@@ -836,7 +836,7 @@ app.get('/api/run', (req, res) => {
 //   folder_end    { folder, index, total, code, stats, reportFile, stopped? }
 //   batch_end     { summary, stoppedReason? }
 app.post('/api/run-batch', async (req, res) => {
-  const { collection, folders, stopOnFail } = req.body || {};
+  const { collection, folders, stopOnFail, autoSubmitIssues } = req.body || {};
   if (!collection || !Array.isArray(folders) || folders.length === 0) {
     return res.status(400).json({ ok: false, error: '参数错误：需要 collection 和 folders' });
   }
@@ -937,6 +937,27 @@ app.post('/api/run-batch', async (req, res) => {
     };
     summary.push(folderSummary);
     send('folder_end', folderSummary);
+
+    // 失败时自动触发 GitHub Issue 提交(Agent 自主查重 + 生成内容 + 提交)
+    if (folderFailed && autoSubmitIssues) {
+      send('github_start', { folder, message: '触发 Agent 分析失败并提交 GitHub Issue...' });
+      try {
+        const failureCtx = await persistFailureContext(collection, folder, folderSummary, path.join(reportDir, reportFile), folderSummary.stats);
+        if (failureCtx) {
+          const agentResult = await triggerAgentForFailure(failureCtx);
+          send('github_end', {
+            folder,
+            success: agentResult.success,
+            content: agentResult.content?.slice(0, 2000),
+            error: agentResult.error
+          });
+        } else {
+          send('github_end', { folder, success: false, error: '写入 last-failure.json 失败' });
+        }
+      } catch (e) {
+        send('github_end', { folder, success: false, error: e.message });
+      }
+    }
 
     // 判断是否需要停止后续 folder
     if (folderFailed && stopOnFail) {
@@ -1099,6 +1120,100 @@ function extractHtmlextraText(html, name) {
 // TRAE_CLI_BIN / KEYCHAIN_SERVICE / KEYCHAIN_ACCOUNT 已在文件顶部可配置化声明
 // Agent 沙箱工作区：只允许在此目录及显式授权的目录内操作
 const WORKSPACE_DIR = path.join(ROOT, '.workspace');
+
+// AGENTS.md 作为 Agent 系统提示词真源(启动时读取,避免硬编码 prompt)
+let AGENT_SYSTEM_PROMPT = '';
+try {
+  const agentsFile = path.join(ROOT, 'AGENTS.md');
+  if (existsSync(agentsFile)) {
+    AGENT_SYSTEM_PROMPT = await readFile(agentsFile, 'utf-8');
+    console.log(`[agent] 已加载 AGENTS.md (${AGENT_SYSTEM_PROMPT.length} 字符) 作为 system prompt`);
+  } else {
+    console.warn('[agent] AGENTS.md 不存在,Agent 功能将使用空 prompt');
+  }
+} catch (e) {
+  console.warn('[agent] AGENTS.md 读取失败:', e.message);
+}
+
+// Trae CLI 同步调用(非 SSE,用于自动场景如 Issue 生成)
+// 返回 { success, content, sessionId, error }
+async function callTraeCliSync(message, opts = {}) {
+  const token = await readTraeToken();
+  if (!token) return { success: false, error: '未从 keychain 读取到 trae-cli token' };
+  if (!existsSync(TRAE_CLI_BIN)) return { success: false, error: `traecli 未安装于 ${TRAE_CLI_BIN}` };
+  if (!existsSync(WORKSPACE_DIR)) await mkdir(WORKSPACE_DIR, { recursive: true });
+
+  const fullMessage = `${AGENT_SYSTEM_PROMPT}\n\n=== 用户指令 ===\n${message}`;
+  const args = [
+    '--print',
+    '--output-format', 'stream-json',
+    '--include-partial-messages',
+    '--permission-mode', 'bypass_permissions',
+    '--query-timeout', String(opts.timeoutSec || 120) + 's',
+    '--add-dir', WORKSPACE_DIR
+  ];
+  if (opts.sessionId) args.push('--session-id', opts.sessionId);
+  args.push(fullMessage);
+
+  return new Promise((resolve) => {
+    const proc = spawn(TRAE_CLI_BIN, args, {
+      cwd: WORKSPACE_DIR,
+      env: {
+        ...process.env,
+        PATH: '/Users/hydramr/.local/bin:' + (process.env.PATH || ''),
+        TRAECLI_PERSONAL_ACCESS_TOKEN: token
+      }
+    });
+    let stdoutBuf = '';
+    let lastResult = null;
+    let stderrBuf = '';
+    const timer = setTimeout(() => {
+      try { proc.kill('SIGTERM'); } catch {}
+      resolve({ success: false, error: 'Trae CLI 调用超时' });
+    }, (opts.timeoutSec || 120) * 1000);
+
+    proc.stderr.on('data', (chunk) => {
+      stderrBuf += chunk.toString();
+      const lines = stderrBuf.split('\n');
+      stderrBuf = lines.pop() || '';
+      for (const line of lines) {
+        if (line.trim()) console.log(`[trae-cli sync stderr] ${line}`);
+      }
+    });
+    proc.stdout.on('data', (chunk) => {
+      stdoutBuf += chunk.toString();
+      const lines = stdoutBuf.split('\n');
+      stdoutBuf = lines.pop() || '';
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('{')) continue;
+        try {
+          const evt = JSON.parse(trimmed);
+          if (evt.type === 'result') {
+            lastResult = evt;
+          } else if (evt.type === 'assistant' && evt.content) {
+            // 累积 assistant content 用于最终返回
+            if (!lastResult) lastResult = { contentAcc: '' };
+            lastResult.contentAcc = (lastResult.contentAcc || '') + evt.content;
+          }
+        } catch {}
+      }
+    });
+    proc.on('close', (code) => {
+      clearTimeout(timer);
+      if (lastResult) {
+        resolve({
+          success: !lastResult.is_error,
+          content: lastResult.contentAcc || lastResult.content || '',
+          sessionId: lastResult.session_id,
+          error: lastResult.is_error ? 'Agent 返回错误' : null
+        });
+      } else {
+        resolve({ success: false, error: `Trae CLI 退出码 ${code},无输出` });
+      }
+    });
+  });
+}
 
 // ============ 故障诊断：S6 Observation 日志拉取 ============
 // 封装 A6-06 三步流程，供 Agent / 前端调用拉取线上日志做故障分析
@@ -1280,18 +1395,7 @@ app.post('/api/diagnostics/investigate', async (req, res) => {
   }
 });
 
-// Agent System Prompt 真源为项目根 AGENTS.md,启动时读取注入
-// 修改 Agent 行为只需修改 AGENTS.md,无需改 server.js
-const AGENTS_MD_PATH = path.join(ROOT, 'AGENTS.md');
-let AGENT_SYSTEM_PROMPT = '';
-try {
-  AGENT_SYSTEM_PROMPT = await readFile(AGENTS_MD_PATH, 'utf-8');
-  console.log(`[agent] 已加载 AGENTS.md (${AGENT_SYSTEM_PROMPT.length} 字符) 作为 system prompt`);
-} catch (e) {
-  console.warn(`[agent] AGENTS.md 读取失败,Agent 将无 system prompt: ${e.message}`);
-  AGENT_SYSTEM_PROMPT = `你是 Lumi API 测试助手。AGENTS.md 加载失败,请检查文件。`;
-}
-
+// AGENT_SYSTEM_PROMPT 已在文件前面(WORKSPACE_DIR 定义后)从 AGENTS.md 读取并注入
 // 历史硬编码 system prompt 已迁移至项目根 AGENTS.md（启动时读取）
 // 修改 Agent 行为只需改 AGENTS.md,无需改 server.js
 
@@ -1442,6 +1546,229 @@ app.post('/api/ai/trae', async (req, res) => {
     try { proc.kill('SIGTERM'); } catch {}
   });
 });
+
+// ============ GitHub Issue 自动提交(供 Agent 调用代理)============
+
+// 集合 → 仓库映射(owner/repo 格式)
+const GITHUB_REPO_MAP = {
+  'lumi-device-platform': 'chadwangcn/lumi-device-platform',
+  'lumi-s4-interaction': 'chadwangcn/lumi-s4-interaction',
+  'lumi-s5-content-media': 'chadwangcn/lumi-s5-content-media',
+  'lumi-s6-observation': 'chadwangcn/lumi-s6-observation'
+};
+
+function getGitHubToken() {
+  return process.env.GITHUB_TOKEN || '';
+}
+
+function githubOwnerRepo(collection) {
+  return GITHUB_REPO_MAP[collection] || null;
+}
+
+// GET /api/github/config — 返回 GitHub 配置状态(供 Agent 与前端查询)
+app.get('/api/github/config', (req, res) => {
+  res.json({
+    ok: true,
+    data: {
+      hasToken: !!getGitHubToken(),
+      repoMap: GITHUB_REPO_MAP
+    }
+  });
+});
+
+// GET /api/github/issues?collection=X&state=open&labels=bug — 列出已有 Issue(供 Agent 查重)
+app.get('/api/github/issues', async (req, res) => {
+  try {
+    const { collection, state = 'open', labels = 'automated-test', per_page = 100 } = req.query;
+    if (!collection) return res.status(400).json({ ok: false, error: 'collection 必填' });
+    const repo = githubOwnerRepo(collection);
+    if (!repo) return res.status(400).json({ ok: false, error: `集合 ${collection} 未配置 GitHub 仓库映射` });
+    if (!getGitHubToken()) return res.status(400).json({ ok: false, error: 'GITHUB_TOKEN 环境变量未设置' });
+
+    const url = `https://api.github.com/repos/${repo}/issues?state=${encodeURIComponent(state)}&labels=${encodeURIComponent(labels)}&per_page=${per_page}`;
+    const resp = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${getGitHubToken()}`,
+        'Accept': 'application/vnd.github+json',
+        'User-Agent': 'NightWatch-Console'
+      }
+    });
+    if (!resp.ok) {
+      return res.status(resp.status).json({ ok: false, error: `GitHub 查询失败: ${await resp.text()}` });
+    }
+    const issues = await resp.json();
+    // 返回精简字段(避免响应过大)
+    const items = issues.map(i => ({
+      number: i.number,
+      title: i.title,
+      state: i.state,
+      url: i.html_url,
+      createdAt: i.created_at,
+      updatedAt: i.updated_at,
+      labels: (i.labels || []).map(l => l.name),
+      comments: i.comments
+    }));
+    res.json({ ok: true, data: items, repo });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// POST /api/github/issues?collection=X — 创建新 Issue(供 Agent 调用)
+app.post('/api/github/issues', async (req, res) => {
+  try {
+    const { collection } = req.query;
+    const { title, body, labels } = req.body || {};
+    if (!collection) return res.status(400).json({ ok: false, error: 'collection 必填(query)' });
+    if (!title) return res.status(400).json({ ok: false, error: 'title 必填' });
+    if (!body) return res.status(400).json({ ok: false, error: 'body 必填' });
+    const repo = githubOwnerRepo(collection);
+    if (!repo) return res.status(400).json({ ok: false, error: `集合 ${collection} 未配置 GitHub 仓库映射` });
+    if (!getGitHubToken()) return res.status(400).json({ ok: false, error: 'GITHUB_TOKEN 环境变量未设置' });
+
+    const url = `https://api.github.com/repos/${repo}/issues`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getGitHubToken()}`,
+        'Accept': 'application/vnd.github+json',
+        'User-Agent': 'NightWatch-Console',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        title,
+        body,
+        labels: labels && Array.isArray(labels) ? labels : ['bug', 'automated-test']
+      })
+    });
+    if (!resp.ok) {
+      return res.status(resp.status).json({ ok: false, error: `GitHub 创建 Issue 失败: ${await resp.text()}` });
+    }
+    const created = await resp.json();
+    res.json({
+      ok: true,
+      data: { number: created.number, title: created.title, url: created.html_url, state: created.state }
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// POST /api/github/issues/:number/comments?collection=X — 在已有 Issue 追加评论(供 Agent 调用)
+app.post('/api/github/issues/:number/comments', async (req, res) => {
+  try {
+    const { number } = req.params;
+    const { collection } = req.query;
+    const { body } = req.body || {};
+    if (!collection) return res.status(400).json({ ok: false, error: 'collection 必填(query)' });
+    if (!body) return res.status(400).json({ ok: false, error: 'body 必填' });
+    const repo = githubOwnerRepo(collection);
+    if (!repo) return res.status(400).json({ ok: false, error: `集合 ${collection} 未配置 GitHub 仓库映射` });
+    if (!getGitHubToken()) return res.status(400).json({ ok: false, error: 'GITHUB_TOKEN 环境变量未设置' });
+
+    const url = `https://api.github.com/repos/${repo}/issues/${number}/comments`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getGitHubToken()}`,
+        'Accept': 'application/vnd.github+json',
+        'User-Agent': 'NightWatch-Console',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ body })
+    });
+    if (!resp.ok) {
+      return res.status(resp.status).json({ ok: false, error: `GitHub 评论失败: ${await resp.text()}` });
+    }
+    const comment = await resp.json();
+    res.json({
+      ok: true,
+      data: { id: comment.id, url: comment.html_url, createdAt: comment.created_at }
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// 写入失败详情到 .workspace/last-failure.json(供 Agent 读取分析)
+async function persistFailureContext(collection, folder, summary, reportFile, stats) {
+  try {
+    const reportPath = reportFile?.replace(/\.html$/, '.json');
+    let failedExecutions = [];
+    if (reportPath && existsSync(reportPath)) {
+      const report = JSON.parse(await readFile(reportPath, 'utf-8'));
+      const executions = report.run?.executions || [];
+      failedExecutions = executions
+        .filter(e => (e.assertions || []).some(a => a.error || a.passed === false))
+        .map(e => ({
+          requestName: e.item?.name || '(unknown)',
+          method: e.request?.method,
+          url: e.request?.url,
+          requestHeaders: e.request?.headers,
+          requestBody: e.request?.body,
+          responseStatus: e.response?.code,
+          responseStatusText: e.response?.status,
+          responseTime: e.response?.responseTime,
+          responseSize: e.response?.responseSize,
+          responseHeaders: e.response?.headers,
+          responseBody: e.response?.body,
+          assertions: (e.assertions || [])
+            .filter(a => a.error || a.passed === false)
+            .map(a => ({
+              name: a.name,
+              error: a.error || { message: '断言失败' }
+            }))
+        }));
+    }
+    const ctx = {
+      timestamp: new Date().toISOString(),
+      collection,
+      folder,
+      repo: githubOwnerRepo(collection),
+      reportFile,
+      stats,
+      summary,
+      failedExecutions,
+      hint: '请分析以上失败,按下方工作流执行 GitHub Issue 提交',
+      githubApiWorkflow: {
+        step1_check_existing: `GET http://localhost:${PORT}/api/github/issues?collection=${collection}&state=open&labels=automated-test`,
+        step2a_create_new: `POST http://localhost:${PORT}/api/github/issues?collection=${collection}  body: {title, body, labels}`,
+        step2b_append_comment: `POST http://localhost:${PORT}/api/github/issues/{issue_number}/comments?collection=${collection}  body: {body}`,
+        rule: '若已有 open Issue 标题与本失败请求精确匹配,追加评论;否则创建新 Issue。Issue 标题用「[Auto] {collection} · {requestName} 失败」格式。'
+      }
+    };
+    await mkdir(WORKSPACE_DIR, { recursive: true });
+    await writeFile(path.join(WORKSPACE_DIR, 'last-failure.json'), JSON.stringify(ctx, null, 2), 'utf-8');
+    return ctx;
+  } catch (e) {
+    console.warn('[github] 写入 last-failure.json 失败:', e.message);
+    return null;
+  }
+}
+
+// 触发 Trae Agent 处理失败(查重 + 生成内容 + 提交)
+async function triggerAgentForFailure(failureContext) {
+  if (!existsSync(TRAE_CLI_BIN)) {
+    console.warn('[github] traecli 未安装,跳过 Agent 自动提交');
+    return { success: false, error: 'traecli 未安装' };
+  }
+  const prompt = `自动化测试失败,请按以下工作流处理 GitHub Issue 提交:
+
+1. 读取失败详情文件: ${path.join(WORKSPACE_DIR, 'last-failure.json')}
+2. 对每个失败请求:
+   a. 调用 ${failureContext.githubApiWorkflow.step1_check_existing} 查询已有 open Issue
+   b. 若有标题精确匹配 "[Auto] ${failureContext.collection} · {请求名} 失败" 的 Issue → 调用 ${failureContext.githubApiWorkflow.step2b_append_comment} 追加评论(评论内容需分析根因 + 失败证据 + 复现步骤 + 建议 Action)
+   c. 若无匹配 → 调用 ${failureContext.githubApiWorkflow.step2a_create_new} 创建新 Issue(标题用上述格式,正文需包含集合/请求/时间/失败详情/根因分析/复现步骤/建议 Action)
+3. 所有调用通过 curl 或 HTTP 客户端完成,服务监听 http://localhost:${PORT}
+4. 完成后输出: 每个失败请求的处理结果(created #N / commented #N / skipped)
+
+注意:
+- 标题格式必须为 "[Auto] ${failureContext.collection} · {请求名} 失败" 以便后续查重
+- 评论/正文要精简:根因 1-2 句、证据引用具体值、Action 用清单
+- 不要创建重复 Issue,务必先查重`;
+  const result = await callTraeCliSync(prompt, { timeoutSec: 300 });
+  return result;
+}
 
 // ============ 启动 ============
 

@@ -2009,6 +2009,12 @@
           <label class="runner-strategy-item"><input type="radio" name="run-strategy" value="continueOnFail"> <span>失败继续</span> <span class="runner-strategy-desc">（所有场景独立，失败也继续）</span></label>
         </div>
       </div>
+      <div class="runner-row">
+        <label class="runner-label">GitHub Issue</label>
+        <div class="runner-strategy">
+          <label class="runner-strategy-item"><input type="checkbox" id="auto-submit-issues"> <span>失败自动提交 Issue</span> <span class="runner-strategy-desc">（Agent 分析失败 → 查重 → 创建/追加评论,需 GITHUB_TOKEN）</span></label>
+        </div>
+      </div>
       <button class="btn btn-primary" id="run-btn" onclick="runFolder()">运行</button>
       <button class="btn" id="stop-btn" onclick="stopRun()" style="display:none">停止</button>
     </div>
@@ -3247,6 +3253,7 @@ async function runFolder() {
   }
   const strategy = document.querySelector('input[name="run-strategy"]:checked')?.value || 'stopOnFail';
   const stopOnFail = strategy === 'stopOnFail';
+  const autoSubmitIssues = document.getElementById('auto-submit-issues')?.checked || false;
 
   document.getElementById('run-btn').style.display = 'none';
   document.getElementById('stop-btn').style.display = 'inline-block';
@@ -3258,8 +3265,8 @@ async function runFolder() {
     return;
   }
 
-  // 多个 folder 走 /api/run-batch（顺序运行，支持 stopOnFail）
-  addRunConsole(`▶ 批量运行 ${checked.length} 个场景（策略：${stopOnFail ? '失败停止' : '失败继续'}）`, 'info');
+  // 多个 folder 走 /api/run-batch（顺序运行，支持 stopOnFail + autoSubmitIssues）
+  addRunConsole(`▶ 批量运行 ${checked.length} 个场景（策略：${stopOnFail ? '失败停止' : '失败继续'}${autoSubmitIssues ? ' + GitHub Issue 自动提交' : ''}）`, 'info');
   addRunConsole(`  顺序: ${checked.join(' → ')}`, 'info');
   addRunConsole('', '');
 
@@ -3268,7 +3275,7 @@ async function runFolder() {
     const resp = await fetch('/api/run-batch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ collection: col, folders: checked, stopOnFail }),
+      body: JSON.stringify({ collection: col, folders: checked, stopOnFail, autoSubmitIssues }),
       signal: runAbort.signal
     });
     // 读取 SSE 流
@@ -3328,6 +3335,15 @@ function handleBatchEvent(eventType, d) {
     }
     line += ` → reports/${d.reportFile}`;
     addRunConsole(line, pass ? 'ok' : 'err');
+  } else if (eventType === 'github_start') {
+    addRunConsole(`  ⏳ GitHub Issue: ${d.message}`, 'info');
+  } else if (eventType === 'github_end') {
+    if (d.success) {
+      addRunConsole(`  ✅ GitHub Issue: Agent 处理完成`, 'ok');
+      if (d.content) addRunConsole(`     ${d.content.slice(0, 500)}`, 'info');
+    } else {
+      addRunConsole(`  ⚠️ GitHub Issue: ${d.error || '未知错误'}`, 'err');
+    }
   } else if (eventType === 'batch_end') {
     const summary = d.summary || [];
     addRunConsole('', '');
