@@ -1,0 +1,251 @@
+{
+  "ok": true,
+  "finished_at": "2026-08-20T10:11:44.114Z",
+  "verifier": "nightwatch/policy/verify.mjs",
+  "task_fingerprint": "nw+p0+wp04+policy-credential+impl+arch@v1.4+3929f2e",
+  "checks": {
+    "a1_denial_matrix": {
+      "ok": true,
+      "production_forbidden_all_denied": true,
+      "production_readonly_smoke_approved": true,
+      "production_readonly_without_allowance_denied": true,
+      "staging_capability_approved": true,
+      "production_url_recheck_reclassifies": true,
+      "nongranted_capability_denied": true,
+      "matrix": [
+        {
+          "case": "production × destructive",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_DENIED"
+        },
+        {
+          "case": "production × fuzzing",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_DENIED"
+        },
+        {
+          "case": "production × load",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_DENIED"
+        },
+        {
+          "case": "production × concurrent_writes",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_DENIED"
+        },
+        {
+          "case": "production × batch_delete",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_DENIED"
+        },
+        {
+          "case": "production × readonly smoke (allowed)",
+          "expected": "approved",
+          "actual": "approved",
+          "code": null
+        },
+        {
+          "case": "staging × destructive (granted)",
+          "expected": "approved",
+          "actual": "approved",
+          "code": null
+        },
+        {
+          "case": "local × destructive (granted)",
+          "expected": "approved",
+          "actual": "approved",
+          "code": null
+        },
+        {
+          "case": "staging-def × production base URL × destructive",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_DENIED"
+        },
+        {
+          "case": "production × readonly smoke (no allowance)",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_DENIED"
+        },
+        {
+          "case": "staging × destructive (not granted)",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_DENIED"
+        }
+      ],
+      "failures": []
+    },
+    "a2_budget_gate": {
+      "ok": true,
+      "cases": [
+        {
+          "case": "requests over limit",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_BUDGET_EXCEEDED"
+        },
+        {
+          "case": "duration over limit",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_BUDGET_EXCEEDED"
+        },
+        {
+          "case": "parallelism over limit",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_BUDGET_EXCEEDED"
+        },
+        {
+          "case": "exact boundary",
+          "expected": "approved",
+          "actual": "approved",
+          "code": null
+        }
+      ],
+      "failures": []
+    },
+    "a3_approval_gate": {
+      "ok": true,
+      "cases": [
+        {
+          "case": "production write, no approval",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_DENIED"
+        },
+        {
+          "case": "production write, valid approval",
+          "expected": "approved",
+          "actual": "approved",
+          "code": null
+        },
+        {
+          "case": "production write, expired approval",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_APPROVAL_EXPIRED"
+        },
+        {
+          "case": "production write, denied approval",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_DENIED"
+        },
+        {
+          "case": "production write, scope-mismatched approval",
+          "expected": "denied",
+          "actual": "denied",
+          "code": "POL_DENIED"
+        }
+      ],
+      "failures": []
+    },
+    "a4_schema_and_idempotency": {
+      "ok": true,
+      "decisions_validated": 22,
+      "approvals_validated": 4,
+      "idempotent_replay_same_result": true,
+      "idempotency_conflict_code": "CTL_IDEMPOTENCY_CONFLICT",
+      "failures": []
+    },
+    "a5_secret_by_reference": {
+      "ok": true,
+      "view_shape": [
+        "reference_name",
+        "provider_type",
+        "configured"
+      ],
+      "broker_has_no_public_resolve": true,
+      "schema_rejects_value_fields": true,
+      "views_contain_no_secret_material": true,
+      "failures": []
+    },
+    "a6_enumeration_forbidden": {
+      "ok": true,
+      "refused_code": "POL_DENIED",
+      "surfaces": [
+        {
+          "surface": "list",
+          "code": "POL_DENIED"
+        },
+        {
+          "surface": "listReferences",
+          "code": "POL_DENIED"
+        },
+        {
+          "surface": "enumerate",
+          "code": "POL_DENIED"
+        },
+        {
+          "surface": "all",
+          "code": "POL_DENIED"
+        }
+      ],
+      "failures": []
+    },
+    "a7_injection_lease": {
+      "ok": true,
+      "materialized_value_is_synthetic": true,
+      "leases_validated": 5,
+      "one_shot": true,
+      "failures": []
+    },
+    "a8_subprocess_allowlist": {
+      "ok": true,
+      "child_env_keys": [
+        "NW_AGENT_HOST_TOKEN",
+        "NW_TESTED_API_TOKEN"
+      ],
+      "child_values_match_materialized": true,
+      "injected_parent_keys_absent": true,
+      "parent_env_larger_than_allowlist": true,
+      "pollution_filtered": true,
+      "failures": []
+    },
+    "a9_secret_scan": {
+      "ok": true,
+      "hits": [],
+      "scanned_files": 11,
+      "scanned_products": 79,
+      "excluded_inputs": [
+        {
+          "file": "nightwatch/policy/fixtures/secrets.synthetic.json",
+          "reason": "synthetic secret INPUT fixture (delivered per WorkRequest §8.1); equivalent to a gitignored .env — values never leave the provider"
+        }
+      ],
+      "failures": []
+    },
+    "a10_audit_integration_and_determinism": {
+      "ok": true,
+      "store": "wp03 shared (nightwatch/state/.store, via openState())",
+      "events_queryable": 31,
+      "decision_events": 21,
+      "lease_events": {
+        "granted": 5,
+        "materialized": 3,
+        "expired": 1,
+        "revoked": 1
+      },
+      "all_events_schema_valid": true,
+      "failures": [],
+      "two_pass_checks_identical": true
+    }
+  },
+  "artifacts": [
+    "nightwatch/policy/lib/gate.mjs",
+    "nightwatch/policy/lib/credentials.mjs",
+    "nightwatch/policy/lib/lease.mjs",
+    "nightwatch/policy/lib/environment.mjs",
+    "nightwatch/policy/fixtures/environments.json",
+    "nightwatch/policy/fixtures/credentials.json",
+    "nightwatch/policy/verify/receipt.json"
+  ]
+}

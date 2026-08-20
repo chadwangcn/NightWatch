@@ -1,0 +1,96 @@
+{
+  "ok": true,
+  "finished_at": "2026-08-20T10:11:39.321Z",
+  "verifier": "nightwatch/library/verify.mjs",
+  "task_fingerprint": "nw+p0+wp02+library-compiler+impl+arch@v1.4+3929f2e",
+  "checks": {
+    "a1_five_case_types_from_inventory": {
+      "ok": true,
+      "assertions": 15,
+      "failures": []
+    },
+    "a2_traceability_eight_fields": {
+      "ok": true,
+      "assertions": 585,
+      "failures": []
+    },
+    "a3_lifecycle_state_machine": {
+      "ok": true,
+      "assertions": 15,
+      "failures": []
+    },
+    "a4_incremental_preservation": {
+      "ok": true,
+      "assertions": 13,
+      "failures": []
+    },
+    "a5_coverage_matrix": {
+      "ok": true,
+      "assertions": 6,
+      "failures": []
+    },
+    "a6_assumption_marking": {
+      "ok": true,
+      "assertions": 6,
+      "failures": []
+    },
+    "a7_compile_determinism": {
+      "ok": true,
+      "assertions": 8,
+      "failures": []
+    },
+    "a8_source_map_reverse_resolution": {
+      "ok": true,
+      "assertions": 5,
+      "failures": []
+    },
+    "a9_wp00_schema_validation": {
+      "ok": true,
+      "assertions": 104,
+      "failures": [],
+      "plans_checked": 2,
+      "scenarios_checked": 1,
+      "cases_checked": 88,
+      "error_envelopes_checked": 11
+    },
+    "a10_secret_scan_and_determinism": {
+      "ok": true,
+      "secret_scan": {
+        "hits": 0,
+        "scanned_files": 232,
+        "findings": []
+      },
+      "checks_byte_identical": true,
+      "state_tree_byte_identical": true,
+      "state_files_compared": 227
+    }
+  },
+  "stats": {
+    "demo_cases": 50,
+    "s6_cases": 38,
+    "compiled_items": 1,
+    "compiled_cases": 1
+  },
+  "artifacts": [
+    "nightwatch/library/verify.mjs",
+    "nightwatch/library/lib/ids.mjs",
+    "nightwatch/library/lib/errors.mjs",
+    "nightwatch/library/lib/schemas.mjs",
+    "nightwatch/library/lib/dsl.mjs",
+    "nightwatch/library/lib/understand.mjs",
+    "nightwatch/library/lib/generate.mjs",
+    "nightwatch/library/lib/review.mjs",
+    "nightwatch/library/lib/store.mjs",
+    "nightwatch/library/lib/lifecycle.mjs",
+    "nightwatch/library/lib/incremental.mjs",
+    "nightwatch/library/lib/coverage.mjs",
+    "nightwatch/library/lib/compile.mjs",
+    "nightwatch/library/lib/pipeline.mjs",
+    "nightwatch/library/fixtures/demo-api-v1.openapi.json",
+    "nightwatch/library/fixtures/demo-api-v2.openapi.json",
+    "nightwatch/library/fixtures/agent-output.json",
+    "nightwatch/library/fixtures/agent-datasets/widget-roundtrip-create.json",
+    "nightwatch/library/fixtures/manual-case.json",
+    "nightwatch/library/verify/receipt.json"
+  ]
+}

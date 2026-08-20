@@ -1,0 +1,72 @@
+{
+  "agent": "test-library-generator",
+  "skill_version": "baseline-suite-design@1",
+  "notes": "Agent Output Fixture (WorkRequest NW-WP-02 §5.2): fixed synthetic stand-in for the real Test Library Generator Agent. The pipeline consumes this file as the deterministic output of the Agent reasoning stages (scenario design, exclusions, business cases). All data is synthetic.",
+  "apis": {
+    "demo-api": {
+      "exclusions": [
+        {
+          "method": "POST",
+          "path": "/v1/metrics",
+          "reason": "writes production metrics; possible destructive side effects before the policy gate (WP-04) is available; paused for human confirmation per architecture §5.4"
+        }
+      ],
+      "scenarios": [
+        {
+          "name": "Widget catalog lifecycle",
+          "description": "Create a widget through the public API, read it back, then delete it (v1) — a cross-endpoint business path over the widget resource.",
+          "revision": "1",
+          "endpoints": [
+            { "method": "POST", "path": "/v1/widgets" },
+            { "method": "GET", "path": "/v1/widgets/{widgetId}" },
+            { "method": "DELETE", "path": "/v1/widgets/{widgetId}" }
+          ],
+          "assumptions": [
+            {
+              "assumption_id": "ASM-WIDGET-001",
+              "statement": "A widget created via POST /v1/widgets is immediately readable via GET /v1/widgets/{widgetId} with the id returned by the create response.",
+              "status": "unconfirmed"
+            },
+            {
+              "assumption_id": "ASM-WIDGET-002",
+              "statement": "The widget id placeholder {{widget_id}} is resolved by the executor at runtime from the create step response.",
+              "status": "confirmed"
+            }
+          ],
+          "cases": [
+            {
+              "title": "Widget create-read round trip",
+              "risk": "medium",
+              "type": "business",
+              "preconditions": ["Demo API test environment is reachable", "A valid bearer credential reference is configured"],
+              "steps": [
+                {
+                  "request": {
+                    "method": "POST",
+                    "path": "/v1/widgets",
+                    "headers": { "Authorization": "Bearer {{DEMO_API_BEARER_TOKEN}}" },
+                    "body_ref": "agent/widget-roundtrip-create.json"
+                  }
+                },
+                {
+                  "request": {
+                    "method": "GET",
+                    "path": "/v1/widgets/{{widget_id}}",
+                    "headers": { "Authorization": "Bearer {{DEMO_API_BEARER_TOKEN}}" }
+                  }
+                }
+              ],
+              "assertions": [
+                "@1 status_code in [201]",
+                "@1 json $.id present",
+                "@1 response_time_ms below 5000",
+                "@2 status_code in [200]",
+                "@2 json $.id present"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

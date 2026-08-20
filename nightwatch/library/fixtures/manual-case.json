@@ -1,0 +1,52 @@
+{
+  "notes": "Manual Case fixture (WorkRequest NW-WP-02 §8.1): a human-authored case loaded into the library to demonstrate incremental preservation — regeneration after a spec change must never silently delete it. All data is synthetic.",
+  "case": {
+    "title": "Manual smoke: read one widget with a fixed synthetic id",
+    "api_id": "demo-api",
+    "risk": "low",
+    "status": "reviewed",
+    "provenance": {
+      "source_revision": "assigned-at-intake",
+      "generated_by": "human-reviewer",
+      "skill_version": "manual@1",
+      "last_validated_run": null
+    },
+    "type": "functional",
+    "preconditions": ["Demo API test environment is reachable", "The synthetic widget id may or may not exist; both outcomes are acceptable for this smoke check"],
+    "setup": { "workflow": "none" },
+    "steps": [
+      {
+        "request": {
+          "method": "GET",
+          "path": "/v1/widgets/widget-synthetic-manual-0001",
+          "headers": { "Authorization": "Bearer {{DEMO_API_BEARER_TOKEN}}" }
+        }
+      }
+    ],
+    "assertions": ["status_code in [200, 404]", "response_time_ms below 5000"],
+    "timing": { "per_request_timeout_ms": 5000 },
+    "repetitions": 1,
+    "cleanup": { "workflow": "none" },
+    "evidence": { "capture_timeline": false, "capture_request_response": "failures", "redact_profile": "default" }
+  },
+  "meta": {
+    "origin": "manual",
+    "endpoint": { "method": "GET", "path": "/v1/widgets/{widgetId}", "key": "GET /v1/widgets/{widgetId}" },
+    "case_type": "functional",
+    "variant": "manual-smoke",
+    "assumptions": [
+      {
+        "assumption_id": "ASM-MANUAL-001",
+        "statement": "A read of a possibly-missing widget id returns either 200 or 404 without side effects.",
+        "status": "confirmed",
+        "rule": "manual judgement confirmed by the reviewer",
+        "classification": "assumption"
+      }
+    ],
+    "explicit_rules": [],
+    "environments": ["test"],
+    "executors": ["newman"],
+    "finding_id": null,
+    "issue_ref": null
+  }
+}

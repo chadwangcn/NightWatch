@@ -1,0 +1,36 @@
+{
+  "environments": [
+    {
+      "environment": "lumi-local",
+      "classification": "local",
+      "base_url_env": "NW_LOCAL_BASE_URL",
+      "credential_profile": "lumi-tested-api",
+      "health_checks": [{ "method": "GET", "path": "/healthz" }],
+      "data_namespace": "nw-{{run_id}}",
+      "limits": { "max_requests": 5000, "max_duration_seconds": 1800, "max_parallelism": 8 },
+      "capabilities": { "destructive": true, "fuzzing": true, "load": true }
+    },
+    {
+      "environment": "lumi-staging",
+      "classification": "staging",
+      "base_url_env": "NW_STAGING_BASE_URL",
+      "credential_profile": "lumi-tested-api",
+      "health_checks": [{ "method": "GET", "path": "/healthz" }],
+      "data_namespace": "nw-{{run_id}}",
+      "limits": { "max_requests": 10000, "max_duration_seconds": 1800, "max_parallelism": 50 },
+      "capabilities": { "destructive": true, "fuzzing": true, "load": true }
+    },
+    {
+      "environment": "lumi-production",
+      "classification": "production",
+      "base_url_env": "NW_PRODUCTION_BASE_URL",
+      "credential_profile": "lumi-tested-api",
+      "health_checks": [{ "method": "GET", "path": "/healthz" }],
+      "data_namespace": "nw-{{run_id}}",
+      "limits": { "max_requests": 100, "max_duration_seconds": 300, "max_parallelism": 2 },
+      "capabilities": { "destructive": false, "fuzzing": false, "load": false },
+      "production_url_patterns": ["https://api-lumi.cinmoore.cn/*"],
+      "allow_readonly_smoke": true
+    }
+  ]
+}
