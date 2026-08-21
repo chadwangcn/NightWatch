@@ -1,0 +1,198 @@
+{
+  "fixture_version": "nw-wp08-orchestration-v1",
+  "note": "Synthetic orchestration fixtures for WP-08 acceptance (WorkRequest §8). All identifiers, URLs and payloads are synthetic; no real secrets. Scenarios/cases are WP-02-shaped (same loader contract as the WP-05 golden-fault fixture) and are driven through the REAL WP-01 registry import pipeline, WP-02 LibraryStore/compileScenario, WP-04 PolicyGate, WP-05 ExecutorGateway against the local Golden Fault stub, WP-06 EvidenceStore/FindingStore and WP-07 IssueGateway. Case ids are assigned by the loader (case_01J + zero-pad + seq).",
+  "api_id": "nw-orch-api",
+  "registry": {
+    "display_name": "NightWatch Orchestration Synthetic API",
+    "owner": "nw-synthetic-owner",
+    "purpose": "Synthetic API exercised only by the local Golden Fault stub for WP-08 acceptance.",
+    "environments": {
+      "lumi-local": {
+        "base_url_env": "NW_LOCAL_BASE_URL",
+        "auth_profile": "lumi-tested-api",
+        "destructive_allowed": false,
+        "load_allowed": false
+      }
+    }
+  },
+  "scenario_ids": {
+    "confirm": "scen_01J00000000000000000000RC1",
+    "clean": "scen_01J00000000000000000000RC2",
+    "cancel": "scen_01J00000000000000000000RC3"
+  },
+  "common": {
+    "api_id": "nw-orch-api",
+    "status": "validated",
+    "provenance": {
+      "source_revision": "nw-orch-r1",
+      "generated_by": "nw-wp08-fixture",
+      "skill_version": "fixture@1",
+      "last_validated_run": null
+    },
+    "preconditions": ["golden-fault stub running on 127.0.0.1"],
+    "setup": { "workflow": "none" },
+    "timing": { "per_request_timeout_ms": 10000 },
+    "repetitions": 1,
+    "cleanup": { "workflow": "none" },
+    "evidence": { "capture_timeline": true, "capture_request_response": "failures", "redact_profile": "nw-default" }
+  },
+  "cases": [
+    {
+      "key": "c-slow",
+      "title": "slow boundary responds within tolerance (cancellation window)",
+      "risk": "low",
+      "type": "boundary",
+      "steps": [{ "request": { "method": "GET", "path": "/v1/edge/slow?ms=2500" } }],
+      "assertions": ["status_code equals 200", "response_time_ms below 6000"],
+      "expect": "passed"
+    },
+    {
+      "key": "c-pass",
+      "title": "positive endpoint returns ok",
+      "risk": "low",
+      "type": "functional",
+      "steps": [{ "request": { "method": "GET", "path": "/v1/positive" } }],
+      "assertions": ["status_code in [200]", "json $.ok equals true", "json $.value equals 42"],
+      "expect": "passed"
+    },
+    {
+      "key": "c-fail-status",
+      "title": "negative endpoint still expected 200 (deterministic confirmed failure)",
+      "risk": "medium",
+      "type": "negative",
+      "steps": [{ "request": { "method": "GET", "path": "/v1/negative" } }],
+      "assertions": ["status_code equals 200"],
+      "expect": "failed"
+    },
+    {
+      "key": "c-fail-large",
+      "title": "large body count expected 999 (second deterministic confirmed failure)",
+      "risk": "low",
+      "type": "boundary",
+      "steps": [{ "request": { "method": "GET", "path": "/v1/edge/large" } }],
+      "assertions": ["status_code equals 200", "json $.count equals 999"],
+      "expect": "failed"
+    }
+  ],
+  "scenarios": {
+    "confirm": {
+      "name": "orchestration confirm mix",
+      "description": "One passing case plus two deterministically failing cases (distinct endpoints): produces two distinct confirmed findings and two issue drafts per first run.",
+      "revision": "nw-orch-r1",
+      "endpoints": [
+        { "api_id": "nw-orch-api", "method": "GET", "path": "/v1/positive" },
+        { "api_id": "nw-orch-api", "method": "GET", "path": "/v1/negative" },
+        { "api_id": "nw-orch-api", "method": "GET", "path": "/v1/edge/large" }
+      ],
+      "case_keys": ["c-pass", "c-fail-status", "c-fail-large"]
+    },
+    "clean": {
+      "name": "orchestration clean pass",
+      "description": "All-passing subset: run completes with zero findings, exercising the inconclusive closure path.",
+      "revision": "nw-orch-r1",
+      "endpoints": [
+        { "api_id": "nw-orch-api", "method": "GET", "path": "/v1/positive" }
+      ],
+      "case_keys": ["c-pass"]
+    },
+    "cancel": {
+      "name": "orchestration cancel window",
+      "description": "Slow case first (2500ms) followed by two more cases: cancelRun lands mid-first-case and the remaining cases must be skipped.",
+      "revision": "nw-orch-r1",
+      "endpoints": [
+        { "api_id": "nw-orch-api", "method": "GET", "path": "/v1/edge/slow" },
+        { "api_id": "nw-orch-api", "method": "GET", "path": "/v1/positive" },
+        { "api_id": "nw-orch-api", "method": "GET", "path": "/v1/negative" }
+      ],
+      "case_keys": ["c-slow", "c-pass", "c-fail-status"]
+    }
+  },
+  "run_profiles": {
+    "scen_01J00000000000000000000RC1": { "api_id": "nw-orch-api", "seed": 424242, "repetitions": 3 },
+    "scen_01J00000000000000000000RC2": { "api_id": "nw-orch-api", "seed": 7, "repetitions": 1 },
+    "scen_01J00000000000000000000RC3": { "api_id": "nw-orch-api", "seed": 99, "repetitions": 1 }
+  },
+  "fault_injections": {
+    "execute_failure": {
+      "step": "execute",
+      "code": "EXE_WORKER_FAILED",
+      "message": "injected single-component failure: executor worker failed abnormally (synthetic WP-08 fault fixture)",
+      "details": { "reason": "injected", "component": "C09-executor" }
+    },
+    "classify_failure": {
+      "step": "finding_classify",
+      "code": "FND_CLASSIFICATION_INVALID",
+      "message": "injected single-component failure: finding classification rejected (synthetic WP-08 fault fixture)",
+      "details": { "reason": "injected", "component": "C12-finding" }
+    }
+  },
+  "interrupt_points": {
+    "after_library": "library_cases",
+    "after_execute": "execute",
+    "after_publish_write": "issue_publish_write"
+  },
+  "published_preset": {
+    "note": "已发布状态预置 (WorkRequest §8): materialized into the orchestrator's published-drafts.jsonl + pipeline completed_steps BEFORE a publishIssue call, proving the orchestration-layer state line replays a pre-published draft with ZERO C13 writes.",
+    "issue_ref": "nw-synthetic/preset-1",
+    "receipt_template": {
+      "receipt_id": "issue_01J0000000000000000000PRST",
+      "draft_id": null,
+      "finding_id": null,
+      "published_at": "2026-08-21T10:00:00Z",
+      "issue_ref": "nw-synthetic/preset-1",
+      "gates": [
+        { "gate": "evidence-completeness", "passed": true },
+        { "gate": "secret-scan", "passed": true },
+        { "gate": "fingerprint-dedup", "passed": true },
+        { "gate": "reviewer", "passed": true },
+        { "gate": "policy", "passed": true },
+        { "gate": "idempotency", "passed": true }
+      ]
+    }
+  },
+  "denied_publish_environment_set": {
+    "note": "Deployment configuration B for A7: default environment is a production-classified env WITHOUT allow_readonly_smoke, so the REAL WP-04 PolicyGate denies the issue.publish action (production read-only smoke not allowed) while runs still execute on lumi-local when explicitly requested.",
+    "environments": [
+      {
+        "environment": "lumi-local",
+        "classification": "local",
+        "base_url_env": "NW_LOCAL_BASE_URL",
+        "credential_profile": "lumi-tested-api",
+        "health_checks": [{ "method": "GET", "path": "/healthz" }],
+        "data_namespace": "nw-{{run_id}}",
+        "limits": { "max_requests": 5000, "max_duration_seconds": 1800, "max_parallelism": 8 },
+        "capabilities": { "destructive": true, "fuzzing": true, "load": true }
+      },
+      {
+        "environment": "nw-orch-prod-locked",
+        "classification": "production",
+        "base_url_env": "NW_LOCKED_BASE_URL",
+        "credential_profile": "lumi-tested-api",
+        "health_checks": [{ "method": "GET", "path": "/healthz" }],
+        "data_namespace": "nw-{{run_id}}",
+        "limits": { "max_requests": 100, "max_duration_seconds": 300, "max_parallelism": 2 },
+        "capabilities": { "destructive": false, "fuzzing": false, "load": false },
+        "production_url_patterns": ["https://nw-orch-locked.example.test/*"]
+      }
+    ]
+  },
+  "policy_decisions": {
+    "approved": {
+      "decision": "approved",
+      "reason": "action within environment capabilities and budget",
+      "requested_action": "issue.publish:finding=<finding_id>",
+      "decided_by": "c04-policy-engine",
+      "decided_at_offset_ms": 0,
+      "expires_at_offset_ms": 300000
+    }
+  },
+  "approvals": {
+    "valid": {
+      "approver": "nw-synthetic-reviewer",
+      "decision": "approved",
+      "approved_at_offset_ms": 0,
+      "expires_at_offset_ms": 3600000,
+      "reason": "synthetic reviewer approval for WP-08 publish acceptance"
+    }
+  }
+}

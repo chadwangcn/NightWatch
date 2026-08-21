@@ -1,0 +1,90 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "NightWatch Orchestration Synthetic API",
+    "version": "1.0.0",
+    "description": "Synthetic API fixture (version 1) for NightWatch WP-08 orchestration acceptance. Served by the WP-05 Golden Fault local stub; all data is synthetic."
+  },
+  "servers": [
+    {
+      "url": "https://nw-orch.example.test",
+      "description": "Synthetic orchestration test server (logical URL; live traffic goes to the local stub)"
+    }
+  ],
+  "paths": {
+    "/v1/positive": {
+      "get": {
+        "operationId": "getPositive",
+        "summary": "Positive sample",
+        "description": "Deterministic 200 response used by passing orchestration cases.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["ok", "value"],
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "value": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/negative": {
+      "get": {
+        "operationId": "getNegative",
+        "summary": "Negative sample",
+        "description": "Deterministic 400 response; orchestration cases expect 200 so the case always fails (confirmed-finding source).",
+        "responses": {
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/edge/slow": {
+      "get": {
+        "operationId": "getSlow",
+        "summary": "Slow boundary",
+        "description": "Delayed response used as the cancellation window for cancelRun acceptance.",
+        "parameters": [
+          {
+            "name": "ms",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK after the requested delay" }
+        }
+      }
+    },
+    "/v1/edge/large": {
+      "get": {
+        "operationId": "getLarge",
+        "summary": "Large body boundary",
+        "description": "Large JSON body; a wrong-count assertion against it yields a second deterministic confirmed-finding source.",
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    }
+  }
+}

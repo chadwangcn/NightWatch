@@ -1,0 +1,498 @@
+{
+  "ok": true,
+  "finished_at": "2026-08-21T17:32:07.869Z",
+  "verifier": "nightwatch/control/verify.mjs",
+  "task_fingerprint": "nw+p0+wp08+control-orchestrator+impl+arch@v1.4+68ff497",
+  "checks": {
+    "a3_registry_import_ok": {
+      "ok": true
+    },
+    "a1_create_session_command_ok": {
+      "ok": true
+    },
+    "a1_session_persisted_schema_valid": {
+      "ok": true
+    },
+    "a1_initial_state_discovery": {
+      "ok": true,
+      "state": "discovery"
+    },
+    "a2_illegal_transition_rejected": {
+      "ok": true
+    },
+    "a2_illegal_transition_state_unchanged": {
+      "ok": true
+    },
+    "a2_blocked_requires_reason": {
+      "ok": true
+    },
+    "a2_closed_is_terminal": {
+      "ok": true
+    },
+    "a9_command_idempotent_replay": {
+      "ok": true
+    },
+    "a9_command_conflict": {
+      "ok": true
+    },
+    "a9_invalid_envelope": {
+      "ok": true
+    },
+    "a9_unknown_command": {
+      "ok": true
+    },
+    "a9_deadline_timeout": {
+      "ok": true
+    },
+    "a3_start_run_ok": {
+      "ok": true
+    },
+    "a3_run_outcome_failed": {
+      "ok": true,
+      "outcome": "failed"
+    },
+    "a3_case_summary_counts": {
+      "ok": true,
+      "summary": {
+        "total": 9,
+        "passed": 3,
+        "failed": 6,
+        "error": 0,
+        "skipped": 0
+      }
+    },
+    "a3_run_bundle_sealed": {
+      "ok": true
+    },
+    "a3_finding_classified": {
+      "ok": true,
+      "finding_ids": [
+        "find_01M0HW6P800000000000000006",
+        "find_01M0HW6P800000000000000007"
+      ]
+    },
+    "a3_finding_confirmed_classification": {
+      "ok": true
+    },
+    "a3_audit_steps_recorded": {
+      "ok": true
+    },
+    "a3_event_sequence_strictly_monotonic": {
+      "ok": true,
+      "count": 10
+    },
+    "a3_event_order": {
+      "ok": true,
+      "names": [
+        "runStepRecorded",
+        "runStepRecorded",
+        "runStepRecorded",
+        "runStarted",
+        "runCompleted",
+        "runStepRecorded",
+        "runStepRecorded",
+        "runStepRecorded",
+        "runStepRecorded",
+        "runStepRecorded"
+      ]
+    },
+    "a3_step_index_ordered": {
+      "ok": true,
+      "stepIdx": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    "a3_observation_recorded_events": {
+      "ok": true,
+      "count": 6
+    },
+    "a5_retry_ok": {
+      "ok": true
+    },
+    "a5_new_run_id": {
+      "ok": true
+    },
+    "a5_supersedes_reference": {
+      "ok": true
+    },
+    "a5_retry_deterministic_outcome": {
+      "ok": true,
+      "outcome": "failed",
+      "summary": {
+        "total": 9,
+        "passed": 3,
+        "failed": 6,
+        "error": 0,
+        "skipped": 0
+      }
+    },
+    "a5_reclaim_reported": {
+      "ok": true,
+      "reclaim": {
+        "status": "clean",
+        "detail": "prior ledger has no orphan resources (setup already cleaned or never left orphans)",
+        "attempts": 0
+      }
+    },
+    "a5_setup_registry_not_redone": {
+      "ok": true,
+      "calls": 1
+    },
+    "a5_setup_library_not_redone": {
+      "ok": true,
+      "calls": 1
+    },
+    "a5_policy_decided_per_run": {
+      "ok": true
+    },
+    "a7_two_confirmed_drafts": {
+      "ok": true,
+      "drafts": [
+        "draft_01M0HW6P800000000000000000",
+        "draft_01M0HW6P800000000000000001"
+      ]
+    },
+    "a7_issue_drafted_events": {
+      "ok": true,
+      "count": 2
+    },
+    "a6_preset_materialized": {
+      "ok": true
+    },
+    "a6_preset_replay_zero_writes": {
+      "ok": true,
+      "writes": 0
+    },
+    "a6_preset_receipt_returned": {
+      "ok": true
+    },
+    "a7_approval_record_valid": {
+      "ok": true
+    },
+    "a6_publish_interrupted_after_write": {
+      "ok": true,
+      "name": "OrchestrationInterrupted"
+    },
+    "a6_c13_single_write_so_far": {
+      "ok": true,
+      "writes": 1
+    },
+    "a6_session_state_before_resume": {
+      "ok": true,
+      "state": "issue_review"
+    },
+    "a6_resume_completed_publish": {
+      "ok": true
+    },
+    "a6_resume_replay_no_second_write": {
+      "ok": true,
+      "writes": 1
+    },
+    "a6_resume_replay_flag": {
+      "ok": true
+    },
+    "a6_single_publish_bookkeeping": {
+      "ok": true
+    },
+    "a6_session_published": {
+      "ok": true,
+      "state": "published"
+    },
+    "a7_issue_published_event": {
+      "ok": true
+    },
+    "a2_retest_issue_ok": {
+      "ok": true
+    },
+    "a2_retest_session_retest_pending": {
+      "ok": true,
+      "state": "retest_pending"
+    },
+    "a2_retest_comment_attached": {
+      "ok": true
+    },
+    "a2_published_to_closed_path": {
+      "ok": true
+    },
+    "a2_clean_run_ok": {
+      "ok": true
+    },
+    "a2_clean_run_completed": {
+      "ok": true,
+      "outcome": "completed"
+    },
+    "a2_issue_review_to_inconclusive": {
+      "ok": true,
+      "state": "inconclusive"
+    },
+    "a2_inconclusive_to_retest_pending": {
+      "ok": true
+    },
+    "a2_inconclusive_to_closed": {
+      "ok": true
+    },
+    "a4_run_id_captured_via_subscription": {
+      "ok": true,
+      "captured": "run_01M0HW6P80000000000000002M"
+    },
+    "a4_cancel_command_semantics": {
+      "ok": true
+    },
+    "a4_cancelled_run_outcome": {
+      "ok": true,
+      "outcome": "cancelled"
+    },
+    "a4_ex_cancelled_semantics": {
+      "ok": true,
+      "summary": {
+        "total": 3,
+        "passed": 0,
+        "failed": 0,
+        "error": 1,
+        "skipped": 2
+      }
+    },
+    "a4_run_completed_event_records_cancel": {
+      "ok": true
+    },
+    "a4_session_state_after_cancel": {
+      "ok": true,
+      "state": "issue_review"
+    },
+    "a6_interrupt_after_execute_injected": {
+      "ok": true,
+      "name": "OrchestrationInterrupted"
+    },
+    "a6_interrupted_run_identified": {
+      "ok": true
+    },
+    "a6_interrupted_execute_done_once": {
+      "ok": true
+    },
+    "a6_interrupted_registry_not_redone": {
+      "ok": true,
+      "calls": 4
+    },
+    "a6_resume_session_continued": {
+      "ok": true
+    },
+    "a6_resumed_run_sealed": {
+      "ok": true
+    },
+    "a6_resume_no_redo_evidence": {
+      "ok": true
+    },
+    "a6_resume_session_issue_review": {
+      "ok": true,
+      "state": "issue_review"
+    },
+    "a8_executor_fault_error_passthrough": {
+      "ok": true,
+      "error": {
+        "code": "EXE_WORKER_FAILED",
+        "message": "injected single-component failure: executor worker failed abnormally (synthetic WP-08 fault fixture)",
+        "retryable": false,
+        "details": {
+          "reason": "injected",
+          "component": "C09-executor"
+        }
+      }
+    },
+    "a8_executor_fault_registered_envelope": {
+      "ok": true
+    },
+    "a8_executor_fault_blocked": {
+      "ok": true,
+      "state": "blocked",
+      "reason": "EXE_WORKER_FAILED: injected single-component failure: executor worker failed abnormally (synthetic WP-08 fault fixture)"
+    },
+    "a8_prior_checkpoints_preserved": {
+      "ok": true,
+      "sequences": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "a8_prior_steps_not_rolled_back": {
+      "ok": true,
+      "completed": [
+        "registry_pin:nw-orch-api",
+        "library_cases:scen_01J00000000000000000000RC3",
+        "policy_gate:run_01M0HW6P800000000000000040"
+      ]
+    },
+    "a8_blocked_to_running_recovered": {
+      "ok": true
+    },
+    "a8_recovered_final_state": {
+      "ok": true,
+      "state": "issue_review"
+    },
+    "a8_classify_fault_error_passthrough": {
+      "ok": true,
+      "error": {
+        "code": "FND_CLASSIFICATION_INVALID",
+        "message": "injected single-component failure: finding classification rejected (synthetic WP-08 fault fixture)",
+        "retryable": false,
+        "details": {
+          "reason": "injected",
+          "component": "C12-finding"
+        }
+      }
+    },
+    "a8_classify_fault_state_unchanged": {
+      "ok": true,
+      "state": "analyzing"
+    },
+    "a8_prior_run_bundle_intact": {
+      "ok": true
+    },
+    "a8_classify_recovered": {
+      "ok": true,
+      "state": "issue_review"
+    },
+    "a7_denied_deployment_run_ok": {
+      "ok": true
+    },
+    "a7_denied_deployment_draft_built": {
+      "ok": true,
+      "drafts": 2
+    },
+    "a7_policy_denied": {
+      "ok": true,
+      "error": {
+        "code": "CTL_VALIDATION_FAILED",
+        "message": "policy denied the publish: production read-only smoke requires an explicit allow_readonly_smoke allowance in the environment definition",
+        "retryable": false,
+        "idempotent_replay": false,
+        "details": {
+          "reason": "policy_denied",
+          "policy_code": "POL_DENIED",
+          "decision_id": "pol-publish-draft_01M0HW6P800000000000000000"
+        }
+      }
+    },
+    "a7_denied_zero_publication": {
+      "ok": true,
+      "writes": 0
+    },
+    "a7_denied_session_state_unchanged": {
+      "ok": true,
+      "state": "issue_review"
+    },
+    "a9_all_events_schema_valid": {
+      "ok": true,
+      "failed": []
+    },
+    "a9_deploy_b_events_schema_valid": {
+      "ok": true
+    },
+    "a9_all_eight_event_types_emitted": {
+      "ok": true,
+      "seen": [
+        "findingClassified",
+        "issueDrafted",
+        "issuePublished",
+        "observationRecorded",
+        "runCompleted",
+        "runStarted",
+        "runStepRecorded",
+        "sessionStateChanged"
+      ]
+    },
+    "a9_checkpoints_schema_valid": {
+      "ok": true
+    },
+    "a9_async_iterator_shape": {
+      "ok": true
+    },
+    "a9_jsonl_log_matches_buffer": {
+      "ok": true,
+      "lines": 159,
+      "buffer": 159
+    },
+    "a9_session_sequence_monotonic": {
+      "ok": true,
+      "seqs": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    "a2_all_legal_edges_covered": {
+      "ok": true,
+      "missing": [],
+      "extra": []
+    },
+    "a1_dto_list_sessions": {
+      "ok": true,
+      "count": 6
+    },
+    "a1_dto_session_view": {
+      "ok": true,
+      "runs": 3,
+      "drafts": 2,
+      "published": 2
+    },
+    "a1_dto_session_not_found_error": {
+      "ok": true
+    },
+    "a10_determinism": {
+      "ok": true,
+      "two_pass_checks_identical": true
+    },
+    "a10_baselines_rerun": {
+      "ok": true,
+      "exit_codes": {
+        "wp00": 0,
+        "wp01": 0,
+        "wp02": 0,
+        "wp03": 0,
+        "wp04": 0,
+        "wp05": 0,
+        "wp06": 0,
+        "wp07": 0
+      }
+    },
+    "a10_secret_scan": {
+      "ok": true,
+      "hits": [],
+      "scanned_files": 11
+    }
+  },
+  "stats": {
+    "pass1_failures": [],
+    "pass2_failures": [],
+    "sessions_per_pass": 6,
+    "deployments_per_pass": 2
+  },
+  "secret_scan": {
+    "hits": [],
+    "scanned_files": 11
+  },
+  "artifacts": {
+    "receipt": "nightwatch/control/verify/receipt.json",
+    "runtime_state": "nightwatch/control/.state (deleted on completion)"
+  },
+  "notes": [
+    "P0 library shape: ControlApi.execute routes the seven WP-00 commands; the HTTP/SSE transport layer belongs to WP-09 (see DeliveryNotice 消费接口提示)",
+    "executor field stays the WP-00 enum 'curl' with executor_version builtin-blackbox@1.0.0 (repo-wide convention)",
+    "evidence base_url records the logical fixture URL (https://nw-orch.example.test), never the ephemeral stub port"
+  ]
+}
