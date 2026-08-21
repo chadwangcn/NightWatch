@@ -1,0 +1,298 @@
+{
+  "ok": true,
+  "finished_at": "2026-08-21T18:56:55.737Z",
+  "verifier": "nightwatch/console/verify.mjs",
+  "task_fingerprint": "nw+p0+wp09+console-experience+impl+arch@v1.4+895a747",
+  "checks": {
+    "a1_bind_loopback_only": {
+      "ok": true,
+      "a": "127.0.0.1",
+      "b": "127.0.0.1"
+    },
+    "a1_capability_token_generated": {
+      "ok": true,
+      "length": 48
+    },
+    "a1_wiring_real_components": {
+      "ok": true
+    },
+    "a1_static_assets_served": {
+      "ok": true,
+      "index": 200,
+      "css": 200,
+      "js": 200
+    },
+    "a2_write_without_token_401": {
+      "ok": true,
+      "status": 401,
+      "code": "CTL_UNAUTHORIZED"
+    },
+    "a2_write_wrong_token_401": {
+      "ok": true
+    },
+    "a2_approvals_without_token_401": {
+      "ok": true
+    },
+    "a2_zero_side_effects_after_401": {
+      "ok": true,
+      "sessions": 0,
+      "audits": 0
+    },
+    "a3_create_session_ok": {
+      "ok": true
+    },
+    "a3_session_schema_valid": {
+      "ok": true
+    },
+    "a3_sessions_listed": {
+      "ok": true,
+      "count": 1
+    },
+    "a3_session_view_aggregates": {
+      "ok": true,
+      "runs": 0,
+      "events": 0
+    },
+    "a3_unknown_session_404_json": {
+      "ok": true,
+      "status": 404
+    },
+    "a5_start_run_ok": {
+      "ok": true
+    },
+    "a5_run_shape": {
+      "ok": true,
+      "outcome": "failed",
+      "summary": {
+        "total": 9,
+        "passed": 3,
+        "failed": 6,
+        "error": 0,
+        "skipped": 0
+      }
+    },
+    "a5_run_events_seen_via_sse": {
+      "ok": true,
+      "started": 1,
+      "completed": 1
+    },
+    "a4_sse_history_replay_exact": {
+      "ok": true,
+      "got": 10,
+      "expected": 10
+    },
+    "a4_sse_sequence_ordered": {
+      "ok": true,
+      "seqs": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "a4_sse_object_filter": {
+      "ok": true
+    },
+    "a4_sse_frame_format_frozen": {
+      "ok": true
+    },
+    "a4_sse_frames_zero_secrets": {
+      "ok": true,
+      "hits": []
+    },
+    "a4_sse_replay_then_live": {
+      "ok": true,
+      "base": 26
+    },
+    "a5_view_sealed_run_and_drafts": {
+      "ok": true,
+      "runs": 1,
+      "drafts": 2,
+      "events": 6
+    },
+    "a6_publish_without_approval_c13_gate": {
+      "ok": true,
+      "code": "ISS_GATE_FAILED",
+      "gate": "reviewer"
+    },
+    "a6_gate_error_fields_complete": {
+      "ok": true
+    },
+    "a6_no_approval_zero_writes": {
+      "ok": true,
+      "writes": 0
+    },
+    "a5_approval_registered": {
+      "ok": true,
+      "body": {
+        "ok": true,
+        "registered": "issue.publish:finding=find_01M0J32DG00000000000000006",
+        "idempotent_replay": false
+      }
+    },
+    "a2_approval_audited_via_wp03": {
+      "ok": true,
+      "count": 1,
+      "key": "issue.publish:finding=find_01M0J32DG00000000000000006:2026-08-21T12:00:00Z"
+    },
+    "a5_publish_issue_ok": {
+      "ok": true
+    },
+    "a5_receipt_visible": {
+      "ok": true,
+      "issue_ref": "synthetic-org/synthetic-repo#1"
+    },
+    "a5_single_github_write": {
+      "ok": true,
+      "writes": 1
+    },
+    "a5_published_receipt_in_view": {
+      "ok": true,
+      "published": 1,
+      "state": "published"
+    },
+    "a6_invalid_envelope_ctl": {
+      "ok": true,
+      "code": "CTL_VALIDATION_FAILED"
+    },
+    "a6_deadline_timeout_ctl": {
+      "ok": true,
+      "code": "CTL_COMMAND_TIMEOUT"
+    },
+    "a6_unknown_command_ctl": {
+      "ok": true
+    },
+    "a6_malformed_body_rejected": {
+      "ok": true,
+      "status": 400
+    },
+    "a6_denied_deployment_run_ok": {
+      "ok": true
+    },
+    "a6_denied_deployment_draft_built": {
+      "ok": true,
+      "drafts": 2
+    },
+    "a6_policy_denied_visible": {
+      "ok": true,
+      "code": "CTL_VALIDATION_FAILED",
+      "policy_code": "POL_DENIED"
+    },
+    "a6_policy_denied_zero_writes": {
+      "ok": true,
+      "writes": 0
+    },
+    "a6_policy_denied_state_unchanged": {
+      "ok": true,
+      "state": "issue_review"
+    },
+    "a8_encoded_traversal_session_404": {
+      "ok": true,
+      "status": 404
+    },
+    "a8_raw_traversal_session_404": {
+      "ok": true,
+      "status": 404
+    },
+    "a8_asset_traversal_404": {
+      "ok": true,
+      "status": 404
+    },
+    "a8_asset_escape_404": {
+      "ok": true
+    },
+    "a8_object_id_filter_safe": {
+      "ok": true,
+      "frames": 0
+    },
+    "a8_server_healthy_after_probes": {
+      "ok": true
+    },
+    "a9_command_replay_original_receipt": {
+      "ok": true,
+      "replay": true,
+      "sid": "session_01M0J32DG00000000000000000"
+    },
+    "a9_command_conflict_http": {
+      "ok": true,
+      "code": "CTL_IDEMPOTENCY_CONFLICT"
+    },
+    "a9_approval_replay_idempotent": {
+      "ok": true,
+      "body": {
+        "ok": true,
+        "registered": "issue.publish:finding=find_01M0J32DG00000000000000006",
+        "idempotent_replay": true
+      }
+    },
+    "a9_approval_audit_not_duplicated": {
+      "ok": true,
+      "count": 1
+    },
+    "a9_publish_replay_single_write": {
+      "ok": true,
+      "writes": 1
+    },
+    "a10_determinism": {
+      "ok": true,
+      "two_pass_checks_identical": true
+    },
+    "a7_static_boundary": {
+      "ok": true,
+      "violations": [],
+      "scanned_sources": [
+        "server.mjs",
+        "lib/wiring.mjs",
+        "lib/http.mjs",
+        "public/index.html",
+        "public/assets/app.js",
+        "public/assets/style.css"
+      ]
+    },
+    "a10_baselines_rerun": {
+      "ok": true,
+      "exit_codes": {
+        "wp00": 0,
+        "wp01": 0,
+        "wp02": 0,
+        "wp03": 0,
+        "wp04": 0,
+        "wp05": 0,
+        "wp06": 0,
+        "wp07": 0,
+        "wp08": 0
+      }
+    },
+    "a10_secret_scan": {
+      "ok": true,
+      "source_hits": [],
+      "output_hits": [],
+      "scanned_files": 7,
+      "scanned_outputs": 84
+    }
+  },
+  "stats": {
+    "pass1_failures": [],
+    "pass2_failures": [],
+    "deployments_per_pass": 2,
+    "http_outputs_scanned": 84
+  },
+  "secret_scan": {
+    "source_hits": [],
+    "output_hits": [],
+    "scanned_files": 7
+  },
+  "artifacts": {
+    "receipt": "nightwatch/console/verify/receipt.json",
+    "runtime_state": "nightwatch/console/.state (deleted on completion)",
+    "ui_entrypoint": "node nightwatch/console/server.mjs (token printed to stderr)"
+  },
+  "notes": [
+    "Frozen error mapping: transport auth failures → HTTP 401 + CTL_UNAUTHORIZED envelope; unknown routes/ids and malformed bodies → 404/405/400 + CTL_VALIDATION_FAILED envelope; every ControlApi/component business error → HTTP 200 + {ok:false,error} passed through verbatim",
+    "SSE frame format frozen as: event: <name> | id: <event_id> | data: {name,event}; history() replay precedes live subscribe on every connection",
+    "POST /approvals audits through the WP-03 public API with idempotency key = scope + approved_at (timestamp taken from the record, so identical retries replay)",
+    "console deployments audit into their own isolated WP-03 store dir (never the shared nightwatch/state/.store)"
+  ]
+}

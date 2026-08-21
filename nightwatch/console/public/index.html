@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NightWatch 控制台</title>
+  <link rel="stylesheet" href="/assets/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <strong>NightWatch 控制台</strong>
+      <span class="muted">C01 · 本地单页 Console(仅访问本地 API)</span>
+    </div>
+    <div class="token-box">
+      <label for="token-input">Capability Token</label>
+      <input id="token-input" type="password" placeholder="粘贴服务启动时 STDERR 打印的 token" autocomplete="off" />
+      <button id="token-save" type="button">保存</button>
+      <span id="token-state" class="muted">未设置</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- ① Session 列表 -->
+    <aside class="sessions-panel">
+      <div class="panel-head">
+        <h2>会话列表</h2>
+        <button id="refresh-sessions" type="button">刷新</button>
+      </div>
+      <ul id="session-list" class="session-list"></ul>
+      <p id="session-list-empty" class="muted empty-hint">暂无会话——在命令面板执行 createSession。</p>
+    </aside>
+
+    <section class="content">
+      <!-- ② Session 详情 -->
+      <div id="session-detail" class="card hidden">
+        <div class="panel-head">
+          <h2 id="detail-title">会话详情</h2>
+          <button id="refresh-detail" type="button">刷新</button>
+        </div>
+        <div id="detail-meta" class="detail-meta"></div>
+        <h3>Runs</h3>
+        <div id="detail-runs" class="runs"></div>
+        <h3>草稿(Drafts)</h3>
+        <div id="detail-drafts" class="drafts"></div>
+        <h3>已发布回执(Published)</h3>
+        <div id="detail-published" class="published"></div>
+        <h3>事件时间线(按 sequence 排序,SSE 实时刷新)</h3>
+        <div id="detail-events" class="timeline"></div>
+      </div>
+
+      <!-- ③ 命令面板 -->
+      <div class="card">
+        <div class="panel-head"><h2>命令面板(七命令)</h2></div>
+        <div class="command-grid">
+          <button class="cmd-tab" data-cmd="createSession" type="button">createSession</button>
+          <button class="cmd-tab" data-cmd="startRun" type="button">startRun</button>
+          <button class="cmd-tab" data-cmd="cancelRun" type="button">cancelRun</button>
+          <button class="cmd-tab" data-cmd="retryRun" type="button">retryRun</button>
+          <button class="cmd-tab" data-cmd="resumeSession" type="button">resumeSession</button>
+          <button class="cmd-tab" data-cmd="publishIssue" type="button">publishIssue</button>
+          <button class="cmd-tab" data-cmd="retestIssue" type="button">retestIssue</button>
+        </div>
+        <form id="command-form">
+          <div class="form-row">
+            <label>command_id
+              <input id="cmd-id" type="text" />
+            </label>
+            <button id="cmd-regen" type="button" class="tiny">自动生成</button>
+          </div>
+          <div class="form-row">
+            <label>issued_at
+              <input id="cmd-issued" type="text" />
+            </label>
+            <label>deadline(默认 +10 分钟)
+              <input id="cmd-deadline" type="text" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>payload(JSON)
+              <textarea id="cmd-payload" rows="8" spellcheck="false"></textarea>
+            </label>
+          </div>
+          <button id="cmd-submit" type="submit">执行命令</button>
+          <span class="muted">写操作需 Bearer token;错误封装会原样显示在下方状态区。</span>
+        </form>
+      </div>
+
+      <!-- ④ 审批面板 -->
+      <div class="card">
+        <div class="panel-head"><h2>人工审批</h2></div>
+        <form id="approval-form">
+          <div class="form-row">
+            <label>approver
+              <input id="ap-approver" type="text" value="human-reviewer" />
+            </label>
+            <label>decision
+              <select id="ap-decision">
+                <option value="approved">approved</option>
+                <option value="denied">denied</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-row">
+            <label>scope(如 issue.publish:finding=find_…)
+              <input id="ap-scope" type="text" placeholder="issue.publish:finding=find_..." />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>approved_at
+              <input id="ap-approved-at" type="text" />
+            </label>
+            <label>expires_at(默认 +1 小时)
+              <input id="ap-expires-at" type="text" />
+            </label>
+          </div>
+          <div class="form-row">
+            <label>reason
+              <input id="ap-reason" type="text" value="人工审批:同意发布该 confirmed finding" />
+            </label>
+          </div>
+          <button id="ap-submit" type="submit">提交审批</button>
+          <span class="muted">提交后经 makeApprovalRecord 校验并注册到 Orchestrator,同时落 WP-03 审计。</span>
+        </form>
+      </div>
+    </section>
+
+    <!-- ⑤ 错误与权限状态区 -->
+    <aside class="status-panel">
+      <div class="panel-head"><h2>错误与权限状态</h2><button id="clear-errors" type="button" class="tiny">清空</button></div>
+      <div id="error-area" class="error-area"><p class="muted">暂无错误。</p></div>
+      <div class="panel-head"><h2>最近命令响应</h2></div>
+      <pre id="last-response" class="response-view muted">—</pre>
+    </aside>
+  </main>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>
