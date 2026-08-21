@@ -1,0 +1,317 @@
+{
+  "fixture_version": "nw-wp07-publish-cases-v1",
+  "note": "Synthetic publish-path fixtures for WP-07 acceptance (WorkRequest §8). All identifiers, URLs and payloads are synthetic; no real secrets. Runs are WP-06-shaped execution-event specs driven through the real WP-06 EvidenceStore/FindingStore pipeline by verify.mjs (so every draft references genuinely sealed, checksum-verified bundles). 'confirmed-unsealed' is ingested but never sealed (gate-1 negative). 'retest-evidence' is ingested mid-suite after the first publish (§5.5 retest linkage). The secret-negative sample is injected ONLY into an in-memory draft override and must be rejected by gate 2 with zero GitHub writes.",
+  "shared": {
+    "workspace_id": "synthetic-workspace-07",
+    "session_id": "session_01J8WP07RG0000000000SES001",
+    "plan_id": "plan_01J8WP07RG0000000000P1AN01",
+    "scenario_id": "scen_01J8WP07RG0000000000SCEN01",
+    "contract_pin": {
+      "source_revision": "synthetic-rev-wp07-4c3f",
+      "checksum": "b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1"
+    },
+    "scenario_revision": "synthetic-scenario-rev-7",
+    "environment_name": "synthetic-staging",
+    "base_url": "https://synthetic-staging.example.test",
+    "deployment_ref": "synthetic-deploy-router-07",
+    "executor": "newman",
+    "executor_version": "6.2.2",
+    "agent_host_type": "synthetic-agent-host"
+  },
+  "runs": [
+    {
+      "purpose": "confirmed-primary",
+      "seal": true,
+      "run": {
+        "run_id": "run_01J8WP07RG000000000000AAA1",
+        "execution_id": "exec_01J8WP07RG0000000000EXEC01",
+        "status": "failed",
+        "started_at": "2026-08-21T01:10:00Z",
+        "finished_at": "2026-08-21T01:12:00Z",
+        "duration_ms": 120000,
+        "seed": 710001,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder widget-create (synthetic wp07)",
+        "cleanup": { "status": "completed", "details": "synthetic widget fixtures removed" },
+        "events": [
+          {
+            "case_id": "case_01J8WP07RG00000000000CSEA1",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "500",
+            "response_signature": "synthetic-sig-500-widget-create",
+            "scenario_state": "widget-create-batch-1",
+            "request": {
+              "method": "POST",
+              "url": "https://synthetic-staging.example.test/v1/widgets",
+              "headers": { "Authorization": "Bearer synthetic-bearer-widget-0001", "Content-Type": "application/json" },
+              "body": { "name": "synthetic-widget-beta" }
+            },
+            "response": { "status": 500, "body": { "error": "synthetic-internal-error", "request_id": "synthetic-req-0001" } }
+          },
+          {
+            "case_id": "case_01J8WP07RG00000000000CSEA2",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "500",
+            "response_signature": "synthetic-sig-500-widget-create",
+            "scenario_state": "widget-create-batch-1",
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets", "headers": { "Content-Type": "application/json" }, "body": { "name": "synthetic-widget-gamma" } },
+            "response": { "status": 500, "body": { "error": "synthetic-internal-error", "request_id": "synthetic-req-0002" } }
+          },
+          {
+            "case_id": "case_01J8WP07RG00000000000CSEA3",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "500",
+            "response_signature": "synthetic-sig-500-widget-create",
+            "scenario_state": "widget-create-batch-1",
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets", "headers": { "Content-Type": "application/json" }, "body": { "name": "synthetic-widget-delta" } },
+            "response": { "status": 500, "body": { "error": "synthetic-internal-error", "request_id": "synthetic-req-0003" } }
+          },
+          {
+            "case_id": "case_01J8WP07RG00000000000CSEA4",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "500",
+            "response_signature": "synthetic-sig-500-widget-create",
+            "scenario_state": "widget-create-batch-1",
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets", "headers": { "Content-Type": "application/json" }, "body": { "name": "synthetic-widget-epsilon" } },
+            "response": { "status": 500, "body": { "error": "synthetic-internal-error", "request_id": "synthetic-req-0004" } }
+          }
+        ]
+      }
+    },
+    {
+      "purpose": "confirmed-repro-second",
+      "seal": true,
+      "run": {
+        "run_id": "run_01J8WP07RG000000000000BBB2",
+        "execution_id": "exec_01J8WP07RG0000000000EXEC02",
+        "status": "failed",
+        "started_at": "2026-08-21T01:20:00Z",
+        "finished_at": "2026-08-21T01:21:00Z",
+        "duration_ms": 60000,
+        "seed": 710002,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder widget-create-repro (synthetic wp07)",
+        "cleanup": { "status": "completed", "details": "synthetic widget fixtures removed" },
+        "events": [
+          {
+            "case_id": "case_01J8WP07RG00000000000CSEB1",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "500",
+            "response_signature": "synthetic-sig-500-widget-create",
+            "scenario_state": "widget-create-batch-1",
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets", "headers": { "Content-Type": "application/json" }, "body": { "name": "synthetic-widget-zeta" } },
+            "response": { "status": 500, "body": { "error": "synthetic-internal-error", "request_id": "synthetic-req-0005" } }
+          },
+          {
+            "case_id": "case_01J8WP07RG00000000000CSEB2",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "500",
+            "response_signature": "synthetic-sig-500-widget-create",
+            "scenario_state": "widget-create-batch-1",
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets", "headers": { "Content-Type": "application/json" }, "body": { "name": "synthetic-widget-eta" } },
+            "response": { "status": 500, "body": { "error": "synthetic-internal-error", "request_id": "synthetic-req-0006" } }
+          }
+        ]
+      }
+    },
+    {
+      "purpose": "inconclusive-single",
+      "seal": true,
+      "run": {
+        "run_id": "run_01J8WP07RG000000000000CCC3",
+        "execution_id": "exec_01J8WP07RG0000000000EXEC03",
+        "status": "failed",
+        "started_at": "2026-08-21T01:30:00Z",
+        "finished_at": "2026-08-21T01:30:30Z",
+        "duration_ms": 30000,
+        "seed": 710003,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder widget-detail (synthetic wp07)",
+        "cleanup": { "status": "completed", "details": "synthetic widget fixtures removed" },
+        "events": [
+          {
+            "case_id": "case_01J8WP07RG00000000000CSEC1",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "GET",
+            "path": "/v1/widgets/01J8WP07RG000000000000WGTX",
+            "assertion_class": "response-schema",
+            "status_or_error": "404",
+            "response_signature": "synthetic-sig-404-widget-missing",
+            "scenario_state": "detail-after-create",
+            "request": { "method": "GET", "url": "https://synthetic-staging.example.test/v1/widgets/01J8WP07RG000000000000WGTX", "headers": { "Accept": "application/json" } },
+            "response": { "status": 404, "body": { "error": "synthetic-widget-not-found" } }
+          }
+        ]
+      }
+    },
+    {
+      "purpose": "confirmed-unsealed",
+      "seal": false,
+      "run": {
+        "run_id": "run_01J8WP07RG000000000000DDD4",
+        "execution_id": "exec_01J8WP07RG0000000000EXEC04",
+        "status": "failed",
+        "started_at": "2026-08-21T01:40:00Z",
+        "finished_at": "2026-08-21T01:41:00Z",
+        "duration_ms": 60000,
+        "seed": 710004,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder widget-list (synthetic wp07, seal deferred)",
+        "cleanup": { "status": "completed", "details": "synthetic widget fixtures removed" },
+        "events": [
+          {
+            "case_id": "case_01J8WP07RG00000000000CSED1",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "GET",
+            "path": "/v1/widgets",
+            "assertion_class": "response-schema",
+            "status_or_error": "503",
+            "response_signature": "synthetic-sig-503-list",
+            "scenario_state": "list-first-page",
+            "request": { "method": "GET", "url": "https://synthetic-staging.example.test/v1/widgets", "headers": { "Accept": "application/json" } },
+            "response": { "status": 503, "body": { "error": "synthetic-service-unavailable" } }
+          },
+          {
+            "case_id": "case_01J8WP07RG00000000000CSED2",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "GET",
+            "path": "/v1/widgets",
+            "assertion_class": "response-schema",
+            "status_or_error": "503",
+            "response_signature": "synthetic-sig-503-list",
+            "scenario_state": "list-first-page",
+            "request": { "method": "GET", "url": "https://synthetic-staging.example.test/v1/widgets?limit=50", "headers": { "Accept": "application/json" } },
+            "response": { "status": 503, "body": { "error": "synthetic-service-unavailable" } }
+          },
+          {
+            "case_id": "case_01J8WP07RG00000000000CSED3",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "GET",
+            "path": "/v1/widgets",
+            "assertion_class": "response-schema",
+            "status_or_error": "503",
+            "response_signature": "synthetic-sig-503-list",
+            "scenario_state": "list-first-page",
+            "request": { "method": "GET", "url": "https://synthetic-staging.example.test/v1/widgets?limit=100", "headers": { "Accept": "application/json" } },
+            "response": { "status": 503, "body": { "error": "synthetic-service-unavailable" } }
+          }
+        ]
+      }
+    }
+  ],
+  "retest_run": {
+    "purpose": "retest-evidence",
+    "seal": true,
+    "run": {
+      "run_id": "run_01J8WP07RG000000000000EEE5",
+      "execution_id": "exec_01J8WP07RG0000000000EXEC05",
+      "status": "failed",
+      "started_at": "2026-08-21T02:00:00Z",
+      "finished_at": "2026-08-21T02:01:00Z",
+      "duration_ms": 60000,
+      "seed": 710005,
+      "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder widget-create-retest (synthetic wp07)",
+      "cleanup": { "status": "completed", "details": "synthetic widget fixtures removed after retest" },
+      "events": [
+        {
+          "case_id": "case_01J8WP07RG00000000000CSEE1",
+          "result": "failed",
+          "api_id": "synthetic-widget-api",
+          "method": "POST",
+          "path": "/v1/widgets",
+          "assertion_class": "status-code",
+          "status_or_error": "500",
+          "response_signature": "synthetic-sig-500-widget-create",
+          "scenario_state": "widget-create-batch-1",
+          "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets", "headers": { "Content-Type": "application/json" }, "body": { "name": "synthetic-widget-retest-1" } },
+          "response": { "status": 500, "body": { "error": "synthetic-internal-error", "request_id": "synthetic-req-0007" } }
+        },
+        {
+          "case_id": "case_01J8WP07RG00000000000CSEE2",
+          "result": "failed",
+          "api_id": "synthetic-widget-api",
+          "method": "POST",
+          "path": "/v1/widgets",
+          "assertion_class": "status-code",
+          "status_or_error": "500",
+          "response_signature": "synthetic-sig-500-widget-create",
+          "scenario_state": "widget-create-batch-1",
+          "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets", "headers": { "Content-Type": "application/json" }, "body": { "name": "synthetic-widget-retest-2" } },
+          "response": { "status": 500, "body": { "error": "synthetic-internal-error", "request_id": "synthetic-req-0008" } }
+        }
+      ]
+    }
+  },
+  "secret_negative": {
+    "note": "Injected ONLY into an in-memory draft override (gate-2 negative); the value is synthetic and never reaches any GitHub write, audit event or persisted artifact.",
+    "override_field": "actual",
+    "value": "observed 500; debug payload echoed api key sk-syntheticwp07negativesample01 in the error body"
+  },
+  "approvals": {
+    "valid": {
+      "approver": "synthetic-reviewer-01",
+      "decision": "approved",
+      "reason": "reviewed the sealed evidence bundle and the draft",
+      "approved_at_offset_ms": -3600000,
+      "expires_at_offset_ms": 3600000
+    },
+    "expired": {
+      "approver": "synthetic-reviewer-02",
+      "decision": "approved",
+      "reason": "stale approval, past its expiry",
+      "approved_at_offset_ms": -7200000,
+      "expires_at_offset_ms": -3600000
+    }
+  },
+  "policy_decisions": {
+    "approved": {
+      "decision": "approved",
+      "reason": "issue publish within policy for the synthetic staging environment",
+      "decided_by": "c04-policy-engine",
+      "decided_at_offset_ms": -600000,
+      "expires_at_offset_ms": 3600000
+    },
+    "denied": {
+      "decision": "denied",
+      "reason": "publish blocked by policy for this environment class",
+      "decided_by": "c04-policy-engine",
+      "decided_at_offset_ms": -600000,
+      "expires_at_offset_ms": 3600000
+    }
+  },
+  "preset_issues": [
+    {
+      "preset": "dedup-hit",
+      "number": 9001,
+      "title": "[NightWatch] synthetic-widget-api POST /v1/widgets → 500 (status-code)",
+      "body": "Pre-existing open issue carrying the same finding fingerprint (synthetic dedup fixture; verify injects the runtime fingerprint hash).",
+      "labels": ["nightwatch", "needs-fix"],
+      "state": "open",
+      "fingerprint_of": "confirmed-primary"
+    }
+  ]
+}

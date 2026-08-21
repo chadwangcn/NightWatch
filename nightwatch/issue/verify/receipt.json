@@ -1,0 +1,85 @@
+{
+  "ok": true,
+  "finished_at": "2026-08-21T10:15:18.964Z",
+  "verifier": "nightwatch/issue/verify.mjs",
+  "task_fingerprint": "nw+p0+wp07+issue-gateway+impl+arch@v1.4+d7f0a6b",
+  "checks": {
+    "a1_draft_generation": {
+      "ok": true,
+      "failures": [],
+      "finding_class": "confirmed"
+    },
+    "a2_evidence_gate": {
+      "ok": true,
+      "failures": [],
+      "gate": "evidence-completeness"
+    },
+    "a3_secret_scan_gate": {
+      "ok": true,
+      "failures": [],
+      "injected_field": "actual"
+    },
+    "a4_fingerprint_dedup": {
+      "ok": true,
+      "failures": [],
+      "preset_issue": 9001
+    },
+    "a5_reviewer_gate": {
+      "ok": true,
+      "failures": [],
+      "cases": [
+        "missing",
+        "expired",
+        "valid"
+      ]
+    },
+    "a6_policy_integration": {
+      "ok": true,
+      "failures": [],
+      "cases": [
+        "missing",
+        "denied",
+        "approved"
+      ]
+    },
+    "a7_publish_idempotency": {
+      "ok": true,
+      "failures": [],
+      "scenarios": [
+        "same-key-replay",
+        "different-key-conflict"
+      ]
+    },
+    "a8_retest_linkage": {
+      "ok": true,
+      "failures": [],
+      "channel": "addComment"
+    },
+    "a9_hypothesis_firewall": {
+      "ok": true,
+      "failures": [],
+      "section": "## Hypothesis (suspected — NOT a confirmed root cause)"
+    },
+    "a10_determinism_and_baseline": {
+      "ok": true,
+      "failures": [],
+      "audit_tally_pass1": {
+        "ok_new": 4,
+        "replay": 0,
+        "fallback": 0,
+        "failed": 0
+      },
+      "baselines": [
+        "WP-00",
+        "WP-03",
+        "WP-04",
+        "WP-06"
+      ]
+    }
+  },
+  "artifacts": [
+    "nightwatch/issue/verify/receipt.json",
+    "nightwatch/issue/fixtures/publish-cases.json"
+  ],
+  "state_dir": "nightwatch/issue/.state/verify (runtime only, wiped at every verify start)"
+}
