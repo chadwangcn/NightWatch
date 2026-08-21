@@ -1,0 +1,711 @@
+{
+  "fixture_version": "nw-wp06-execution-events-v1",
+  "note": "Synthetic execution-event sequences for WP-06 acceptance (WorkRequest §8). All identifiers, URLs and payloads are synthetic. Credential-shaped negative samples use fake 'synthetic-' prefixed values (never real secrets). 'run-secret-block' embeds base64-encoded synthetic credentials in innocent-named fields: plain-text redaction deliberately cannot see through encoding; the seal-time secret scan decodes base64-shaped blobs and must block the seal (A4).",
+  "runs": [
+    {
+      "purpose": "positive-all-pass",
+      "expect_seal": "ok",
+      "run": {
+        "run_id": "run_01J8WP06RG000000000000PSSX",
+        "workspace_id": "synthetic-workspace-06",
+        "session_id": "session_01J8WP06RG0000000000SESS01",
+        "plan_id": "plan_01J8WP06RG0000000000P1AN01",
+        "scenario_id": "scen_01J8WP06RG0000000000SCEN01",
+        "execution_id": "exec_01J8WP06RG0000000000EXEC01",
+        "status": "completed",
+        "contract_pin": {
+          "source_revision": "synthetic-rev-8d9f2c1",
+          "checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+        },
+        "scenario_revision": "synthetic-scenario-rev-3",
+        "assumptions": [{ "assumption_id": "synthetic-assumption-01", "status": "confirmed" }],
+        "environment_name": "synthetic-staging",
+        "base_url": "https://synthetic-staging.example.test",
+        "deployment_ref": "synthetic-deploy-router-01",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "agent_host_type": "synthetic-agent-host",
+        "started_at": "2026-08-21T01:00:00Z",
+        "finished_at": "2026-08-21T01:02:00Z",
+        "duration_ms": 120000,
+        "seed": 483920,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder smoke (synthetic)",
+        "environment_snapshot": {
+          "NW_GITHUB_TOKEN": "synthetic-ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+          "NW_TESTED_API_TOKEN": "synthetic-nw-tested-api-token-0001",
+          "REGION": "synthetic-Region-1"
+        },
+        "cleanup": { "status": "completed", "details": "synthetic widget fixtures removed" },
+        "events": [
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEP1",
+            "result": "passed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "201",
+            "response_signature": "synthetic-sig-201-created",
+            "scenario_state": "widget-create-batch-1",
+            "request": {
+              "method": "POST",
+              "url": "https://synthetic-staging.example.test/v1/tokens?access_token=synthetic-access-token-0001",
+              "headers": {
+                "Authorization": "Bearer synthetic-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.synthetic-jwt-payload.synthetic-jwt-sig",
+                "X-Api-Key": "synthetic-sk-abc123def456ghi789jkl",
+                "Content-Type": "application/json"
+              },
+              "body": { "name": "synthetic-widget-alpha", "credentials": { "client_secret": "synthetic-client-secret-0001" } }
+            },
+            "response": { "status": 201, "body": { "id": "synthetic-widget-001", "name": "synthetic-widget-alpha" } }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEP2",
+            "result": "passed",
+            "api_id": "synthetic-widget-api",
+            "method": "GET",
+            "path": "/v1/widgets",
+            "assertion_class": "response-schema",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-list-ok",
+            "scenario_state": "list-first-page",
+            "request": {
+              "method": "GET",
+              "url": "https://synthetic-staging.example.test/v1/widgets",
+              "headers": { "Authorization": "Bearer synthetic-bearer-token-alpha-0001" }
+            },
+            "response": { "status": 200, "body": { "items": [{ "id": "synthetic-widget-001" }], "total": 1 } },
+            "logs": ["GET /v1/widgets 200 in 41ms", "reload cert: -----BEGIN RSA PRIVATE KEY----- synthetic"],
+            "metrics": { "duration_ms": 41, "bytes_in": 512 }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEP3",
+            "result": "passed",
+            "api_id": "synthetic-widget-api",
+            "method": "GET",
+            "path": "/v1/widgets/synthetic-widget-001",
+            "assertion_class": "response-schema",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-detail-ok",
+            "scenario_state": "detail-after-create",
+            "request": { "method": "GET", "url": "https://synthetic-staging.example.test/v1/widgets/synthetic-widget-001" },
+            "response": { "status": 200, "body": { "id": "synthetic-widget-001" } },
+            "artifacts": [{ "name": "response-detail.json", "content": { "id": "synthetic-widget-001", "note": "synthetic artifact" } }]
+          }
+        ]
+      }
+    },
+    {
+      "purpose": "negative-confirmed",
+      "expect_seal": "ok",
+      "run": {
+        "run_id": "run_01J8WP06RG000000000000CNFF",
+        "workspace_id": "synthetic-workspace-06",
+        "session_id": "session_01J8WP06RG0000000000SESS01",
+        "plan_id": "plan_01J8WP06RG0000000000P1AN01",
+        "scenario_id": "scen_01J8WP06RG0000000000SCEN01",
+        "execution_id": "exec_01J8WP06RG0000000000EXEC02",
+        "status": "failed",
+        "contract_pin": {
+          "source_revision": "synthetic-rev-8d9f2c1",
+          "checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+        },
+        "scenario_revision": "synthetic-scenario-rev-3",
+        "assumptions": [{ "assumption_id": "synthetic-assumption-01", "status": "confirmed" }],
+        "environment_name": "synthetic-staging",
+        "base_url": "https://synthetic-staging.example.test",
+        "deployment_ref": "synthetic-deploy-router-01",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "agent_host_type": "synthetic-agent-host",
+        "started_at": "2026-08-21T02:00:00Z",
+        "finished_at": "2026-08-21T02:03:00Z",
+        "duration_ms": 180000,
+        "seed": 483921,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder create (synthetic)",
+        "cleanup": { "status": "completed", "details": "nothing to clean" },
+        "events": [
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEC1",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "500",
+            "response_signature": "synthetic-sig-500-null-body",
+            "scenario_state": "widget-create-batch-1",
+            "expected": { "status": 201 },
+            "actual": { "status": 500, "body": null },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets", "headers": { "Authorization": "Bearer synthetic-bearer-beta-0001" }, "body": { "name": "synthetic-widget-beta" } },
+            "response": { "status": 500, "body": null }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEC2",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "500",
+            "response_signature": "synthetic-sig-500-null-body",
+            "scenario_state": "widget-create-batch-1",
+            "expected": { "status": 201 },
+            "actual": { "status": 500, "body": null },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets" },
+            "response": { "status": 500, "body": null }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEC3",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "500",
+            "response_signature": "synthetic-sig-500-null-body",
+            "scenario_state": "widget-create-batch-1",
+            "expected": { "status": 201 },
+            "actual": { "status": 500, "body": null },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets" },
+            "response": { "status": 500, "body": null }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEC4",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "500",
+            "response_signature": "synthetic-sig-500-null-body",
+            "scenario_state": "widget-create-batch-1",
+            "expected": { "status": 201 },
+            "actual": { "status": 500, "body": null },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets" },
+            "response": { "status": 500, "body": null }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEC5",
+            "result": "passed",
+            "api_id": "synthetic-widget-api",
+            "method": "GET",
+            "path": "/v1/widgets",
+            "assertion_class": "response-schema",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-list-ok",
+            "scenario_state": "list-first-page",
+            "request": { "method": "GET", "url": "https://synthetic-staging.example.test/v1/widgets" },
+            "response": { "status": 200, "body": { "items": [], "total": 0 } }
+          }
+        ]
+      }
+    },
+    {
+      "purpose": "flaky-intermittent",
+      "expect_seal": "ok",
+      "run": {
+        "run_id": "run_01J8WP06RG000000000000F1AK",
+        "workspace_id": "synthetic-workspace-06",
+        "session_id": "session_01J8WP06RG0000000000SESS01",
+        "plan_id": "plan_01J8WP06RG0000000000P1AN01",
+        "scenario_id": "scen_01J8WP06RG0000000000SCEN01",
+        "execution_id": "exec_01J8WP06RG0000000000EXEC03",
+        "status": "completed",
+        "contract_pin": {
+          "source_revision": "synthetic-rev-8d9f2c1",
+          "checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+        },
+        "scenario_revision": "synthetic-scenario-rev-3",
+        "assumptions": [{ "assumption_id": "synthetic-assumption-01", "status": "confirmed" }],
+        "environment_name": "synthetic-staging",
+        "base_url": "https://synthetic-staging.example.test",
+        "deployment_ref": "synthetic-deploy-router-01",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "agent_host_type": "synthetic-agent-host",
+        "started_at": "2026-08-21T03:00:00Z",
+        "finished_at": "2026-08-21T03:02:30Z",
+        "duration_ms": 150000,
+        "seed": 483922,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder search-repetition (synthetic)",
+        "cleanup": { "status": "completed", "details": "nothing to clean" },
+        "events": [
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEF1",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets/search",
+            "assertion_class": "response-schema",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-missing-field",
+            "scenario_state": "search-after-seed",
+            "expected": { "body_schema": "widgets.search.v1" },
+            "actual": { "missing_field": "total" },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets/search", "body": { "q": "synthetic" } },
+            "response": { "status": 200, "body": { "items": [] } }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEF2",
+            "result": "passed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets/search",
+            "assertion_class": "response-schema",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-search-ok",
+            "scenario_state": "search-after-seed",
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets/search", "body": { "q": "synthetic" } },
+            "response": { "status": 200, "body": { "items": [], "total": 0 } }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEF3",
+            "result": "passed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets/search",
+            "assertion_class": "response-schema",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-search-ok",
+            "scenario_state": "search-after-seed",
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets/search" },
+            "response": { "status": 200, "body": { "items": [], "total": 0 } }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEF4",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets/search",
+            "assertion_class": "response-schema",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-missing-field",
+            "scenario_state": "search-after-seed",
+            "expected": { "body_schema": "widgets.search.v1" },
+            "actual": { "missing_field": "total" },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets/search" },
+            "response": { "status": 200, "body": { "items": [] } }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEF5",
+            "result": "passed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets/search",
+            "assertion_class": "response-schema",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-search-ok",
+            "scenario_state": "search-after-seed",
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets/search" },
+            "response": { "status": 200, "body": { "items": [], "total": 0 } }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEF6",
+            "result": "passed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets/search",
+            "assertion_class": "response-schema",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-search-ok",
+            "scenario_state": "search-after-seed",
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets/search" },
+            "response": { "status": 200, "body": { "items": [], "total": 0 } }
+          }
+        ]
+      }
+    },
+    {
+      "purpose": "environmental-network",
+      "expect_seal": "ok",
+      "run": {
+        "run_id": "run_01J8WP06RG000000000000ENVK",
+        "workspace_id": "synthetic-workspace-06",
+        "session_id": "session_01J8WP06RG0000000000SESS01",
+        "plan_id": "plan_01J8WP06RG0000000000P1AN01",
+        "scenario_id": "scen_01J8WP06RG0000000000SCEN01",
+        "execution_id": "exec_01J8WP06RG0000000000EXEC04",
+        "status": "failed",
+        "contract_pin": {
+          "source_revision": "synthetic-rev-8d9f2c1",
+          "checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+        },
+        "scenario_revision": "synthetic-scenario-rev-3",
+        "assumptions": [{ "assumption_id": "synthetic-assumption-01", "status": "confirmed" }],
+        "environment_name": "synthetic-staging",
+        "base_url": "https://synthetic-staging.example.test",
+        "deployment_ref": "synthetic-deploy-router-01",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "agent_host_type": "synthetic-agent-host",
+        "started_at": "2026-08-21T04:00:00Z",
+        "finished_at": "2026-08-21T04:01:20Z",
+        "duration_ms": 80000,
+        "seed": 483923,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder list (synthetic)",
+        "cleanup": { "status": "skipped", "details": "no fixtures were created" },
+        "events": [
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEE1",
+            "result": "error",
+            "api_id": "synthetic-widget-api",
+            "method": "GET",
+            "path": "/v1/widgets",
+            "assertion_class": "transport",
+            "status_or_error": "ETIMEDOUT",
+            "response_signature": "synthetic-sig-no-response",
+            "scenario_state": "list-first-page",
+            "environmental_signals": ["network"],
+            "expected": { "status": 200 },
+            "actual": { "error": "ETIMEDOUT after 30000ms" },
+            "request": { "method": "GET", "url": "https://synthetic-staging.example.test/v1/widgets" },
+            "response": { "error": "ETIMEDOUT after 30000ms" },
+            "logs": ["GET /v1/widgets ETIMEDOUT (synthetic network partition)"]
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEE2",
+            "result": "error",
+            "api_id": "synthetic-widget-api",
+            "method": "GET",
+            "path": "/v1/widgets",
+            "assertion_class": "transport",
+            "status_or_error": "ETIMEDOUT",
+            "response_signature": "synthetic-sig-no-response",
+            "scenario_state": "list-first-page",
+            "environmental_signals": ["network"],
+            "expected": { "status": 200 },
+            "actual": { "error": "ETIMEDOUT after 30000ms" },
+            "request": { "method": "GET", "url": "https://synthetic-staging.example.test/v1/widgets" },
+            "response": { "error": "ETIMEDOUT after 30000ms" }
+          }
+        ]
+      }
+    },
+    {
+      "purpose": "spec-ambiguity",
+      "expect_seal": "ok",
+      "run": {
+        "run_id": "run_01J8WP06RG000000000000AMBK",
+        "workspace_id": "synthetic-workspace-06",
+        "session_id": "session_01J8WP06RG0000000000SESS01",
+        "plan_id": "plan_01J8WP06RG0000000000P1AN01",
+        "scenario_id": "scen_01J8WP06RG0000000000SCEN01",
+        "execution_id": "exec_01J8WP06RG0000000000EXEC05",
+        "status": "completed",
+        "contract_pin": {
+          "source_revision": "synthetic-rev-8d9f2c1",
+          "checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+        },
+        "scenario_revision": "synthetic-scenario-rev-3",
+        "assumptions": [
+          { "assumption_id": "synthetic-assumption-01", "status": "confirmed" },
+          { "assumption_id": "synthetic-assumption-02-legacy-delete-semantics", "status": "unconfirmed" }
+        ],
+        "environment_name": "synthetic-staging",
+        "base_url": "https://synthetic-staging.example.test",
+        "deployment_ref": "synthetic-deploy-router-01",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "agent_host_type": "synthetic-agent-host",
+        "started_at": "2026-08-21T05:00:00Z",
+        "finished_at": "2026-08-21T05:01:00Z",
+        "duration_ms": 60000,
+        "seed": 483924,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder legacy-delete (synthetic)",
+        "cleanup": { "status": "completed", "details": "nothing to clean" },
+        "events": [
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEA1",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets/legacy-mode",
+            "assertion_class": "contract-conformance",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-empty-body-vs-404",
+            "scenario_state": "legacy-delete-path",
+            "spec_ambiguity": "spec v2 requires 404 for a missing resource; the API returns 200 with an empty body — behavior and spec are ambiguous (assumption synthetic-assumption-02-legacy-delete-semantics is unconfirmed)",
+            "expected": { "status": 404 },
+            "actual": { "status": 200, "body": null },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets/legacy-mode", "body": { "id": "synthetic-widget-missing" } },
+            "response": { "status": 200, "body": null }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEA2",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets/legacy-mode",
+            "assertion_class": "contract-conformance",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-empty-body-vs-404",
+            "scenario_state": "legacy-delete-path",
+            "spec_ambiguity": "spec v2 requires 404 for a missing resource; the API returns 200 with an empty body — behavior and spec are ambiguous",
+            "expected": { "status": 404 },
+            "actual": { "status": 200, "body": null },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets/legacy-mode" },
+            "response": { "status": 200, "body": null }
+          }
+        ]
+      }
+    },
+    {
+      "purpose": "inconclusive-single-attempt",
+      "expect_seal": "ok",
+      "run": {
+        "run_id": "run_01J8WP06RG0000000000001NCK",
+        "workspace_id": "synthetic-workspace-06",
+        "session_id": "session_01J8WP06RG0000000000SESS01",
+        "plan_id": "plan_01J8WP06RG0000000000P1AN01",
+        "scenario_id": "scen_01J8WP06RG0000000000SCEN01",
+        "execution_id": "exec_01J8WP06RG0000000000EXEC06",
+        "status": "completed",
+        "contract_pin": {
+          "source_revision": "synthetic-rev-8d9f2c1",
+          "checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+        },
+        "scenario_revision": "synthetic-scenario-rev-3",
+        "assumptions": [{ "assumption_id": "synthetic-assumption-01", "status": "confirmed" }],
+        "environment_name": "synthetic-staging",
+        "base_url": "https://synthetic-staging.example.test",
+        "deployment_ref": "synthetic-deploy-router-01",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "agent_host_type": "synthetic-agent-host",
+        "started_at": "2026-08-21T06:00:00Z",
+        "finished_at": "2026-08-21T06:00:30Z",
+        "duration_ms": 30000,
+        "seed": 483925,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder settings (synthetic)",
+        "cleanup": { "status": "completed", "details": "nothing to clean" },
+        "events": [
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEN1",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "PUT",
+            "path": "/v1/widgets/settings",
+            "assertion_class": "status-code",
+            "status_or_error": "503",
+            "response_signature": "synthetic-sig-503-retry-after",
+            "scenario_state": "settings-update",
+            "expected": { "status": 200 },
+            "actual": { "status": 503, "retry_after_s": 5 },
+            "request": { "method": "PUT", "url": "https://synthetic-staging.example.test/v1/widgets/settings", "body": { "mode": "synthetic-safe" } },
+            "response": { "status": 503, "retry_after_s": 5 }
+          }
+        ]
+      }
+    },
+    {
+      "purpose": "cross-run-reproduction",
+      "expect_seal": "ok",
+      "run": {
+        "run_id": "run_01J8WP06RG000000000000CR0K",
+        "workspace_id": "synthetic-workspace-06",
+        "session_id": "session_01J8WP06RG0000000000SESS01",
+        "plan_id": "plan_01J8WP06RG0000000000P1AN01",
+        "scenario_id": "scen_01J8WP06RG0000000000SCEN01",
+        "execution_id": "exec_01J8WP06RG0000000000EXEC07",
+        "status": "failed",
+        "contract_pin": {
+          "source_revision": "synthetic-rev-8d9f2c1",
+          "checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+        },
+        "scenario_revision": "synthetic-scenario-rev-3",
+        "assumptions": [{ "assumption_id": "synthetic-assumption-01", "status": "confirmed" }],
+        "environment_name": "synthetic-staging",
+        "base_url": "https://synthetic-staging.example.test",
+        "deployment_ref": "synthetic-deploy-router-01",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "agent_host_type": "synthetic-agent-host",
+        "started_at": "2026-08-21T07:00:00Z",
+        "finished_at": "2026-08-21T07:01:30Z",
+        "duration_ms": 90000,
+        "seed": 483926,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder create-retest (synthetic)",
+        "cleanup": { "status": "completed", "details": "nothing to clean" },
+        "events": [
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEX1",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "500",
+            "response_signature": "synthetic-sig-500-null-body",
+            "scenario_state": "widget-create-batch-1",
+            "expected": { "status": 201 },
+            "actual": { "status": 500, "body": null },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets" },
+            "response": { "status": 500, "body": null }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEX2",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "500",
+            "response_signature": "synthetic-sig-500-null-body",
+            "scenario_state": "widget-create-batch-1",
+            "expected": { "status": 201 },
+            "actual": { "status": 500, "body": null },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets" },
+            "response": { "status": 500, "body": null }
+          }
+        ]
+      }
+    },
+    {
+      "purpose": "behavior-change-new-fingerprint",
+      "expect_seal": "ok",
+      "run": {
+        "run_id": "run_01J8WP06RG000000000000BEHK",
+        "workspace_id": "synthetic-workspace-06",
+        "session_id": "session_01J8WP06RG0000000000SESS01",
+        "plan_id": "plan_01J8WP06RG0000000000P1AN01",
+        "scenario_id": "scen_01J8WP06RG0000000000SCEN01",
+        "execution_id": "exec_01J8WP06RG0000000000EXEC08",
+        "status": "failed",
+        "contract_pin": {
+          "source_revision": "synthetic-rev-8d9f2c1",
+          "checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+        },
+        "scenario_revision": "synthetic-scenario-rev-3",
+        "assumptions": [{ "assumption_id": "synthetic-assumption-01", "status": "confirmed" }],
+        "environment_name": "synthetic-staging",
+        "base_url": "https://synthetic-staging.example.test",
+        "deployment_ref": "synthetic-deploy-router-02",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "agent_host_type": "synthetic-agent-host",
+        "started_at": "2026-08-21T08:00:00Z",
+        "finished_at": "2026-08-21T08:01:00Z",
+        "duration_ms": 60000,
+        "seed": 483927,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder create-after-deploy (synthetic)",
+        "cleanup": { "status": "completed", "details": "nothing to clean" },
+        "events": [
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEB1",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "502",
+            "response_signature": "synthetic-sig-502-bad-gateway",
+            "scenario_state": "widget-create-batch-1",
+            "expected": { "status": 201 },
+            "actual": { "status": 502, "body": { "error": "synthetic-upstream-unavailable" } },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets" },
+            "response": { "status": 502, "body": { "error": "synthetic-upstream-unavailable" } }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEB2",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "502",
+            "response_signature": "synthetic-sig-502-bad-gateway",
+            "scenario_state": "widget-create-batch-1",
+            "expected": { "status": 201 },
+            "actual": { "status": 502, "body": { "error": "synthetic-upstream-unavailable" } },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets" },
+            "response": { "status": 502, "body": { "error": "synthetic-upstream-unavailable" } }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASEB3",
+            "result": "failed",
+            "api_id": "synthetic-widget-api",
+            "method": "POST",
+            "path": "/v1/widgets",
+            "assertion_class": "status-code",
+            "status_or_error": "502",
+            "response_signature": "synthetic-sig-502-bad-gateway",
+            "scenario_state": "widget-create-batch-1",
+            "expected": { "status": 201 },
+            "actual": { "status": 502, "body": { "error": "synthetic-upstream-unavailable" } },
+            "request": { "method": "POST", "url": "https://synthetic-staging.example.test/v1/widgets" },
+            "response": { "status": 502, "body": { "error": "synthetic-upstream-unavailable" } }
+          }
+        ]
+      }
+    },
+    {
+      "purpose": "secret-block-encoded-credentials",
+      "expect_seal": "blocked_by_secret_scan",
+      "run": {
+        "run_id": "run_01J8WP06RG000000000000SECK",
+        "workspace_id": "synthetic-workspace-06",
+        "session_id": "session_01J8WP06RG0000000000SESS01",
+        "plan_id": "plan_01J8WP06RG0000000000P1AN01",
+        "scenario_id": "scen_01J8WP06RG0000000000SCEN01",
+        "execution_id": "exec_01J8WP06RG0000000000EXEC09",
+        "status": "completed",
+        "contract_pin": {
+          "source_revision": "synthetic-rev-8d9f2c1",
+          "checksum": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+        },
+        "scenario_revision": "synthetic-scenario-rev-3",
+        "assumptions": [{ "assumption_id": "synthetic-assumption-01", "status": "confirmed" }],
+        "environment_name": "synthetic-staging",
+        "base_url": "https://synthetic-staging.example.test",
+        "deployment_ref": "synthetic-deploy-router-01",
+        "executor": "newman",
+        "executor_version": "6.2.2",
+        "agent_host_type": "synthetic-agent-host",
+        "started_at": "2026-08-21T09:00:00Z",
+        "finished_at": "2026-08-21T09:00:40Z",
+        "duration_ms": 40000,
+        "seed": 483928,
+        "command_summary": "newman run synthetic-widget-api.postman_collection.json --folder report (synthetic)",
+        "cleanup": { "status": "completed", "details": "nothing to clean" },
+        "events": [
+          {
+            "case_id": "case_01J8WP06RG0000000000CASES1",
+            "result": "passed",
+            "api_id": "synthetic-widget-api",
+            "method": "GET",
+            "path": "/v1/widgets/report",
+            "assertion_class": "status-code",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-report-ok",
+            "scenario_state": "report-generation",
+            "request": { "method": "GET", "url": "https://synthetic-staging.example.test/v1/widgets/report" },
+            "response": {
+              "status": 200,
+              "body": {
+                "report_id": "synthetic-report-001",
+                "debug_trace": "c3ludGhldGljLUFLSUFJT1NGT0ROTjdFWEFNUExFWA=="
+              }
+            }
+          },
+          {
+            "case_id": "case_01J8WP06RG0000000000CASES2",
+            "result": "passed",
+            "api_id": "synthetic-widget-api",
+            "method": "GET",
+            "path": "/v1/widgets/report/summary",
+            "assertion_class": "status-code",
+            "status_or_error": "200",
+            "response_signature": "synthetic-sig-200-report-summary-ok",
+            "scenario_state": "report-generation",
+            "request": { "method": "GET", "url": "https://synthetic-staging.example.test/v1/widgets/report/summary" },
+            "response": { "status": 200, "body": { "summary": "synthetic-summary" } },
+            "logs": [
+              "upstream echo captured: c3ludGhldGljLWdocF9BQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0NTY3ODk="
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

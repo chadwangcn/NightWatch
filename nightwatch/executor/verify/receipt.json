@@ -1,0 +1,354 @@
+{
+  "ok": true,
+  "finished_at": "2026-08-21T07:43:08.322Z",
+  "verifier": "nightwatch/executor/verify.mjs",
+  "task_fingerprint": "nw+p0+wp05+executor-fixture-runtime+impl+arch@v1.4+a734f71",
+  "mode": "shared-audit",
+  "checks": {
+    "a1_submit_ok": {
+      "ok": true
+    },
+    "a1_result_schema": {
+      "ok": true
+    },
+    "a1_result_fields_complete": {
+      "ok": true
+    },
+    "a1_duration_monotonic_positive": {
+      "ok": true
+    },
+    "a1_wall_vs_monotonic_consistent": {
+      "ok": true
+    },
+    "a1_traffic_really_sent": {
+      "ok": true,
+      "requests_before": 0,
+      "requests_after": 6
+    },
+    "a6_exit_zero_all_pass": {
+      "ok": true,
+      "exit_code": 0,
+      "counts": {
+        "passed": 4,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      }
+    },
+    "a2_main_run_ok": {
+      "ok": true
+    },
+    "a2_per_case_statuses": {
+      "ok": true,
+      "counts": {
+        "passed": 10,
+        "failed": 4,
+        "error": 2,
+        "skipped": 0
+      }
+    },
+    "a2_repetitions_multiplied": {
+      "ok": true,
+      "case_results": 16
+    },
+    "a2_exit_one_on_failures": {
+      "ok": true
+    },
+    "a2_failures_counted": {
+      "ok": true,
+      "failures": 6
+    },
+    "a2_slow_case_elapsed_in_tolerance": {
+      "ok": true,
+      "elapsed_ms": 2502
+    },
+    "a9_same_seed_run_ok": {
+      "ok": true
+    },
+    "a9_same_seed_same_status_set": {
+      "ok": true
+    },
+    "a9_same_seed_same_nonce_sequence": {
+      "ok": true,
+      "first8": [
+        "case_01J00000000000000000000001#1:n4mt00jil",
+        "case_01J00000000000000000000002#1:n8i9l41t6"
+      ]
+    },
+    "a3_timeout_run_ok": {
+      "ok": true
+    },
+    "a3_timed_out_flag": {
+      "ok": true
+    },
+    "a3_exit_code_timeout": {
+      "ok": true,
+      "exit_code": 124
+    },
+    "a3_interrupted_case_error": {
+      "ok": true,
+      "c6": "error"
+    },
+    "a3_skipped_cases_visible": {
+      "ok": true,
+      "skipped": [
+        "c7",
+        "c8"
+      ]
+    },
+    "a3_duration_respects_budget": {
+      "ok": true,
+      "duration_ms": 1001
+    },
+    "a4_cancel_run_ok": {
+      "ok": true
+    },
+    "a4_cancelled_flag": {
+      "ok": true
+    },
+    "a4_exit_code_cancelled": {
+      "ok": true,
+      "exit_code": 130
+    },
+    "a4_new_steps_stopped": {
+      "ok": true,
+      "skipped": [
+        "c7",
+        "c8"
+      ]
+    },
+    "a4_worker_terminated_inflight": {
+      "ok": true,
+      "c6": "error"
+    },
+    "a4_bounded_cleanup_completed": {
+      "ok": true,
+      "cleanup": {
+        "status": "completed",
+        "residual_resources": []
+      }
+    },
+    "a4_cleanup_timeout_run_ok": {
+      "ok": true
+    },
+    "a4_cleanup_timeout_independent": {
+      "ok": true,
+      "cleanup": {
+        "status": "timed_out",
+        "residual_resources": [
+          "widget/wid-0009",
+          "widget/wid-0010"
+        ]
+      }
+    },
+    "a4_cleanup_timeout_not_swallowed": {
+      "ok": true,
+      "failures": [
+        {
+          "resource_id": "wid-0009",
+          "resource_type": "widget",
+          "error": "DELETE timed out"
+        }
+      ]
+    },
+    "a4_case_results_preserved_despite_cleanup_timeout": {
+      "ok": true,
+      "exit_code": 0
+    },
+    "a5_setup_records_every_resource": {
+      "ok": true,
+      "ledger_lines": 2
+    },
+    "a5_orphans_visible_after_interrupt": {
+      "ok": true,
+      "orphans": 2
+    },
+    "a5_verify_setup_ok": {
+      "ok": true
+    },
+    "a5_cleanup_completed_residual_empty": {
+      "ok": true
+    },
+    "a5_repeat_cleanup_safe_no_error": {
+      "ok": true,
+      "repeat": "skipped"
+    },
+    "a5_idempotent_delete_404_counts_cleaned": {
+      "ok": true,
+      "cleanupD": {
+        "status": "completed",
+        "residual_resources": [],
+        "cleanup_failures": [],
+        "attempts": 1
+      }
+    },
+    "a5_cleanup_failure_residual_recorded": {
+      "ok": true,
+      "cleanupE": {
+        "status": "failed",
+        "residual_resources": [
+          "widget/wid-injected-500"
+        ],
+        "cleanup_failures": [
+          {
+            "resource_id": "wid-injected-500",
+            "resource_type": "widget",
+            "error": "DELETE returned 500"
+          }
+        ],
+        "attempts": 2
+      }
+    },
+    "a5_ledger_append_only_lines": {
+      "ok": true,
+      "ledger_d_lines": 2,
+      "ledger_e_lines": 4
+    },
+    "a7_approved_path_ok": {
+      "ok": true
+    },
+    "a7_gate_approved_decision": {
+      "ok": true,
+      "decision": "approved"
+    },
+    "a7_injected_credential_authenticates": {
+      "ok": true,
+      "c4": "passed"
+    },
+    "a7_spawnenv_child_keys_allowlisted": {
+      "ok": true,
+      "child_env_keys": [
+        "NW_TESTED_API_TOKEN",
+        "__CF_USER_TEXT_ENCODING"
+      ]
+    },
+    "a7_denied_refuses_execution": {
+      "ok": true,
+      "code": "POL_DENIED"
+    },
+    "a7_denied_zero_traffic": {
+      "ok": true,
+      "before": 87,
+      "after": 87
+    },
+    "audit_events_per_pass": {
+      "ok": true,
+      "appended": 23
+    },
+    "audit_lifecycle_actions": {
+      "ok": true,
+      "actions": [
+        "execution.finished",
+        "execution.started",
+        "execution.submitted"
+      ]
+    },
+    "audit_cancelled_execution_has_cancel_event": {
+      "ok": true,
+      "actions": [
+        "execution.cancelled",
+        "execution.finished",
+        "execution.started",
+        "execution.submitted"
+      ]
+    },
+    "a6_executor_version_recorded": {
+      "ok": true,
+      "executor_version": "builtin-blackbox@1.0.0"
+    },
+    "a6_exit_code_semantics": {
+      "ok": true,
+      "exit_codes": {
+        "all_pass": 0,
+        "failures": 1,
+        "timeout": 124,
+        "cancelled": 130
+      }
+    },
+    "a8_requests_schema_valid": {
+      "ok": true,
+      "count": 8
+    },
+    "a8_results_schema_valid": {
+      "ok": true,
+      "count": 7
+    },
+    "a8_sanitized_command_clean": {
+      "ok": true,
+      "sample": [
+        "builtin-blackbox@1.0.0",
+        "run",
+        "--scenario",
+        "scen_01J00000000000000000000GFP/r0",
+        "--environment",
+        "lumi-local",
+        "--seed",
+        "7",
+        "--repetitions",
+        "1",
+        "--base-url",
+        "{{base_url}}"
+      ]
+    },
+    "a8_sanitized_command_references_only": {
+      "ok": true,
+      "command": [
+        "builtin-blackbox@1.0.0",
+        "run",
+        "--scenario",
+        "scen_01J00000000000000000000GFX/r6a",
+        "--environment",
+        "lumi-local",
+        "--seed",
+        "102",
+        "--repetitions",
+        "1",
+        "--base-url",
+        "{{base_url}}",
+        "--credentials",
+        "NW_TESTED_API_TOKEN(lease:lease_01M0HM8YBRRBC9JEBJD16NGTKZ)"
+      ]
+    },
+    "a10_secret_scan": {
+      "ok": true,
+      "hits": [],
+      "scanned": 39
+    },
+    "a9_determinism": {
+      "ok": true,
+      "two_pass_checks_identical": true
+    },
+    "a10_baselines_rerun": {
+      "ok": true,
+      "exit_codes": {
+        "wp00": 0,
+        "wp02": 0,
+        "wp03": 0,
+        "wp04": 0
+      }
+    }
+  },
+  "stats": {
+    "pass1_failures": [],
+    "pass2_failures": [],
+    "execution_results_validated": 7,
+    "audit_events_per_pass": 23
+  },
+  "newman": {
+    "status": "executed",
+    "exit_code": 1,
+    "detection": "PATH"
+  },
+  "secret_scan": {
+    "hits": [],
+    "scanned_files": 13
+  },
+  "artifacts": {
+    "receipt": "nightwatch/executor/verify/receipt.json",
+    "runtime_state": "nightwatch/executor/.state (deleted on completion)"
+  },
+  "notes": [
+    "executor field is the WP-00 enum value 'curl' (no 'builtin-blackbox' in the frozen enum); executor_version records builtin-blackbox@1.0.0",
+    "skipped statuses are exercised by the timeout/cancel runs (a3/a4) and asserted in a2 aggregates"
+  ]
+}

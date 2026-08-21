@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "finished_at": "2026-08-20T10:11:44.114Z",
+  "finished_at": "2026-08-21T07:43:08.312Z",
   "verifier": "nightwatch/policy/verify.mjs",
   "task_fingerprint": "nw+p0+wp04+policy-credential+impl+arch@v1.4+3929f2e",
   "checks": {

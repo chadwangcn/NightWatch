@@ -1,0 +1,86 @@
+{
+  "ok": true,
+  "finished_at": "2026-08-21T07:36:37.184Z",
+  "verifier": "nightwatch/evidence/verify.mjs",
+  "task_fingerprint": "nw+p0+wp06+evidence-finding+impl+arch@v1.4+a734f71",
+  "checks": {
+    "a1_bundle_structure": {
+      "ok": true,
+      "failures": [],
+      "sealed_bundles": 8,
+      "index_runs": 11
+    },
+    "a2_ingest": {
+      "ok": true,
+      "failures": [],
+      "ingested_runs": 11,
+      "ingested_cases": 28
+    },
+    "a3_redaction": {
+      "ok": true,
+      "failures": [],
+      "needles": 12,
+      "redaction_report_total": 10
+    },
+    "a4_secret_scan_blocks_seal": {
+      "ok": true,
+      "failures": [],
+      "blocked_run": "run_01J8WP06RG000000000000SECK",
+      "scan_hits": 2
+    },
+    "a5_seal_immutability": {
+      "ok": true,
+      "failures": [],
+      "tamper_cases": 2
+    },
+    "a6_observations_schema": {
+      "ok": true,
+      "failures": [],
+      "total_observations": 16
+    },
+    "a7_six_classifications": {
+      "ok": true,
+      "failures": [],
+      "classifications_exercised": [
+        "confirmed",
+        "flaky",
+        "environmental",
+        "spec-ambiguity",
+        "inconclusive",
+        "duplicate"
+      ]
+    },
+    "a8_fingerprint_dedup": {
+      "ok": true,
+      "failures": [],
+      "findings": 6,
+      "relations": 1
+    },
+    "a9_schema_and_hypothesis": {
+      "ok": true,
+      "failures": [],
+      "hypothesis_firewall": true
+    },
+    "a10_determinism_and_baseline": {
+      "ok": true,
+      "failures": [],
+      "audit_tally_pass1": {
+        "ok_new": 8,
+        "replay": 0,
+        "fallback": 0,
+        "failed": 0
+      },
+      "audit_tally_pass2": {
+        "ok_new": 0,
+        "replay": 8,
+        "fallback": 0,
+        "failed": 0
+      }
+    }
+  },
+  "artifacts": [
+    "nightwatch/evidence/verify/receipt.json",
+    "nightwatch/evidence/fixtures/execution-events.json"
+  ],
+  "state_dir": "nightwatch/evidence/.state/verify (runtime only, wiped at every verify start)"
+}
