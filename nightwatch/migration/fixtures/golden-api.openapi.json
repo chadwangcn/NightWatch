@@ -1,0 +1,92 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "NightWatch Golden Fault API",
+    "version": "1.0.0",
+    "description": "Deterministic local golden-fault target for NW-WP-10 Golden Eval (127.0.0.1 only). Semantics: (1) POST /widgets with an Idempotency-Key header MUST replay the first creation result (200 + the original resource) when the same key is re-submitted; first submission returns 201. (2) GET after PUT on widget 'stale' is contractually strongly consistent. (3) Widget 'lost' supports read-modify-write increments: two concurrent increments derived from the same base read MUST both take effect (final value = base + 2). (4) A token that has not expired MUST be accepted. (5) Responses never contain credential material."
+  },
+  "servers": [{ "url": "http://127.0.0.1:0", "description": "local golden fault server (ephemeral port; verify injects the real base url)" }],
+  "security": [{ "bearerAuth": [] }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer" }
+    },
+    "schemas": {
+      "Widget": {
+        "type": "object",
+        "required": ["id", "name", "rating"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "rating": { "type": "number", "enum": [1, 2, 3, 4, 5] },
+          "value": { "type": "integer" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/widgets": {
+      "post": {
+        "operationId": "createWidget",
+        "summary": "Create a widget (idempotent when Idempotency-Key is supplied)",
+        "security": [{ "bearerAuth": [] }, {}],
+        "parameters": [
+          { "name": "name", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "rating", "in": "query", "required": true, "schema": { "type": "number", "enum": [1, 2, 3, 4, 5] } },
+          { "name": "Idempotency-Key", "in": "header", "required": false, "schema": { "type": "string" }, "description": "When present, re-submission with the same key MUST replay the first result (200) instead of creating a second resource" }
+        ],
+        "responses": {
+          "201": { "description": "created (first submission)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Widget" } } } },
+          "200": { "description": "idempotent replay of the first creation (same resource)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Widget" } } } },
+          "401": { "description": "auth error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/widgets/{widgetId}": {
+      "get": {
+        "operationId": "getWidget",
+        "summary": "Read one widget (strongly consistent with the last PUT)",
+        "security": [{ "bearerAuth": [] }, {}],
+        "parameters": [
+          { "name": "widgetId", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Widget ID: numeric (e.g. 100 for baseline) or alphanumeric (e.g. schema, stale, lost, token, secret, flaky for defect probes)" },
+          { "name": "reset", "in": "query", "required": false, "schema": { "type": "integer" }, "description": "reset=1 resets widget 'lost' value to 0 before reading (deterministic demo baseline)" },
+          { "name": "nonce", "in": "query", "required": false, "schema": { "type": "string" }, "description": "deterministic availability probe on widget 'flaky' (sha256 rule, see defect manifest)" }
+        ],
+        "responses": {
+          "200": { "description": "widget", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Widget" } } } },
+          "401": { "description": "auth error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "unknown widget", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "put": {
+        "operationId": "updateWidget",
+        "summary": "Update a widget (write; increments derived from a common base read must both survive)",
+        "security": [{ "bearerAuth": [] }, {}],
+        "parameters": [
+          { "name": "widgetId", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Widget ID: numeric or alphanumeric" },
+          { "name": "name", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "value", "in": "query", "required": false, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "updated widget", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Widget" } } } },
+          "404": { "description": "unknown widget", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "delete": {
+        "operationId": "deleteWidget",
+        "summary": "Delete a widget",
+        "security": [{ "bearerAuth": [] }, {}],
+        "parameters": [{ "name": "widgetId", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Widget ID: numeric or alphanumeric" }],
+        "responses": { "204": { "description": "deleted" } }
+      }
+    }
+  }
+}

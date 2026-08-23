@@ -53,6 +53,8 @@ device-platform（签发 token）
 | `lumi-s5-content-media.postman_collection.json` | S5 内容媒体集合（黑盒测试，设备+家长+运营：CMS/Catalog/PlayResource/Categories/Library/Recommendations/Uploads/Publications/Source-intakes/CMS Pages/场景/负面） | 8 分组 59 请求 |
 | `lumi-device-platform.postman_environment.json` | **唯一共享环境文件**（三个集合共用） | 56 变量 |
 
+> **机器计数对齐**:迁移管线导入 4 集合 218 请求(26+26+114+52),机器真源 `nightwatch/migration/reports/migration-report.json`。
+
 ### 2.2 集合结构
 
 #### device-platform 集合（17 请求）

@@ -1,0 +1,94 @@
+{
+  "manifest_version": "nw-golden-defects@1",
+  "frozen": true,
+  "note": "Frozen implant list for the Golden Fault API (WorkRequest NW-WP-10 §5.3). Every behavior is a deterministic function of the request inputs (fixed ids / fixed Idempotency-Keys / fixed nonces / sha256-derived flaky rule) — no wall clock, no randomness. expected_* fields are the ONLY source of truth for Golden Eval expectations (A8: never read from the Golden API implementation internals). Defect probes use non-numeric widget IDs so each defect normalizes to an independent path (avoiding quartet-level attempts dilution).",
+  "api_id": "nw-golden-api",
+  "flaky_rule": "GET /widgets/flaky?nonce=N responds 500 when sha256('nwgold:'+N)[0] % 3 !== 0, else 200",
+  "flaky_nonces": {
+    "pass": "nw-flaky-ok-c",
+    "fail_1": "nw-flaky-fail-b",
+    "fail_2": "nw-flaky-alt-d"
+  },
+  "fake_secret_marker": "sk-nwgold-FAKE-DO-NOT-USE-0123456789abcdef",
+  "defects": [
+    {
+      "defect_id": "G-BASELINE-00",
+      "kind": "none-baseline",
+      "endpoint": "GET/PUT/DELETE /widgets/100",
+      "trigger": "normal read/update/delete on widget 100 (baseline path, zero implanted defects)",
+      "expected_classification": "none",
+      "expected_fingerprint_signature": null
+    },
+    {
+      "defect_id": "G-SCHEMA-01",
+      "kind": "schema-violation",
+      "endpoint": "GET /widgets/schema",
+      "trigger": "widgetId=schema responds 200 with rating:\"five\" (contract: number enum 1..5)",
+      "expected_classification": "confirmed",
+      "expected_fingerprint_signature": "sig:200:json $.rating is number",
+      "expected_attempts_per_run": 3,
+      "expected_failures_per_run": 3
+    },
+    {
+      "defect_id": "G-IDEM-01",
+      "kind": "non-idempotent-duplicate-submit",
+      "endpoint": "POST /widgets",
+      "trigger": "re-submitting with the same Idempotency-Key (nwgold-idem-k1/k2/k3) returns 201 + a NEW resource instead of replaying the first result with 200",
+      "expected_classification": "confirmed",
+      "expected_fingerprint_signature": "sig:201:status_code equals 200",
+      "expected_attempts_per_run": 3,
+      "expected_failures_per_run": 3
+    },
+    {
+      "defect_id": "G-FLAKY-01",
+      "kind": "intermittent-5xx-deterministic",
+      "endpoint": "GET /widgets/flaky",
+      "trigger": "nonce=nw-flaky-fail-b / nw-flaky-alt-d respond 500, nonce=nw-flaky-ok-c responds 200 (sha256 rule, fixed)",
+      "expected_classification": "flaky",
+      "expected_fingerprint_signature": "sig:500:status_code in [200]",
+      "expected_attempts_per_run": 3,
+      "expected_failures_per_run": 2
+    },
+    {
+      "defect_id": "G-STALE-01",
+      "kind": "eventual-consistency-stale-read",
+      "endpoint": "PUT then GET /widgets/stale",
+      "trigger": "the first GET after PUT still returns the OLD name for one read (stale window = 1 read, reset by every PUT)",
+      "expected_classification": "confirmed",
+      "expected_fingerprint_signature": "sig:200:json $.name equals \"stale-new\"",
+      "expected_attempts_per_run": 3,
+      "expected_failures_per_run": 3
+    },
+    {
+      "defect_id": "G-LOST-01",
+      "kind": "concurrent-lost-update",
+      "endpoint": "GET/PUT /widgets/lost",
+      "trigger": "two writers both derive value=1 from the SAME base read 0 (interleaved read-modify-write window): final value stays 1 instead of 2 (last-write-wins loses one increment). Case: @1 GET ?reset=1, @2 PUT value=1, @3 PUT value=1, @4 GET expects 2",
+      "expected_classification": "confirmed",
+      "expected_fingerprint_signature": "sig:200:json $.value equals 2",
+      "expected_attempts_per_run": 3,
+      "expected_failures_per_run": 3
+    },
+    {
+      "defect_id": "G-TOKEN-01",
+      "kind": "token-boundary-expiry",
+      "endpoint": "GET /widgets/token",
+      "trigger": "a NOT-YET-EXPIRED token (Bearer nwgold-token-expiring-ttl30s) is rejected with 401 AUTH_TOKEN_EXPIRED",
+      "expected_classification": "confirmed",
+      "expected_fingerprint_signature": "sig:401:status_code in [200]",
+      "expected_attempts_per_run": 3,
+      "expected_failures_per_run": 3
+    },
+    {
+      "defect_id": "G-SECRET-01",
+      "kind": "secret-leakage-plus-schema",
+      "endpoint": "GET /widgets/secret",
+      "trigger": "200 response carries rating:\"six\" (enum violation) AND leaks a fake credential field api_key (synthetic marker only; the value must NEVER appear in any NightWatch artifact)",
+      "expected_classification": "confirmed",
+      "expected_fingerprint_signature": "sig:200:json $.rating one_of [1, 2, 3, 4, 5]",
+      "expected_attempts_per_run": 3,
+      "expected_failures_per_run": 3,
+      "secret_scan_expected": true
+    }
+  ]
+}

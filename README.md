@@ -25,6 +25,8 @@ NightWatch 是一个面向 Agent 的 API 测试平台,围绕 Postman + Newman �
 | `lumi-s5-content-media` | CMS/Catalog/PlayResource/Categories/Library/Recommendations/Uploads/Publications/CMS Pages/场景 | 78 |
 | `lumi-s6-observation` | Observation 日志拉取与诊断 | — |
 
+> **机器计数对齐**:迁移管线导入 4 集合 218 请求(26+26+114+52),机器真源 `nightwatch/migration/reports/migration-report.json`。
+
 ## 快速开始
 
 ### 1. 安装依赖

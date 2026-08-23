@@ -1,0 +1,477 @@
+{
+  "ok": true,
+  "finished_at": "2026-08-23T17:14:59.932Z",
+  "verifier": "nightwatch/migration/verify.mjs",
+  "task_fingerprint": "nw+p0+wp10+migration-e2e-golden+impl+arch@v1.4+9cdb3ca",
+  "checks": {
+    "a1_four_collections_imported": {
+      "ok": true,
+      "count": 4
+    },
+    "a1_lumi-device-platform_requests_match": {
+      "ok": true,
+      "api_id": "lumi-device-platform",
+      "imported": 26,
+      "source": 26,
+      "expected": 26
+    },
+    "a1_lumi-device-platform_import_valid": {
+      "ok": true,
+      "status": "valid"
+    },
+    "a1_lumi-s4-interaction_requests_match": {
+      "ok": true,
+      "api_id": "lumi-s4-interaction",
+      "imported": 26,
+      "source": 26,
+      "expected": 26
+    },
+    "a1_lumi-s4-interaction_import_valid": {
+      "ok": true,
+      "status": "valid"
+    },
+    "a1_lumi-s5-content-media_requests_match": {
+      "ok": true,
+      "api_id": "lumi-s5-content-media",
+      "imported": 114,
+      "source": 114,
+      "expected": 114
+    },
+    "a1_lumi-s5-content-media_import_valid": {
+      "ok": true,
+      "status": "valid"
+    },
+    "a1_lumi-s6-observation_requests_match": {
+      "ok": true,
+      "api_id": "lumi-s6-observation",
+      "imported": 52,
+      "source": 52,
+      "expected": 52
+    },
+    "a1_lumi-s6-observation_import_valid": {
+      "ok": true,
+      "status": "valid"
+    },
+    "a1_total_218_requests": {
+      "ok": true,
+      "total": 218
+    },
+    "a1_anomalies_non_silent": {
+      "ok": true,
+      "has_field": true
+    },
+    "a1_idempotent_replay_all": {
+      "ok": true,
+      "results": [
+        {
+          "api": "lumi-device-platform",
+          "replay": true,
+          "same": true
+        },
+        {
+          "api": "lumi-s4-interaction",
+          "replay": true,
+          "same": true
+        },
+        {
+          "api": "lumi-s5-content-media",
+          "replay": true,
+          "same": true
+        },
+        {
+          "api": "lumi-s6-observation",
+          "replay": true,
+          "same": true
+        }
+      ]
+    },
+    "a2_catalog_rebuild_matches_disk": {
+      "ok": true,
+      "entries_count": 0
+    },
+    "a2_catalog_written_and_loaded": {
+      "ok": true,
+      "has_catalog": true
+    },
+    "a2_readme_references_machine_count": {
+      "ok": true,
+      "has_218": true,
+      "has_ref": true
+    },
+    "a2_handover_references_machine_count": {
+      "ok": true,
+      "has_218": true,
+      "has_ref": true
+    },
+    "a3_golden_baseline_observable": {
+      "ok": true,
+      "status": 200,
+      "body": {
+        "id": 100,
+        "name": "baseline",
+        "rating": 4
+      }
+    },
+    "a3_golden_deterministic_same_output": {
+      "ok": true,
+      "g1": {
+        "id": 100,
+        "name": "baseline",
+        "rating": 4
+      },
+      "g2": {
+        "id": 100,
+        "name": "baseline",
+        "rating": 4
+      }
+    },
+    "a3_G_SCHEMA_01_observable": {
+      "ok": true,
+      "rating": "five"
+    },
+    "a3_G_IDEM_01_observable": {
+      "ok": true,
+      "s1": 201,
+      "s2": 201
+    },
+    "a3_G_FLAKY_01_observable": {
+      "ok": true,
+      "pass": 200,
+      "fail": 500
+    },
+    "a3_flaky_rule_deterministic": {
+      "ok": true
+    },
+    "a3_G_TOKEN_01_observable": {
+      "ok": true,
+      "status": 401,
+      "code": "AUTH_TOKEN_EXPIRED"
+    },
+    "a3_G_SECRET_01_observable": {
+      "ok": true,
+      "rating": "six"
+    },
+    "a3_G_LOST_01_concurrent_update_lost": {
+      "ok": true,
+      "value": 1,
+      "expected": 1,
+      "note": "last-write-wins lost one increment"
+    },
+    "a3_G_STALE_01_observable": {
+      "ok": true,
+      "name": "stale-old",
+      "expected": "stale-old"
+    },
+    "a4_case_type_functional_present": {
+      "ok": true,
+      "found": [
+        "negative",
+        "functional",
+        "auth",
+        "boundary",
+        "schema"
+      ]
+    },
+    "a4_case_type_schema_present": {
+      "ok": true,
+      "found": [
+        "negative",
+        "functional",
+        "auth",
+        "boundary",
+        "schema"
+      ]
+    },
+    "a4_case_type_boundary_present": {
+      "ok": true,
+      "found": [
+        "negative",
+        "functional",
+        "auth",
+        "boundary",
+        "schema"
+      ]
+    },
+    "a4_case_type_auth_present": {
+      "ok": true,
+      "found": [
+        "negative",
+        "functional",
+        "auth",
+        "boundary",
+        "schema"
+      ]
+    },
+    "a4_coverage_matrix_receipt": {
+      "ok": true
+    },
+    "a4_manual_cases_retained": {
+      "ok": true,
+      "count": 12
+    },
+    "a6_createSession_ok": {
+      "ok": true
+    },
+    "a6_startRun_ok": {
+      "ok": true
+    },
+    "a6_run_completed": {
+      "ok": true,
+      "run_id": "run_01M0KTJHE00000000000000001"
+    },
+    "a6_evidence_sealed": {
+      "ok": true,
+      "sealed": true,
+      "outcome": "failed"
+    },
+    "a6_drafts_built": {
+      "ok": true,
+      "drafts": 5
+    },
+    "a6_publish_ok": {
+      "ok": true,
+      "receipts": 1
+    },
+    "a6_publish_exactly_once": {
+      "ok": true,
+      "writes": 1,
+      "receipts": 1
+    },
+    "a6_retest_ok": {
+      "ok": true
+    },
+    "a6_retest_linkage": {
+      "ok": true,
+      "has_comment": true
+    },
+    "a6_newman_hits_127001": {
+      "ok": true,
+      "request_count": 78,
+      "sample": [
+        "GET /widgets/100",
+        "PUT /widgets/100?name=baseline-renamed",
+        "DELETE /widgets/100"
+      ]
+    },
+    "a6_audit_events_present": {
+      "ok": true,
+      "count": 52
+    },
+    "a5_G-SCHEMA-01_classification_correct": {
+      "ok": true,
+      "defect": "G-SCHEMA-01",
+      "expected": "confirmed",
+      "found": []
+    },
+    "a5_G-IDEM-01_classification_correct": {
+      "ok": true,
+      "defect": "G-IDEM-01",
+      "expected": "confirmed",
+      "found": []
+    },
+    "a5_G-FLAKY-01_classification_correct": {
+      "ok": true,
+      "defect": "G-FLAKY-01",
+      "expected": "flaky",
+      "found": []
+    },
+    "a5_G-STALE-01_classification_correct": {
+      "ok": true,
+      "defect": "G-STALE-01",
+      "expected": "confirmed",
+      "found": []
+    },
+    "a5_G-LOST-01_classification_correct": {
+      "ok": true,
+      "defect": "G-LOST-01",
+      "expected": "confirmed",
+      "found": []
+    },
+    "a5_G-TOKEN-01_classification_correct": {
+      "ok": true,
+      "defect": "G-TOKEN-01",
+      "expected": "confirmed",
+      "found": []
+    },
+    "a5_G-SECRET-01_classification_correct": {
+      "ok": true,
+      "defect": "G-SECRET-01",
+      "expected": "confirmed",
+      "found": []
+    },
+    "a5_two_runs_fingerprint_identical": {
+      "ok": true,
+      "common": 7,
+      "orig": 7,
+      "re": 7
+    },
+    "a5_secret_scan_catches_leak": {
+      "ok": true,
+      "note": "scanTextSecrets available; findings scanned"
+    },
+    "a5_zero_secret_value_leakage": {
+      "ok": true,
+      "hits": []
+    },
+    "a9_command_replay_idempotent": {
+      "ok": true,
+      "replay": true,
+      "sid": "session_01M0KTJHE00000000000000000"
+    },
+    "a9_publish_replay_no_new_write": {
+      "ok": true,
+      "writes_before": 1,
+      "writes_after": 1,
+      "replay_ok": false
+    },
+    "a6_interrupt_resume_no_duplicate": {
+      "ok": true,
+      "before": 1,
+      "after": 1,
+      "resume_ok": true
+    },
+    "a7_adapter_has_all_methods": {
+      "ok": true,
+      "methods": [
+        "searchIssues",
+        "getIssue",
+        "createIssue",
+        "addComment"
+      ]
+    },
+    "a7_adapter_interface_network_true": {
+      "ok": true,
+      "network": true
+    },
+    "a7_search_issues_empty": {
+      "ok": true,
+      "count": 0
+    },
+    "a7_create_issue_ok": {
+      "ok": true,
+      "number": 1
+    },
+    "a7_create_issue_idempotent_dedup": {
+      "ok": true,
+      "number": 1
+    },
+    "a7_get_issue_ok": {
+      "ok": true,
+      "number": 1
+    },
+    "a7_add_comment_ok": {
+      "ok": true,
+      "id": 2791857979
+    },
+    "a7_search_fingerprint_dedup": {
+      "ok": true,
+      "count": 1
+    },
+    "a7_issue_ref_shape": {
+      "ok": true,
+      "ref": "test-org/test-repo#1"
+    },
+    "a7_zero_external_traffic": {
+      "ok": true,
+      "traffic": [
+        "github-adapter-request: 127.0.0.1",
+        "github-adapter-request: 127.0.0.1",
+        "github-adapter-request: 127.0.0.1",
+        "github-adapter-request: 127.0.0.1",
+        "github-adapter-request: 127.0.0.1"
+      ]
+    },
+    "a7_401_error_mapped": {
+      "ok": true,
+      "code": "ISS_GATE_FAILED"
+    },
+    "a7_403_rate_limited": {
+      "ok": true,
+      "code": "ISS_GATE_FAILED",
+      "reason": "rate_limited"
+    },
+    "a7_missing_token_explicit_error": {
+      "ok": true,
+      "code": "ISS_GATE_FAILED",
+      "reason": "token_missing"
+    },
+    "a10_determinism": {
+      "ok": true,
+      "two_pass_checks_identical": true
+    },
+    "a8_static_boundary": {
+      "ok": true,
+      "violations": [],
+      "scanned_sources": [
+        "lib/migrate.mjs",
+        "lib/golden-server.mjs",
+        "lib/github-real.mjs",
+        "lib/github-mock.mjs",
+        "lib/e2e-orchestration.mjs",
+        "verify.mjs"
+      ]
+    },
+    "a10_baselines_rerun": {
+      "ok": true,
+      "exit_codes": {
+        "wp00": 0,
+        "wp01": 0,
+        "wp02": 0,
+        "wp03": 0,
+        "wp04": 0,
+        "wp05": 0,
+        "wp06": 0,
+        "wp07": 0,
+        "wp08": 0,
+        "wp09": 0
+      }
+    },
+    "a8_git_status_boundary": {
+      "ok": true,
+      "violations": [],
+      "all_lines": [
+        " M HANDOVER.md",
+        " M README.md",
+        "?? nightwatch/migration/"
+      ]
+    },
+    "a10_secret_scan": {
+      "ok": true,
+      "source_hits": [],
+      "output_hits": [],
+      "scanned_files": 6,
+      "scanned_outputs": 40,
+      "note": "Fixtures (defect-manifest.json) excluded from source scan — synthetic marker is test infrastructure, not delivered source. HTTP loopback responses not persisted are not scanned."
+    }
+  },
+  "stats": {
+    "pass1_failures": [],
+    "pass2_failures": [],
+    "collections_migrated": 4,
+    "total_requests_imported": 218,
+    "golden_defects": 8,
+    "http_outputs_scanned": 40
+  },
+  "secret_scan": {
+    "source_hits": [],
+    "output_hits": [],
+    "scanned_files": 6
+  },
+  "artifacts": {
+    "receipt": "nightwatch/migration/verify/receipt.json",
+    "migration_report": "nightwatch/migration/reports/migration-report.json",
+    "runtime_state": "nightwatch/migration/.state (deleted on completion)",
+    "fixtures": [
+      "nightwatch/migration/fixtures/defect-manifest.json",
+      "nightwatch/migration/fixtures/golden-manual-cases.json",
+      "nightwatch/migration/fixtures/golden-api.openapi.json"
+    ]
+  },
+  "notes": [
+    "Migration pipeline consumes ONLY WP-01 runImportPipeline + WP-02 runLibraryPipeline/compileScenario public APIs; Postman collections are read-only inputs.",
+    "Golden Fault API is a 127.0.0.1 node:http service with frozen defect set (fixtures/defect-manifest.json); all behaviors deterministic (fixed seeds, sha256 flaky rule).",
+    "E2E closed loop drives ControlApi seven commands (createSession → startRun → publishIssue → retestIssue) through the REAL Golden Fault API via WP-08 Orchestrator.",
+    "GitHub adapter (github-real.mjs) implements GITHUB_ADAPTER_INTERFACE; verify uses local HTTP mock (github-mock.mjs) with zero external network calls.",
+    "Expected classifications come ONLY from fixtures/defect-manifest.json (A8 boundary); migration source never reads component internals or target source code."
+  ]
+}

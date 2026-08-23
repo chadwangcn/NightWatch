@@ -1,0 +1,137 @@
+{
+  "fixture_version": "nw-golden-manual-cases@1",
+  "api_id": "nw-golden-api",
+  "scenario": {
+    "name": "Golden Fault Defect Sweep",
+    "description": "Deterministic sweep over every implanted defect of the Golden Fault API (see fixtures/defect-manifest.json): baseline read/update/delete plus three probe cases per defect so that confirmed defects reach attempts=3 and the flaky defect lands at attempts=3 / failures=2. Defect probes use non-numeric widget IDs so each defect normalizes to an independent quartet (avoiding cross-defect attempts dilution).",
+    "endpoints": ["/widgets", "/widgets/{widgetId}"],
+    "revision": "r1"
+  },
+  "common": {
+    "risk": "medium",
+    "case_type_by_kind": {
+      "none-baseline": "functional",
+      "schema-violation": "schema",
+      "non-idempotent-duplicate-submit": "functional",
+      "intermittent-5xx-deterministic": "boundary",
+      "eventual-consistency-stale-read": "functional",
+      "concurrent-lost-update": "functional",
+      "token-boundary-expiry": "auth",
+      "secret-leakage-plus-schema": "schema"
+    }
+  },
+  "cases": [
+    { "key": "base-read", "defect_id": "G-BASELINE-00", "title": "baseline: read widget 100 returns the contract widget shape",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/100" } }],
+      "assertions": ["status_code in [200]", "json $.name is string", "json $.rating is number"], "expect": "passed" },
+    { "key": "base-update", "defect_id": "G-BASELINE-00", "title": "baseline: rename widget 100 persists immediately",
+      "steps": [{ "request": { "method": "PUT", "path": "/widgets/100?name=baseline-renamed" } }],
+      "assertions": ["status_code in [200]", "json $.name equals \"baseline-renamed\""], "expect": "passed" },
+    { "key": "base-delete", "defect_id": "G-BASELINE-00", "title": "baseline: delete widget 100 acknowledges with 204 (idempotent)",
+      "steps": [{ "request": { "method": "DELETE", "path": "/widgets/100" } }],
+      "assertions": ["status_code equals 204"], "expect": "passed" },
+
+    { "key": "schema-1", "defect_id": "G-SCHEMA-01", "title": "widget schema rating must be a number per contract",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/schema" } }],
+      "assertions": ["status_code in [200]", "json $.rating is number"], "expect": "failed" },
+    { "key": "schema-2", "defect_id": "G-SCHEMA-01", "title": "widget schema rating must be a number per contract (probe 2)",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/schema" } }],
+      "assertions": ["status_code in [200]", "json $.rating is number"], "expect": "failed" },
+    { "key": "schema-3", "defect_id": "G-SCHEMA-01", "title": "widget schema rating must be a number per contract (probe 3)",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/schema" } }],
+      "assertions": ["status_code in [200]", "json $.rating is number"], "expect": "failed" },
+
+    { "key": "idem-1", "defect_id": "G-IDEM-01", "title": "same Idempotency-Key k1 must replay the first creation with 200",
+      "steps": [
+        { "request": { "method": "POST", "path": "/widgets?name=idem-k1&rating=3", "headers": { "Idempotency-Key": "nwgold-idem-k1" } } },
+        { "request": { "method": "POST", "path": "/widgets?name=idem-k1&rating=3", "headers": { "Idempotency-Key": "nwgold-idem-k1" } } }
+      ],
+      "assertions": ["@1 status_code equals 201", "@2 status_code equals 200"], "expect": "failed" },
+    { "key": "idem-2", "defect_id": "G-IDEM-01", "title": "same Idempotency-Key k2 must replay the first creation with 200",
+      "steps": [
+        { "request": { "method": "POST", "path": "/widgets?name=idem-k2&rating=3", "headers": { "Idempotency-Key": "nwgold-idem-k2" } } },
+        { "request": { "method": "POST", "path": "/widgets?name=idem-k2&rating=3", "headers": { "Idempotency-Key": "nwgold-idem-k2" } } }
+      ],
+      "assertions": ["@1 status_code equals 201", "@2 status_code equals 200"], "expect": "failed" },
+    { "key": "idem-3", "defect_id": "G-IDEM-01", "title": "same Idempotency-Key k3 must replay the first creation with 200",
+      "steps": [
+        { "request": { "method": "POST", "path": "/widgets?name=idem-k3&rating=3", "headers": { "Idempotency-Key": "nwgold-idem-k3" } } },
+        { "request": { "method": "POST", "path": "/widgets?name=idem-k3&rating=3", "headers": { "Idempotency-Key": "nwgold-idem-k3" } } }
+      ],
+      "assertions": ["@1 status_code equals 201", "@2 status_code equals 200"], "expect": "failed" },
+
+    { "key": "flaky-pass", "defect_id": "G-FLAKY-01", "title": "widget flaky availability probe (nonce ok-c: sha256 rule passes)",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/flaky?nonce=nw-flaky-ok-c" } }],
+      "assertions": ["status_code in [200]"], "expect": "passed" },
+    { "key": "flaky-fail-1", "defect_id": "G-FLAKY-01", "title": "widget flaky availability probe (nonce fail-b: deterministic 500)",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/flaky?nonce=nw-flaky-fail-b" } }],
+      "assertions": ["status_code in [200]"], "expect": "failed" },
+    { "key": "flaky-fail-2", "defect_id": "G-FLAKY-01", "title": "widget flaky availability probe (nonce alt-d: deterministic 500)",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/flaky?nonce=nw-flaky-alt-d" } }],
+      "assertions": ["status_code in [200]"], "expect": "failed" },
+
+    { "key": "stale-1", "defect_id": "G-STALE-01", "title": "read after write on widget stale must be strongly consistent",
+      "steps": [
+        { "request": { "method": "PUT", "path": "/widgets/stale?name=stale-new" } },
+        { "request": { "method": "GET", "path": "/widgets/stale" } }
+      ],
+      "assertions": ["@1 status_code in [200]", "@2 json $.name equals \"stale-new\""], "expect": "failed" },
+    { "key": "stale-2", "defect_id": "G-STALE-01", "title": "read after write on widget stale must be strongly consistent (probe 2)",
+      "steps": [
+        { "request": { "method": "PUT", "path": "/widgets/stale?name=stale-new" } },
+        { "request": { "method": "GET", "path": "/widgets/stale" } }
+      ],
+      "assertions": ["@1 status_code in [200]", "@2 json $.name equals \"stale-new\""], "expect": "failed" },
+    { "key": "stale-3", "defect_id": "G-STALE-01", "title": "read after write on widget stale must be strongly consistent (probe 3)",
+      "steps": [
+        { "request": { "method": "PUT", "path": "/widgets/stale?name=stale-new" } },
+        { "request": { "method": "GET", "path": "/widgets/stale" } }
+      ],
+      "assertions": ["@1 status_code in [200]", "@2 json $.name equals \"stale-new\""], "expect": "failed" },
+
+    { "key": "lost-1", "defect_id": "G-LOST-01", "title": "two increments from one base read on widget lost must both survive",
+      "steps": [
+        { "request": { "method": "GET", "path": "/widgets/lost?reset=1" } },
+        { "request": { "method": "PUT", "path": "/widgets/lost?value=1" } },
+        { "request": { "method": "PUT", "path": "/widgets/lost?value=1" } },
+        { "request": { "method": "GET", "path": "/widgets/lost" } }
+      ],
+      "assertions": ["@1 status_code in [200]", "@1 json $.value equals 0", "@2 status_code in [200]", "@3 status_code in [200]", "@4 json $.value equals 2"], "expect": "failed" },
+    { "key": "lost-2", "defect_id": "G-LOST-01", "title": "two increments from one base read on widget lost must both survive (probe 2)",
+      "steps": [
+        { "request": { "method": "GET", "path": "/widgets/lost?reset=1" } },
+        { "request": { "method": "PUT", "path": "/widgets/lost?value=1" } },
+        { "request": { "method": "PUT", "path": "/widgets/lost?value=1" } },
+        { "request": { "method": "GET", "path": "/widgets/lost" } }
+      ],
+      "assertions": ["@1 status_code in [200]", "@1 json $.value equals 0", "@2 status_code in [200]", "@3 status_code in [200]", "@4 json $.value equals 2"], "expect": "failed" },
+    { "key": "lost-3", "defect_id": "G-LOST-01", "title": "two increments from one base read on widget lost must both survive (probe 3)",
+      "steps": [
+        { "request": { "method": "GET", "path": "/widgets/lost?reset=1" } },
+        { "request": { "method": "PUT", "path": "/widgets/lost?value=1" } },
+        { "request": { "method": "PUT", "path": "/widgets/lost?value=1" } },
+        { "request": { "method": "GET", "path": "/widgets/lost" } }
+      ],
+      "assertions": ["@1 status_code in [200]", "@1 json $.value equals 0", "@2 status_code in [200]", "@3 status_code in [200]", "@4 json $.value equals 2"], "expect": "failed" },
+
+    { "key": "token-1", "defect_id": "G-TOKEN-01", "title": "not-yet-expired token (ttl 30s) must be accepted on widget token",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/token", "headers": { "Authorization": "Bearer nwgold-token-expiring-ttl30s" } } }],
+      "assertions": ["status_code in [200]"], "expect": "failed" },
+    { "key": "token-2", "defect_id": "G-TOKEN-01", "title": "not-yet-expired token (ttl 30s) must be accepted on widget token (probe 2)",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/token", "headers": { "Authorization": "Bearer nwgold-token-expiring-ttl30s" } } }],
+      "assertions": ["status_code in [200]"], "expect": "failed" },
+    { "key": "token-3", "defect_id": "G-TOKEN-01", "title": "not-yet-expired token (ttl 30s) must be accepted on widget token (probe 3)",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/token", "headers": { "Authorization": "Bearer nwgold-token-expiring-ttl30s" } } }],
+      "assertions": ["status_code in [200]"], "expect": "failed" },
+
+    { "key": "secret-1", "defect_id": "G-SECRET-01", "title": "widget secret rating must stay inside the declared enum (and no credential fields)",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/secret" } }],
+      "assertions": ["status_code in [200]", "json $.rating one_of [1, 2, 3, 4, 5]"], "expect": "failed" },
+    { "key": "secret-2", "defect_id": "G-SECRET-01", "title": "widget secret rating must stay inside the declared enum (probe 2)",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/secret" } }],
+      "assertions": ["status_code in [200]", "json $.rating one_of [1, 2, 3, 4, 5]"], "expect": "failed" },
+    { "key": "secret-3", "defect_id": "G-SECRET-01", "title": "widget secret rating must stay inside the declared enum (probe 3)",
+      "steps": [{ "request": { "method": "GET", "path": "/widgets/secret" } }],
+      "assertions": ["status_code in [200]", "json $.rating one_of [1, 2, 3, 4, 5]"], "expect": "failed" }
+  ]
+}
