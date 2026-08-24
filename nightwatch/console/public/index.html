@@ -3,57 +3,56 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NightWatch 控制台</title>
+  <title>NightWatch QA 控制台</title>
   <link rel="stylesheet" href="/assets/style.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <strong>NightWatch 控制台</strong>
-      <span class="muted">C01 · 本地单页 Console(仅访问本地 API)</span>
+      <strong>NightWatch</strong>
+      <span class="muted">Agent QA 黑盒测试平台</span>
     </div>
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="dashboard" type="button">Dashboard</button>
+      <button class="nav-tab" data-tab="sessions" type="button">Sessions</button>
+      <button class="nav-tab" data-tab="library" type="button">Library</button>
+      <button class="nav-tab" data-tab="findings" type="button">Findings</button>
+      <button class="nav-tab" data-tab="evidence" type="button">Evidence</button>
+      <button class="nav-tab" data-tab="audit" type="button">Audit</button>
+    </nav>
     <div class="token-box">
-      <label for="token-input">Capability Token</label>
-      <input id="token-input" type="password" placeholder="粘贴服务启动时 STDERR 打印的 token" autocomplete="off" />
-      <button id="token-save" type="button">保存</button>
+      <input id="token-input" type="password" placeholder="Capability Token" autocomplete="off" />
+      <button id="token-save" type="button">Set</button>
       <span id="token-state" class="muted">未设置</span>
     </div>
   </header>
 
-  <main class="layout">
-    <!-- ① Session 列表 -->
-    <aside class="sessions-panel">
-      <div class="panel-head">
-        <h2>会话列表</h2>
-        <button id="refresh-sessions" type="button">刷新</button>
-      </div>
-      <ul id="session-list" class="session-list"></ul>
-      <p id="session-list-empty" class="muted empty-hint">暂无会话——在命令面板执行 createSession。</p>
-    </aside>
+  <main class="content-area">
 
-    <section class="content">
-      <!-- ② Session 详情 -->
-      <div id="session-detail" class="card hidden">
-        <div class="panel-head">
-          <h2 id="detail-title">会话详情</h2>
-          <button id="refresh-detail" type="button">刷新</button>
+    <!-- ========== Dashboard ========== -->
+    <section id="tab-dashboard" class="tab-panel active">
+      <div class="stats-grid">
+        <div class="stat-card" id="stat-sessions"><div class="stat-num">—</div><div class="stat-label">Sessions</div></div>
+        <div class="stat-card" id="stat-apis"><div class="stat-num">—</div><div class="stat-label">APIs</div></div>
+        <div class="stat-card" id="stat-cases"><div class="stat-num">—</div><div class="stat-label">Test Cases</div></div>
+        <div class="stat-card" id="stat-scenarios"><div class="stat-num">—</div><div class="stat-label">Scenarios</div></div>
+        <div class="stat-card" id="stat-findings"><div class="stat-num">—</div><div class="stat-label">Findings</div></div>
+        <div class="stat-card" id="stat-runs"><div class="stat-num">—</div><div class="stat-label">Evidence Runs</div></div>
+      </div>
+      <div class="dashboard-row">
+        <div class="card">
+          <div class="card-head"><h2>最近 Sessions</h2><button class="tiny" onclick="document.querySelector('[data-tab=sessions]').click()">查看全部</button></div>
+          <div id="dash-sessions" class="dash-list"></div>
         </div>
-        <div id="detail-meta" class="detail-meta"></div>
-        <h3>Runs</h3>
-        <div id="detail-runs" class="runs"></div>
-        <h3>草稿(Drafts)</h3>
-        <div id="detail-drafts" class="drafts"></div>
-        <h3>已发布回执(Published)</h3>
-        <div id="detail-published" class="published"></div>
-        <h3>事件时间线(按 sequence 排序,SSE 实时刷新)</h3>
-        <div id="detail-events" class="timeline"></div>
+        <div class="card">
+          <div class="card-head"><h2>最近 Findings</h2><button class="tiny" onclick="document.querySelector('[data-tab=findings]').click()">查看全部</button></div>
+          <div id="dash-findings" class="dash-list"></div>
+        </div>
       </div>
-
-      <!-- ③ 命令面板 -->
       <div class="card">
-        <div class="panel-head"><h2>命令面板(七命令)</h2></div>
+        <div class="card-head"><h2>命令面板(七命令闭环)</h2></div>
         <div class="command-grid">
-          <button class="cmd-tab" data-cmd="createSession" type="button">createSession</button>
+          <button class="cmd-tab active" data-cmd="createSession" type="button">createSession</button>
           <button class="cmd-tab" data-cmd="startRun" type="button">startRun</button>
           <button class="cmd-tab" data-cmd="cancelRun" type="button">cancelRun</button>
           <button class="cmd-tab" data-cmd="retryRun" type="button">retryRun</button>
@@ -61,78 +60,119 @@
           <button class="cmd-tab" data-cmd="publishIssue" type="button">publishIssue</button>
           <button class="cmd-tab" data-cmd="retestIssue" type="button">retestIssue</button>
         </div>
-        <form id="command-form">
+        <form id="command-form" class="cmd-form">
           <div class="form-row">
-            <label>command_id
-              <input id="cmd-id" type="text" />
-            </label>
-            <button id="cmd-regen" type="button" class="tiny">自动生成</button>
+            <label>command_id<input id="cmd-id" type="text" /></label>
+            <button id="cmd-regen" type="button" class="tiny">生成</button>
+            <label>issued_at<input id="cmd-issued" type="text" /></label>
+            <label>deadline<input id="cmd-deadline" type="text" /></label>
           </div>
           <div class="form-row">
-            <label>issued_at
-              <input id="cmd-issued" type="text" />
-            </label>
-            <label>deadline(默认 +10 分钟)
-              <input id="cmd-deadline" type="text" />
-            </label>
+            <label>payload (JSON)<textarea id="cmd-payload" rows="6" spellcheck="false"></textarea></label>
           </div>
-          <div class="form-row">
-            <label>payload(JSON)
-              <textarea id="cmd-payload" rows="8" spellcheck="false"></textarea>
-            </label>
-          </div>
-          <button id="cmd-submit" type="submit">执行命令</button>
-          <span class="muted">写操作需 Bearer token;错误封装会原样显示在下方状态区。</span>
-        </form>
-      </div>
-
-      <!-- ④ 审批面板 -->
-      <div class="card">
-        <div class="panel-head"><h2>人工审批</h2></div>
-        <form id="approval-form">
-          <div class="form-row">
-            <label>approver
-              <input id="ap-approver" type="text" value="human-reviewer" />
-            </label>
-            <label>decision
-              <select id="ap-decision">
-                <option value="approved">approved</option>
-                <option value="denied">denied</option>
-              </select>
-            </label>
-          </div>
-          <div class="form-row">
-            <label>scope(如 issue.publish:finding=find_…)
-              <input id="ap-scope" type="text" placeholder="issue.publish:finding=find_..." />
-            </label>
-          </div>
-          <div class="form-row">
-            <label>approved_at
-              <input id="ap-approved-at" type="text" />
-            </label>
-            <label>expires_at(默认 +1 小时)
-              <input id="ap-expires-at" type="text" />
-            </label>
-          </div>
-          <div class="form-row">
-            <label>reason
-              <input id="ap-reason" type="text" value="人工审批:同意发布该 confirmed finding" />
-            </label>
-          </div>
-          <button id="ap-submit" type="submit">提交审批</button>
-          <span class="muted">提交后经 makeApprovalRecord 校验并注册到 Orchestrator,同时落 WP-03 审计。</span>
+          <button id="cmd-submit" type="submit" class="btn-primary">执行命令</button>
         </form>
       </div>
     </section>
 
-    <!-- ⑤ 错误与权限状态区 -->
-    <aside class="status-panel">
-      <div class="panel-head"><h2>错误与权限状态</h2><button id="clear-errors" type="button" class="tiny">清空</button></div>
-      <div id="error-area" class="error-area"><p class="muted">暂无错误。</p></div>
-      <div class="panel-head"><h2>最近命令响应</h2></div>
-      <pre id="last-response" class="response-view muted">—</pre>
-    </aside>
+    <!-- ========== Sessions ========== -->
+    <section id="tab-sessions" class="tab-panel">
+      <div class="split-layout">
+        <aside class="split-left">
+          <div class="card-head"><h2>Sessions</h2><button id="refresh-sessions" type="button" class="tiny">刷新</button></div>
+          <ul id="session-list" class="session-list"></ul>
+          <p id="session-list-empty" class="muted empty-hint">暂无会话</p>
+        </aside>
+        <section class="split-right">
+          <div id="session-detail" class="card hidden">
+            <div class="card-head"><h2 id="detail-title">会话详情</h2><button id="refresh-detail" type="button" class="tiny">刷新</button></div>
+            <div id="detail-meta" class="detail-meta"></div>
+            <h3>Runs</h3><div id="detail-runs" class="runs"></div>
+            <h3>Drafts</h3><div id="detail-drafts" class="drafts"></div>
+            <h3>Published</h3><div id="detail-published" class="published"></div>
+            <h3>事件时间线 (SSE 实时)</h3><div id="detail-events" class="timeline"></div>
+          </div>
+        </section>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>人工审批</h2></div>
+        <form id="approval-form" class="approval-form">
+          <div class="form-row">
+            <label>approver<input id="ap-approver" type="text" value="human-reviewer" /></label>
+            <label>decision<select id="ap-decision"><option value="approved">approved</option><option value="denied">denied</option></select></label>
+            <label>scope<input id="ap-scope" type="text" placeholder="issue.publish:finding=find_..." /></label>
+          </div>
+          <div class="form-row">
+            <label>approved_at<input id="ap-approved-at" type="text" /></label>
+            <label>expires_at<input id="ap-expires-at" type="text" /></label>
+            <label>reason<input id="ap-reason" type="text" value="同意发布" /></label>
+          </div>
+          <button id="ap-submit" type="submit" class="btn-primary">提交审批</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ========== Library ========== -->
+    <section id="tab-library" class="tab-panel">
+      <div class="split-layout">
+        <aside class="split-left">
+          <div class="card-head"><h2>Test Cases</h2><button id="refresh-cases" type="button" class="tiny">刷新</button></div>
+          <ul id="case-list" class="case-list"></ul>
+          <p id="case-list-empty" class="muted empty-hint">暂无 Case</p>
+        </aside>
+        <section class="split-right">
+          <div id="case-detail" class="card">
+            <div class="card-head"><h2>Case 详情</h2></div>
+            <pre id="case-detail-body" class="json-view muted">选择左侧 Case 查看</pre>
+          </div>
+        </section>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Scenarios</h2></div>
+        <div id="scenario-list" class="scenario-grid"></div>
+      </div>
+    </section>
+
+    <!-- ========== Findings ========== -->
+    <section id="tab-findings" class="tab-panel">
+      <div class="card">
+        <div class="card-head"><h2>Findings</h2><button id="refresh-findings" type="button" class="tiny">刷新</button></div>
+        <table class="data-table" id="findings-table">
+          <thead><tr><th>Finding ID</th><th>分类</th><th>API</th><th>Method</th><th>Path</th><th>Fingerprint</th><th>复现率</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========== Evidence ========== -->
+    <section id="tab-evidence" class="tab-panel">
+      <div class="card">
+        <div class="card-head"><h2>Evidence Runs</h2><button id="refresh-evidence" type="button" class="tiny">刷新</button></div>
+        <div id="evidence-runs" class="evidence-grid"></div>
+      </div>
+    </section>
+
+    <!-- ========== Audit ========== -->
+    <section id="tab-audit" class="tab-panel">
+      <div class="card">
+        <div class="card-head"><h2>Audit Log</h2><button id="refresh-audit" type="button" class="tiny">刷新</button></div>
+        <table class="data-table" id="audit-table">
+          <thead><tr><th>Seq</th><th>Event</th><th>Object ID</th><th>Timestamp</th><th>Payload</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
+
+  <!-- Status bar -->
+  <footer class="status-bar">
+    <div id="error-area" class="error-area"></div>
+    <div class="response-box">
+      <span class="muted">最近响应:</span>
+      <pre id="last-response" class="response-view muted">—</pre>
+    </div>
+  </footer>
 
   <script src="/assets/app.js"></script>
 </body>

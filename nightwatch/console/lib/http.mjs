@@ -44,7 +44,7 @@
  * plus a ": keep-alive\n\n" comment frame every 15s.
  */
 import { createServer } from "node:http";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -189,7 +189,7 @@ export function buildConsoleServer({ deployment, token, publicDir = PUBLIC_DIR }
   }
   const capabilityToken = token ?? randomBytes(24).toString("hex");
   const sseConnections = new Set();
-  const { api, orchestrator, events } = deployment;
+  const { api, orchestrator, events, registry, library, evidence, findings } = deployment;
 
   const bearerOk = (header) => {
     if (typeof header !== "string" || !header.startsWith("Bearer ")) return false;
@@ -278,6 +278,54 @@ export function buildConsoleServer({ deployment, token, publicDir = PUBLIC_DIR }
       if (pathname === "/sessions") {
         if (method !== "GET") return sendJson(res, 405, { ok: false, error: methodNotAllowed(method, "/sessions") });
         return sendJson(res, 200, { ok: true, sessions: api.listSessions() });
+      }
+
+      /* ---------------- registry / catalog ------------------------- */
+      if (pathname === "/registry/apis" && method === "GET") {
+        return sendJson(res, 200, { ok: true, apis: registry.listApis() });
+      }
+      if (pathname.startsWith("/registry/apis/") && method === "GET") {
+        const apiId = decodeURIComponent(pathname.slice("/registry/apis/".length));
+        const inv = registry.getInventory(apiId);
+        if (!inv) return sendJson(res, 404, { ok: false, error: notFoundRoute(pathname) });
+        return sendJson(res, 200, { ok: true, inventory: inv });
+      }
+
+      /* ---------------- library ------------------------------------ */
+      if (pathname === "/library/cases" && method === "GET") {
+        const caseIds = library.listCaseIds();
+        const cases = caseIds.map((id) => library.getCase(id)).filter(Boolean);
+        return sendJson(res, 200, { ok: true, cases });
+      }
+      if (pathname.startsWith("/library/cases/") && method === "GET") {
+        const caseId = decodeURIComponent(pathname.slice("/library/cases/".length));
+        const c = library.getCase(caseId);
+        if (!c) return sendJson(res, 404, { ok: false, error: notFoundRoute(pathname) });
+        return sendJson(res, 200, { ok: true, case: c });
+      }
+      if (pathname === "/library/scenarios" && method === "GET") {
+        const scenDir = join(library.rootDir, "scenarios");
+        let scenarioIds = [];
+        try { scenarioIds = readdirSync(scenDir).filter((f) => f.endsWith(".json")).map((f) => f.replace(/\.json$/, "")).sort(); } catch { /* dir not yet created */ }
+        const scenarios = scenarioIds.map((id) => library.getScenario(id)).filter(Boolean);
+        return sendJson(res, 200, { ok: true, scenarios });
+      }
+
+      /* ---------------- evidence / findings ------------------------- */
+      if (pathname === "/evidence/runs" && method === "GET") {
+        const runsDir = join(evidence.rootDir, "runs");
+        let runIds = [];
+        try { runIds = readdirSync(runsDir).filter((d) => !d.startsWith(".")).sort(); } catch { /* dir not yet created */ }
+        return sendJson(res, 200, { ok: true, run_ids: runIds });
+      }
+      if (pathname === "/findings" && method === "GET") {
+        return sendJson(res, 200, { ok: true, findings: findings.list() });
+      }
+
+      /* ---------------- audit log ---------------------------------- */
+      if (pathname === "/audit" && method === "GET") {
+        const events_ = events.history();
+        return sendJson(res, 200, { ok: true, events: events_.map((e) => ({ event_id: e.event.event_id, sequence: e.event.sequence, name: e.name, object_id: e.event.object_id, timestamp: e.event.timestamp, payload: e.event.payload })) });
       }
       if (pathname.startsWith("/sessions/")) {
         if (method !== "GET") return sendJson(res, 405, { ok: false, error: methodNotAllowed(method, "/sessions/:id") });
