@@ -1,13 +1,13 @@
-# SuperMan Console Agent Instructions
+# NightWatch Repository Instructions
 
-本仓是一个 Agent Workspace。任何 Agent（含 Trae CLI、Codex、Claude Code 等）进入本仓后，**必须先读本文件**。本文件是 Agent 行为与项目规则的唯一真源；`server.js` 内的 `AGENT_SYSTEM_PROMPT` 在启动时读取本文件并注入。
+本仓是 NightWatch API 测试工具与版本化 API Case 的真源。任何 Agent（含 Paperclip Codex、Trae CLI、Codex、Claude Code 等）进入本仓后必须先读本文件。API 测试工程师的岗位定义、Skill、Workflow 和 Eval 由 `chadwangcn/OpenAgent` 管理；本文件只定义当前仓库边界与工具入口。
 
 ## Project Identity
 
 ```yaml
-id: API-Test
-name: SuperMan Console
-repo: chadwangcn/API-Test  # 本地仓,非上游
+id: NightWatch
+name: NightWatch
+repo: chadwangcn/NightWatch
 role: API 黑盒测试平台
 type: postman/newman 驱动 + Node.js Web Console
 sensitivity: 测试凭证敏感（device_secret/operator_password 不入 Git）
@@ -17,16 +17,24 @@ sensitivity: 测试凭证敏感（device_secret/operator_password 不入 Git）
 
 为 Lumi 多服务平台（device-platform / s4-interaction / s5-content-media / s6-observation）提供完整的 API 黑盒测试体系，包含：
 
-1. **Postman 集合**（.postman_collection.json）— 测试用例载体
-2. **共享环境变量**（.postman_environment[.local].json）— 鉴权凭证与运行时变量
-3. **SuperMan Console**（server.js + public/index.html）— Web 测试平台，支持单接口调试、批量场景运行、Agent 集成
-4. **Newman CLI**（scripts/run-newman.sh）— CI 自动化执行入口
-5. **Agent 集成**（/api/ai/trae）— 通过 Trae CLI 子进程接入资深 QA Agent
+1. **统一 Case 索引**（cases/index.json）— 正式测试资产发现入口
+2. **Postman 集合**（.postman_collection.json）— 过渡期 Case 执行适配格式
+3. **共享环境模板**（.postman_environment.json）— 变量名称和非秘密默认值
+4. **NightWatch Console**（server.js + public/index.html）— Web 测试平台，支持单接口调试、批量场景运行和报告查看
+5. **Newman CLI**（scripts/run-newman.sh）— CI 自动化执行入口
+6. **NightWatch 核心模块**（nightwatch/）— registry、library、policy、executor、evidence、issue、control 和 console
+
+## Agent 与工具边界
+
+- Paperclip API 测试 Agent 必须加载 `$nightwatch-api-testing`；设计或更新 Case 时同时加载 `$lumi-test-case-governance`。
+- NightWatch 负责注册、计划、策略、执行、证据和 Finding；Agent 负责读取 D0 正式定义、选择 Case、判断结果和路由问题。
+- `/api/ai/trae` 是历史可选适配器，不是 API 测试员工身份或正式协作控制面。Paperclip Task、Agent Definition 与 Skill 优先。
+- `LUMI_API_BASE_URL` 是 Lumi API 地址唯一环境真源。工具适配层可以在子进程中映射为 NightWatch/Postman 变量，不得在 Paperclip 维护竞争地址。
 
 ## Boundaries
 
 ### ✅ 允许
-- 读写 `postman/*.json`（集合、环境变量）
+- 按任务类型读写 `cases/` 或 `postman/*.postman_collection.json`
 - 读写 `.workspace/`（Agent 沙箱工作区）
 - 调用所有 `/api/*` HTTP 端点
 - 在 `.workspace/` 内执行 bash 命令
@@ -37,18 +45,27 @@ sensitivity: 测试凭证敏感（device_secret/operator_password 不入 Git）
 - 直接修改 `postman/*.local.json` 中的敏感凭证（应通过 Web Console 或环境变量覆盖）
 - 在 Git 提交中包含 `.env*` / `postman/ai-config.local.json` / `.workspace/` / `reports/`
 - 跨系统 import 上游子系统的业务代码或数据模型
+- 在同一 PR 中同时修改工具实现和业务 Case，除非任务明确授权引导迁移
+- 以 HTTP 200、Newman 退出 0 或 NightWatch run 完成替代逐 Case 断言
+
+## 三条迭代线
+
+1. `test_case_maintenance`：默认只修改 `cases/`、Postman Case 资产和 Case 文档。
+2. `test_tool_improvement`：修改 `nightwatch/`、`server.js`、`src/`、执行适配器或工具测试，不得顺便降低 Case 断言。
+3. Agent/Skill 迭代：在 `chadwangcn/OpenAgent` 完成，不在本仓复制长期岗位定义。
 
 ## 目录与文件索引
 
 ### 顶层结构
 
 ```
-API-Test/
-├── AGENTS.md                          # ← 本文件,Agent 真源
+NightWatch/
+├── AGENTS.md                          # ← 本文件，仓库规则真源
 ├── HANDOVER.md                        # 项目交接文档(人类阅读,Agent 可参考但非真源)
-├── server.js                          # SuperMan Console 后端(Express)
+├── server.js                          # NightWatch Console 后端(Express)
 ├── package.json                      # npm scripts(newman/console/test)
 ├── postman/                           # Postman 集合与环境(测试资产)
+├── cases/                             # 统一 Case 索引、schema 与套件
 ├── public/                            # Web Console 前端(单文件 index.html)
 ├── scripts/                           # CI 脚本
 ├── src/                               # JavaScript 工具库(crypto/runner/api-client)
@@ -294,7 +311,7 @@ Lumi 设备平台 API(device/user/ops 三面) + S4 交互 + S5 内容媒体 + S6
 
 ## GitHub Issue 自动提交工作流
 
-当测试运行失败时,server.js 自动写入 `.workspace/last-failure.json`,并触发 Trae CLI Agent 按以下工作流执行 Issue 提交。**整个工作流由 Agent 自主决策,server.js 仅提供 GitHub API 代理端点**。
+当测试运行失败时，server.js 可以写入 `.workspace/last-failure.json`。创建或更新 GitHub Issue 属于独立外部写操作：必须由 Paperclip Task 明确授权、先按 Finding 指纹查重，再由 API 测试 Agent 调用受控代理；默认只生成 Finding 和脱敏证据，不自动发布 Issue。
 
 ### 集合 → 仓库映射
 
@@ -365,7 +382,7 @@ Lumi 设备平台 API(device/user/ops 三面) + S4 交互 + S5 内容媒体 + S6
 - 环境变量 `GITHUB_TOKEN`(Personal Access Token,需 `repo` scope)
 - 未设置时,Agent 提示用户设置并跳过提交
 
-## Agent 技能清单(Skills)
+## 仓库工具能力
 
 Agent 可使用以下工具/技能完成任务:
 

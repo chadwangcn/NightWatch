@@ -11,7 +11,7 @@ NightWatch 是一个面向 Agent 的 API 测试平台,围绕 Postman + Newman �
 | 能力 | 入口 | 说明 |
 |---|---|---|
 | Web Console | `npm run console` → http://localhost:8088 | 集合/环境变量/请求编辑、单接口运行、批量场景运行、报告预览 |
-| Agent 集成 | Console 内 Agent 面板 | Trae CLI 子进程接入,系统 prompt 真源为 [AGENTS.md](./AGENTS.md) |
+| Agent 集成 | Paperclip + OpenAgent Skills | API 测试员工通过 `nightwatch-api-testing` 调用 NightWatch；Trae Console 适配器仅保留为可选兼容入口 |
 | Newman CLI | `npm run newman:*` 或 `bash scripts/run-newman.sh <mode>` | 命令行批量运行,支持 smoke/device/guardian/ops/s5-full/all 六种模式 |
 | CI/CD | `.github/workflows/api-test.yml` | push/PR 触发 smoke,每天 03:00 BJT 全量回归 |
 | 故障诊断 | `POST /api/diagnostics/investigate` | 一键拉取 S6 Observation 日志,Agent 自动分析根因 |
@@ -130,26 +130,24 @@ npm run newman:all           # 三集合全量
 
 ## Agent 集成
 
-NightWatch 内置 Agent 真源 [AGENTS.md](./AGENTS.md),定义了:
+API 测试工程师的岗位定义、Skill、Workflow 与 Eval 由
+[`chadwangcn/OpenAgent`](https://github.com/chadwangcn/OpenAgent) 管理。Paperclip Agent
+加载 `nightwatch-api-testing` 和 `lumi-test-case-governance`；本仓 [AGENTS.md](./AGENTS.md)
+只定义 NightWatch 工具和 API Case 的仓库边界。
 
-- **角色**:Lumi API 资深 QA 工程师 Agent
-- **职责**:功能验证、测试设计、质量洞察、工程实践
-- **边界**:只读 `.workspace/` 沙箱 + 调用 `/api/*` HTTP 端点,不修改项目源码
-- **输出规范**:诊断类「结论 + 证据 + 建议 Action」,精简结论不展示过程
-- **诊断框架**:优先读 `.workspace/last-request.json` → 调 `/api/context/current` 确认上下文 → 必要时调 `/api/diagnostics/investigate` 拉日志
-
-修改 Agent 行为只需改 AGENTS.md,server.js 启动时自动读取注入,无需改代码。
+`/api/ai/trae` 是历史可选适配器，不再承担正式员工身份、任务控制或最终验收职责。
 
 ## 项目结构
 
 ```
 NightWatch/
-├── AGENTS.md                # Agent 真源(角色/规则/端点/规范)
+├── AGENTS.md                # 仓库规则真源（工具/Case 边界与入口）
 ├── README.md               # 本文件
 ├── HANDOVER.md             # 项目交接文档(人类阅读)
 ├── server.js               # Express 后端(Newman 运行 + Agent SSE + 诊断)
 ├── public/index.html       # Web Console 前端(单文件)
 ├── postman/                # Postman 集合与环境变量(测试资产)
+├── cases/                  # 统一 Case 索引、schema 与迁移入口
 │   ├── lumi-device-platform.postman_collection.json
 │   ├── lumi-s4-interaction.postman_collection.json
 │   ├── lumi-s5-content-media.postman_collection.json
@@ -164,6 +162,8 @@ NightWatch/
 ├── .workspace/             # Agent 沙箱工作区(不入 Git)
 └── .github/workflows/api-test.yml  # GitHub Actions CI
 ```
+
+运行 `npm run cases:validate` 可检查所有 Postman Collection 是否进入统一 Case 索引。
 
 ## CI/CD
 
@@ -183,11 +183,11 @@ NightWatch/
 | `OPERATOR_ACCOUNT` / `OPERATOR_PASSWORD` | 运营账号凭证 |
 | `S5_TEST_FAMILY_ID` / `S5_TEST_CHILD_ID` | S5 场景B private_child 参数 |
 | `S5_TEST_AUDIO_PATH` | S5 测试音频路径(CI 自动生成) |
-| `GITHUB_TOKEN` | 自动提交 Issue 用 PAT(需 `repo` scope),供 server.js 与 Trae Agent 调用 |
+| `GITHUB_TOKEN` | 经授权后创建/更新 Issue 所需的 GitHub 凭证；由运行环境安全注入，不写入仓库或报告 |
 
 ## GitHub Issue 自动提交
 
-测试失败时,可自动向对应后端仓库提交 Issue。整个工作流由 Trae CLI Agent 自主决策:查重 → 生成 Issue 内容(根因/证据/复现/Action) → 创建新 Issue 或追加评论。
+测试失败时，NightWatch 先产出 Finding。仅当 Task 明确授权外部写操作时，Paperclip API 测试工程师才可查重后创建 Issue 或追加评论；默认只回填原 Task，不自行扩大影响范围。
 
 ### 集合 → 仓库映射
 
@@ -221,7 +221,7 @@ Agent 工作流详情见 [AGENTS.md](./AGENTS.md)「GitHub Issue 自动提交工
 - **后端**:Node.js + Express
 - **前端**:单文件 HTML(原生 JS,无框架)
 - **测试**:Postman Collection v2.1.0 + Newman CLI
-- **Agent**:Trae CLI 子进程 + OpenAI 兼容 chat/completions
+- **Agent 集成**:Paperclip + OpenAgent Skills；Trae CLI/OpenAI 兼容接口仅为可选适配层
 - **CI**:GitHub Actions
 - **单元测试**:Vitest
 
