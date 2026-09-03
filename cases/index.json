@@ -1,0 +1,49 @@
+{
+  "schema_version": "nightwatch.case-index.v1",
+  "case_set_version": "0.1.0",
+  "case_schema": "nightwatch/schemas/test_case/v1.json",
+  "discovery_rule": "listed_only",
+  "entries": [
+    {
+      "case_set_id": "device-platform-postman",
+      "component": "device-platform",
+      "owner": "api-test",
+      "format": "postman_collection",
+      "source": "postman/lumi-device-platform.postman_collection.json",
+      "status": "active",
+      "migration_state": "legacy_postman_source",
+      "contract_ref_required_at_runtime": true
+    },
+    {
+      "case_set_id": "s4-interaction-postman",
+      "component": "s4-interaction",
+      "owner": "api-test",
+      "format": "postman_collection",
+      "source": "postman/lumi-s4-interaction.postman_collection.json",
+      "status": "active",
+      "migration_state": "legacy_postman_source",
+      "contract_ref_required_at_runtime": true
+    },
+    {
+      "case_set_id": "s5-content-media-postman",
+      "component": "s5-content-media",
+      "owner": "api-test",
+      "format": "postman_collection",
+      "source": "postman/lumi-s5-content-media.postman_collection.json",
+      "status": "active",
+      "migration_state": "legacy_postman_source",
+      "contract_ref_required_at_runtime": true
+    },
+    {
+      "case_set_id": "s6-observation-postman",
+      "component": "s6-observation",
+      "owner": "api-test",
+      "format": "postman_collection",
+      "source": "postman/lumi-s6-observation.postman_collection.json",
+      "status": "active",
+      "migration_state": "legacy_postman_source",
+      "contract_ref_required_at_runtime": true
+    }
+  ]
+}
+

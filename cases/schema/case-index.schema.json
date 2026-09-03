@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nightwatch.local/schemas/case-index.v1.json",
+  "title": "NightWatch Case Index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "case_set_version", "case_schema", "discovery_rule", "entries"],
+  "properties": {
+    "schema_version": {"const": "nightwatch.case-index.v1"},
+    "case_set_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "case_schema": {"const": "nightwatch/schemas/test_case/v1.json"},
+    "discovery_rule": {"const": "listed_only"},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["case_set_id", "component", "owner", "format", "source", "status", "migration_state", "contract_ref_required_at_runtime"],
+        "properties": {
+          "case_set_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$"},
+          "component": {"type": "string", "minLength": 1},
+          "owner": {"const": "api-test"},
+          "format": {"enum": ["nightwatch_case", "postman_collection"]},
+          "source": {"type": "string", "minLength": 1},
+          "status": {"enum": ["draft", "active", "deprecated", "retired"]},
+          "migration_state": {"enum": ["native", "legacy_postman_source", "migration_pending"]},
+          "contract_ref_required_at_runtime": {"const": true}
+        }
+      }
+    }
+  }
+}
+

@@ -6,6 +6,7 @@
   "description": "Lumi API 黑盒测试：Postman 集合（开发调试）+ Newman（CI 自动化）+ Vitest（代码单元测试）",
   "scripts": {
     "test": "vitest run",
+    "cases:validate": "node scripts/validate-case-index.mjs",
     "test:watch": "vitest",
     "dev": "vite",
     "build": "vite build",
